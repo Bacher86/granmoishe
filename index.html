@@ -2,7 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gran Moishe">
+  <meta name="theme-color" content="#1B3A6B">
+  <meta name="description" content="Fantasy Fútbol del Mundial 2026 · Olami Almagro">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="almagro.jpg">
   <title>Gran Moishe 2026 — Fantasy Fútbol · Olami Almagro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -172,6 +180,26 @@
       .hero-title-wrap { text-align: center; }
       .row2 { flex-direction: column; }
       .nav-sub { display: none; }
+      .nav { padding: 0 12px; height: 56px; }
+      .nav-actions { gap: 4px; }
+      .btn { padding: 6px 10px; font-size: .8rem; }
+      .nav-logo-wrap { width: 36px; height: 36px; }
+      .nav-name { font-size: .95rem; }
+      .feat { padding: 10px 9px; }
+      .cta-main, .cta-sec { padding: 12px 20px; font-size: .95rem; }
+      .pay-box { padding: 20px 16px; }
+      .modal { padding: 20px 16px; }
+      .ad-strip { padding: 6px 12px; }
+      .wrap { padding: 48px 16px; }
+    }
+    @media (max-width:380px) {
+      .nav-actions .btn-outline { display: none; }
+      .hero-title { font-size: 2.6rem; }
+    }
+    /* Safe area for notch phones */
+    @supports (padding: max(0px)) {
+      .nav { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+      .hero-content { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
@@ -761,6 +789,14 @@ function spClick(i) { const sp = spList[i]; if(sp?.url) window.open(sp.url,'_bla
 
 initSponsors();
 
+</script>
+<script>
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
