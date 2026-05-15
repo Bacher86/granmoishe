@@ -18786,6 +18786,222 @@ function calcProdePoints(userPick, match) {
   return 0;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PRODE VIEW
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ProdeView({ user, toast }) {
+  const prodeKey = user ? "gm_prode_" + user.uid : "gm_prode_anon";
+  const [picks, setPicks] = useState(function() { return getLS(prodeKey, {}); });
+  const [filter, setFilter] = useState("todos");
+  const [saved, setSaved] = useState(false);
+
+  // Persist picks
+  useEffect(function() {
+    setLS(prodeKey, picks);
+  }, [picks]);
+
+  const allGroups = [...new Set(WC2026_FIXTURE.filter(function(m){ return m.group; }).map(function(m){ return m.group; }))].sort();
+
+  const visibleMatches = useMemo(function() {
+    return WC2026_FIXTURE.filter(function(m) {
+      if (filter === "todos") return true;
+      if (filter === "mis-picks") return !!picks[m.id];
+      if (filter === "abiertos") return canProde(m);
+      return m.group === filter;
+    });
+  }, [filter, picks]);
+
+  function setPick(matchId, side, val) {
+    const raw = val.replace(/[^0-9]/g, "").slice(0, 2);
+    setPicks(function(prev) {
+      const cur = prev[matchId] || {};
+      return Object.assign({}, prev, { [matchId]: Object.assign({}, cur, { [side]: raw }) });
+    });
+  }
+
+  function savePick(match) {
+    const p = picks[match.id];
+    if (!p || p.home === "" || p.home === undefined || p.away === "" || p.away === undefined) {
+      toast("Completá los dos resultados ✏️", "warn"); return;
+    }
+    if (!canProde(match)) { toast("El partido ya comenzó ⏳", "error"); return; }
+    toast("Pronóstico guardado 🎯", "success");
+    setSaved(true);
+    setTimeout(function(){ setSaved(false); }, 1500);
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + "hs";
+  }
+
+  // Totals
+  const totalPicks = Object.keys(picks).length;
+  const totalPts = WC2026_FIXTURE.reduce(function(acc, m) {
+    const p = picks[m.id];
+    if (!p) return acc;
+    const pts = calcProdePoints(p, m);
+    return acc + (pts || 0);
+  }, 0);
+  const exactos = WC2026_FIXTURE.filter(function(m) {
+    return calcProdePoints(picks[m.id], m) === 3;
+  }).length;
+
+  const FILTER_TABS = [
+    { id: "todos", label: "Todos" },
+    { id: "abiertos", label: "🟢 Abiertos" },
+    { id: "mis-picks", label: "🎯 Mis picks" },
+    ...allGroups.map(function(g) { return { id: g, label: "Grupo " + g }; }),
+  ];
+
+  return React.createElement("div", { style: { padding: "16px", maxWidth: 760, margin: "0 auto" } },
+
+    // Header
+    React.createElement("div", { style: { marginBottom: 20 } },
+      React.createElement("h2", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 900, letterSpacing: 2, color: "#4ade80", marginBottom: 4 } }, "🎯 PRODE"),
+      React.createElement("p", { style: { fontSize: ".82rem", color: "#5a7a6a" } }, "Pronosticá resultados antes de que empiece cada partido. +3 pts por exacto, +1 por ganador correcto.")
+    ),
+
+    // Stats strip
+    React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" } },
+      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#4ade80" } }, totalPicks),
+        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Pronósticos")
+      ),
+      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#FFD700" } }, totalPts),
+        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Pts Prode")
+      ),
+      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#60a5fa" } }, exactos),
+        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Exactos ⭐")
+      )
+    ),
+
+    // Filter tabs
+    React.createElement("div", { style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 16 } },
+      FILTER_TABS.map(function(ft) {
+        return React.createElement("button", {
+          key: ft.id,
+          onClick: function() { setFilter(ft.id); },
+          style: {
+            padding: "6px 14px", borderRadius: 20, border: "1px solid",
+            borderColor: filter === ft.id ? "#4ade80" : "#1a3a28",
+            background: filter === ft.id ? "rgba(74,222,128,.15)" : "transparent",
+            color: filter === ft.id ? "#4ade80" : "#5a7a6a",
+            fontFamily: "Oswald,sans-serif", fontWeight: 600, fontSize: ".82rem",
+            cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0
+          }
+        }, ft.label);
+      })
+    ),
+
+    // Match cards
+    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+      visibleMatches.length === 0 && React.createElement("div", {
+        style: { textAlign: "center", padding: 40, color: "#3a5a4a", fontSize: ".9rem" }
+      }, "No hay partidos en esta categoría"),
+
+      visibleMatches.map(function(match) {
+        const status = matchStatus(match);
+        const open = status === "open";
+        const finished = status === "finished";
+        const p = picks[match.id] || {};
+        const pts = calcProdePoints(p, match);
+        const hasScore = match.score_home !== null && match.score_home !== undefined;
+
+        const statusColors = { open: "#4ade80", closing: "#fbbf24", live: "#ef4444", finished: "#60a5fa" };
+        const statusLabels = { open: "Abierto", closing: "Cierra pronto", live: "En juego", finished: "Finalizado" };
+
+        return React.createElement("div", {
+          key: match.id,
+          style: {
+            background: "#0a1a2a", border: "1px solid #1a3040", borderRadius: 12,
+            padding: "14px 16px", opacity: status === "live" ? 0.85 : 1
+          }
+        },
+          // Top row: group/round + date + status
+          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 6 } },
+            React.createElement("span", { style: { fontSize: ".7rem", color: "#3a6a4a", fontWeight: 600, letterSpacing: 1 } },
+              match.group ? "Grupo " + match.group + " · Fecha " + match.matchday : match.round
+            ),
+            React.createElement("span", { style: { fontSize: ".68rem", color: "#3a5a4a" } }, fmtDate(match.date)),
+            React.createElement("span", {
+              style: { fontSize: ".68rem", fontWeight: 700, color: statusColors[status], background: statusColors[status] + "22", padding: "2px 8px", borderRadius: 10 }
+            }, statusLabels[status])
+          ),
+
+          // Teams + inputs
+          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+            // Home team
+            React.createElement("div", { style: { flex: 1, textAlign: "right" } },
+              React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontWeight: 700, fontSize: "1rem", color: "#e2e8f0" } }, match.home)
+            ),
+
+            // Score inputs / result
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
+              open
+                ? React.createElement("input", {
+                    className: "prode-input", type: "text", inputMode: "numeric",
+                    value: p.home !== undefined ? p.home : "",
+                    placeholder: "-",
+                    onChange: function(e) { setPick(match.id, "home", e.target.value); }
+                  })
+                : React.createElement("div", {
+                    style: { width: 40, textAlign: "center", fontFamily: "Oswald,sans-serif", fontWeight: 700, fontSize: "1.1rem",
+                      color: p.home !== undefined ? "#4ade80" : "#2a4a38" }
+                  }, p.home !== undefined ? p.home : "-"),
+
+              React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontWeight: 900, color: "#2a4a38", fontSize: "1.1rem" } }, "—"),
+
+              open
+                ? React.createElement("input", {
+                    className: "prode-input", type: "text", inputMode: "numeric",
+                    value: p.away !== undefined ? p.away : "",
+                    placeholder: "-",
+                    onChange: function(e) { setPick(match.id, "away", e.target.value); }
+                  })
+                : React.createElement("div", {
+                    style: { width: 40, textAlign: "center", fontFamily: "Oswald,sans-serif", fontWeight: 700, fontSize: "1.1rem",
+                      color: p.away !== undefined ? "#4ade80" : "#2a4a38" }
+                  }, p.away !== undefined ? p.away : "-"),
+            ),
+
+            // Away team
+            React.createElement("div", { style: { flex: 1 } },
+              React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontWeight: 700, fontSize: "1rem", color: "#e2e8f0" } }, match.away)
+            )
+          ),
+
+          // Real score (if finished)
+          hasScore && React.createElement("div", { style: { textAlign: "center", marginTop: 8, fontSize: ".78rem", color: "#3a6a4a" } },
+            "Resultado: ",
+            React.createElement("strong", { style: { color: "#e2e8f0" } }, match.score_home + " — " + match.score_away),
+            pts !== null && React.createElement("span", {
+              style: { marginLeft: 10, fontWeight: 700,
+                color: pts === 3 ? "#FFD700" : pts === 1 ? "#4ade80" : "#ef4444" }
+            }, pts === 3 ? "⭐ +3 pts (exacto)" : pts === 1 ? "✅ +1 pt (ganador)" : "❌ 0 pts")
+          ),
+
+          // Save button
+          open && React.createElement("div", { style: { marginTop: 10, textAlign: "right" } },
+            React.createElement("button", {
+              onClick: function() { savePick(match); },
+              style: {
+                padding: "6px 18px", borderRadius: 8, border: "none",
+                background: "linear-gradient(135deg,#166534,#4ade80)", color: "#07111e",
+                fontFamily: "Oswald,sans-serif", fontWeight: 700, fontSize: ".85rem", cursor: "pointer"
+              }
+            }, "Guardar pronóstico")
+          )
+        );
+      })
+    )
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FIXTURE VIEW
 // ═══════════════════════════════════════════════════════════════════════════
