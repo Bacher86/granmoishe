@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gran Moishe">
+  <meta name="theme-color" content="#07111e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="almagro.jpg">
   <title>Gran Moishe 2026 — Fantasy Fútbol</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -410,6 +417,20 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   .idx-title{font-size:3rem;}
   .idx-ctas{flex-direction:column;align-items:center;}
   .idx-features{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){
+  .idx-title{font-size:2.4rem;}
+  .ntab-lbl{font-size:.6rem;}
+  .ntab{min-width:52px;padding:10px 3px;}
+  .ntab span:first-child{font-size:.85rem;}
+  .hdr-logo{width:30px;height:30px;}
+  .idx-features{grid-template-columns:1fr;}
+  .auth-modal{padding:20px 14px;}
+}
+@supports(padding:max(0px)){
+  .hdr{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-top:max(9px,env(safe-area-inset-top));}
+  .nav{padding-bottom:max(4px,env(safe-area-inset-bottom));}
+  .toast-wrap{top:max(84px,calc(84px + env(safe-area-inset-top)));}
 }
 .prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}</style>
 </head>
@@ -18068,7 +18089,7 @@ function IndexPage({ onLogin, onRegister, ads }) {
         , React.createElement('div', { className: "idx-bg-grid",})
         , React.createElement('div', { className: "idx-hero-content",}
           , React.createElement('div', { className: "idx-logo",}
-            , React.createElement('div', { className: "idx-star",}, "✡")
+            , React.createElement('img', { src:"almagro.jpg", alt:"Olami Almagro", style:{width:80,height:80,borderRadius:'50%',objectFit:'cover',border:'3px solid rgba(74,222,128,.4)',boxShadow:'0 0 24px rgba(74,222,128,.4)',flexShrink:0}, onError:e=>{e.target.outerHTML='<div class="idx-star">✡</div>'},})
             , React.createElement('div', { className: "idx-title-wrap",}
               , React.createElement('div', { className: "idx-pretitle",}, "GRAN")
               , React.createElement('div', { className: "idx-title",}, "MOISHE")
@@ -19466,7 +19487,7 @@ function GranMoishe() {
   const Toasts=()=>React.createElement('div', { className: "toast-wrap",}, toasts.map(t=>React.createElement('div', { key: t.id, className: `toast ${t.type}`,}, t.msg)));
 
   // ── LOADING ──
-  if(authLoading) return React.createElement('div', { className: "splash",}, React.createElement('div', { className: "splash-b",}, "✡"), React.createElement('div', { className: "splash-t",}, "GRAN MOISHE" ));
+  if(authLoading) return React.createElement('div', { className: "splash",}, React.createElement('img',{src:"almagro.jpg",alt:"Gran Moishe",style:{width:80,height:80,borderRadius:'50%',objectFit:'cover',border:'3px solid rgba(74,222,128,.5)',boxShadow:'0 0 24px rgba(74,222,128,.4)',animation:'pulse 1.2s ease-in-out infinite'},onError:e=>{e.target.outerHTML='<div class="splash-b">✡</div>'}}), React.createElement('div', { className: "splash-t",}, "GRAN MOISHE" ));
 
   // ── BLOCKED ──
   if(user && user.bloqueado && !user.admin) return (
@@ -19533,7 +19554,7 @@ function GranMoishe() {
       /* HEADER */
       , React.createElement('header', { className: "hdr",}
         , React.createElement('div', { className: "hdr-l",}
-          , React.createElement('a', { href: "index.html", style: {textDecoration:'none'},}, React.createElement('div', { className: "hdr-logo",}, "✡"))
+          , React.createElement('a', { href: "index.html", style: {textDecoration:'none'},}, React.createElement('div', { className: "hdr-logo", style:{width:36,height:36,borderRadius:7,overflow:'hidden',flexShrink:0}}, React.createElement('img',{src:"almagro.jpg",alt:"Olami Almagro",style:{width:'100%',height:'100%',objectFit:'cover'},onError:e=>{e.target.parentElement.textContent='✡'}})))
           , React.createElement('div', null, React.createElement('div', { className: "hdr-title",}, "GRAN " , React.createElement('span', { className: "hdr-yr",}, "MOISHE")), React.createElement('div', { className: "hdr-sub",}, "EL DT DEL MUNDIAL 2026"    ))
         )
         , React.createElement('div', { className: "hdr-r",}
@@ -19647,5 +19668,12 @@ function GranMoishe() {
   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(GranMoishe));
 })();
   </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
 </body>
 </html>
