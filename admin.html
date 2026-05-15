@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gran Moishe Admin">
+  <meta name="theme-color" content="#07111e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="almagro.jpg">
   <title>Gran Moishe — Panel Administrador</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -67,7 +74,19 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .confirm-cancel:hover{border-color:#4a5a6a;color:#a0b0c0;}
 .confirm-ok:hover{background:#dc2626;}
 @media(max-width:768px){.hdr{padding:9px 12px;}.ps-row2{flex-direction:column;}.ap-grid{grid-template-columns:1fr;}}
-`;
+@media(max-width:480px){
+  .hdr-title{font-size:1rem;letter-spacing:1px;}
+  .ntab-lbl{font-size:.6rem;}
+  .ntab{min-width:60px;padding:10px 4px;}
+  .ntab span:first-child{font-size:.85rem;}
+  .main{padding:10px;}
+  .ap-card{padding:12px;}
+  .hdr-r .btn-logout{padding:6px 8px;font-size:.72rem;}
+}
+@supports(padding:max(0px)){
+  .hdr{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right));}
+  .nav{padding-bottom:max(0px,env(safe-area-inset-bottom));}
+}`;
 
 
 // ── CONFIRM DIALOG ────────────────────────────────────────────────────────
@@ -425,7 +444,7 @@ export default function AdminPage() {
 
       <header className="hdr">
         <div className="hdr-l">
-          <div className="hdr-logo">✡</div>
+          <div className="hdr-logo" style={{width:40,height:40,borderRadius:8,overflow:'hidden',flexShrink:0}}><img src="almagro.jpg" alt="Olami Almagro" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.parentElement.textContent='✡'}}/></div>
           <div>
             <div className="hdr-title">GRAN <span className="hdr-yr">MOISHE</span></div>
             <div className="hdr-sub" style={{ color:"#fbbf24" }}>👑 PANEL DE ADMINISTRACIÓN</div>
@@ -18344,7 +18363,7 @@ function AdminPage() {
 
       , React.createElement('header', { className: "hdr",}
         , React.createElement('div', { className: "hdr-l",}
-          , React.createElement('div', { className: "hdr-logo",}, "✡")
+          , React.createElement('div', { className: "hdr-logo", style:{width:40,height:40,borderRadius:8,overflow:'hidden',flexShrink:0}}, React.createElement('img',{src:"almagro.jpg",alt:"Olami Almagro",style:{width:'100%',height:'100%',objectFit:'cover'},onError:e=>{e.target.parentElement.textContent='✡'}}))
           , React.createElement('div', null
             , React.createElement('div', { className: "hdr-title",}, "GRAN " , React.createElement('span', { className: "hdr-yr",}, "MOISHE"))
             , React.createElement('div', { className: "hdr-sub", style: { color:"#fbbf24" },}, "👑 PANEL DE ADMINISTRACIÓN"   )
@@ -18525,22 +18544,60 @@ function ApiPanel({ toast }) {
       // Step 1: buscar el fixture en api-football por fecha y equipos
       const dateStr = match.date.slice(0,10);
       const afFixUrl = `https://v3.football.api-sports.io/fixtures?date=${dateStr}&league=1&season=2026`;
-      // Intentar con múltiples proxies CORS
-      const fetchWithProxy = async (url, headers) => {
-        const proxies = [
-          u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-          u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-          u => `https://proxy.cors.sh/${u}`,
+      
+      // Proxy CORS robusto — intentar con varios y headers correctos
+      const fetchWithProxy = async (url, extraHeaders = {}) => {
+        const strategies = [
+          // AllOrigins — soporta headers custom via query param
+          async () => {
+            const encoded = encodeURIComponent(url);
+            const r = await fetch(`https://api.allorigins.win/raw?url=${encoded}`, {
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!r.ok) throw new Error("allorigins " + r.status);
+            return r;
+          },
+          // Corsproxy.io
+          async () => {
+            const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {
+              headers: extraHeaders,
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!r.ok) throw new Error("corsproxy " + r.status);
+            return r;
+          },
+          // ThingProxy
+          async () => {
+            const r = await fetch(`https://thingproxy.freeboard.io/fetch/${url}`, {
+              headers: extraHeaders,
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!r.ok) throw new Error("thingproxy " + r.status);
+            return r;
+          },
+          // Directo (puede funcionar en algunos entornos)
+          async () => {
+            const r = await fetch(url, {
+              headers: {"x-apisports-key": AF_KEY, ...extraHeaders},
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!r.ok) throw new Error("directo " + r.status);
+            return r;
+          },
         ];
-        for(const proxy of proxies){
+        let lastErr = null;
+        for (const strategy of strategies) {
           try {
-            const r = await fetch(proxy(url), {headers, signal: AbortSignal.timeout(8000)});
-            if(r.ok) return r;
-          } catch(e){ continue; }
+            const res = await strategy();
+            return res;
+          } catch(e) {
+            lastErr = e;
+            continue;
+          }
         }
-        throw new Error("Todos los proxies fallaron. Probá desde granmoisheolamialmagro.com");
+        throw new Error("CORS bloqueado. Intentá desde granmoisheolamialmagro.com o usá la carga manual. (" + (lastErr?.message||"") + ")");
       };
-      const fixtureRes = await fetchWithProxy(afFixUrl, {"x-apisports-key":AF_KEY});
+      const fixtureRes = await fetchWithProxy(afFixUrl);
       const fixtureData = await fixtureRes.json();
       const fixtures = fixtureData.response||[];
 
@@ -18560,7 +18617,7 @@ function ApiPanel({ toast }) {
 
       // Step 2: traer eventos del partido (goles, tarjetas, asistencias)
       const afEvUrl = `https://v3.football.api-sports.io/fixtures/events?fixture=${fixtureId}`;
-      const evRes = await fetchWithProxy(afEvUrl, {"x-apisports-key":AF_KEY});
+      const evRes = await fetchWithProxy(afEvUrl);
       if(!evRes.ok) throw new Error("Error eventos: "+evRes.status);
       const evData = await evRes.json();
       const events = evData.response||[];
@@ -18886,5 +18943,12 @@ function ApiPanel({ toast }) {
   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(AdminPage));
 })();
   </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
 </body>
 </html>
