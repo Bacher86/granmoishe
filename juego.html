@@ -91,9 +91,9 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .ad-cta{font-size:.65rem;color:#4a6a5a;margin-top:2px;}
 
 /* SIDEBAR ADS */
-.sidebar-ads{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:12px 0 12px 12px;}
+.sidebar-ads{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:12px 0 12px 12px;align-self:stretch;}
 .sba-label{font-size:.55rem;letter-spacing:2px;color:#3a5a4a;text-transform:uppercase;text-align:center;padding-bottom:4px;}
-.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.15s;min-height:100px;}
+.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.15s;flex:1;min-height:160px;}
 .sba-item:hover{border-color:#2a4a38;}
 
 /* APP LAYOUT */
@@ -103,7 +103,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0a1b2a,#071a10);border-bottom:2px solid #1a3a20;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:200;}
 .hdr-l{display:flex;align-items:center;gap:12px;}
-.hdr-logo{font-size:1.8rem;filter:drop-shadow(0 0 8px rgba(74,222,128,.5));}
+.hdr-{font-size:1.8rem;filter:drop-shadow(0 0 8px rgba(74,222,128,.5));}
 .hdr-title{font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:900;letter-spacing:3px;color:#fff;line-height:1;}
 .hdr-yr{color:#4ade80;}
 .hdr-sub{font-size:.55rem;letter-spacing:2.5px;color:#2a5a30;text-transform:uppercase;margin-top:2px;}
@@ -116,7 +116,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .hdr-av{width:32px;height:32px;background:linear-gradient(135deg,#4ade80,#22c55e);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#07111e;flex-shrink:0;}
 .hdr-un{font-size:.8rem;font-weight:600;line-height:1.1;}
 .hdr-ut{font-size:.65rem;color:#4a6a5a;margin-top:1px;}
-.btn-logout{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:7px;padding:7px 11px;font-size:.8rem;cursor:pointer;}
+.btn-ut{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:7px;padding:7px 11px;font-size:.8rem;cursor:pointer;}
 
 /* NAV */
 .nav{display:flex;background:#0a1525;border-bottom:1px solid #1a2d40;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -18044,13 +18044,13 @@ function SidebarAds({ ads }) {
       a
         ? React.createElement('div', { key: a.id+i, className: "sba-item", onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
             , a.img
-              ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:100,objectFit:"cover",display:"block"}})
-              : React.createElement('div', { className: "ad-placeholder", style: {height:100},}
+              ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:"100%",objectFit:"cover",display:"block"}})
+              : React.createElement('div', { className: "ad-placeholder", style: {height:"100%",minHeight:160},}
                   , React.createElement('span', { style: {color:_optionalChain([AD_TIERS, 'access', _20 => _20[a.tier], 'optionalAccess', _21 => _21.color]),fontSize:".6rem",fontWeight:700,letterSpacing:1}}, _optionalChain([AD_TIERS, 'access', _22 => _22[a.tier], 'optionalAccess', _23 => _23.name]))
                   , React.createElement('div', { style: {fontSize:".8rem",fontWeight:700,color:"#e2e8f0",marginTop:4,textAlign:"center",lineHeight:1.3}}, a.nombre)
                 )
           )
-        : React.createElement('div', { key: "empty"+i, className: "sba-item", style:{minHeight:100,border:"1px dashed #1a2d40",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"},}
+        : React.createElement('div', { key: "empty"+i, className: "sba-item", style:{minHeight:160,border:"1px dashed #1a2d40",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"},}
             , React.createElement('span', {style:{fontSize:".65rem",color:"#1a3a28"}}, "Publicidad")
           )
     )
