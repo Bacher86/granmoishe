@@ -55,12 +55,42 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .mkt-search:focus{border-color:#4ade80;}
 .mkt-search::placeholder{color:#3a5a6a;}
 .mkt-sel{background:#0a1525;border:1px solid #1e2d40;color:#e2e8f0;border-radius:7px;padding:8px 9px;font-size:.82rem;cursor:pointer;min-width:140px;}
+
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);}
+.confirm-box{background:#0d1b2a;border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:28px;max-width:380px;width:100%;text-align:center;}
+.confirm-icon{font-size:2.4rem;margin-bottom:12px;}
+.confirm-title{font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:#e2e8f0;margin-bottom:8px;}
+.confirm-msg{font-size:.85rem;color:#5a7a8a;margin-bottom:22px;line-height:1.6;}
+.confirm-btns{display:flex;gap:10px;justify-content:center;}
+.confirm-cancel{padding:10px 22px;border-radius:8px;border:1px solid #2a3a4a;background:transparent;color:#5a7a8a;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:600;font-size:.9rem;}
+.confirm-ok{padding:10px 22px;border-radius:8px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;}
+.confirm-cancel:hover{border-color:#4a5a6a;color:#a0b0c0;}
+.confirm-ok:hover{background:#dc2626;}
 @media(max-width:768px){.hdr{padding:9px 12px;}.ps-row2{flex-direction:column;}.ap-grid{grid-template-columns:1fr;}}
 `;
+
+
+// ── CONFIRM DIALOG ────────────────────────────────────────────────────────
+function ConfirmDialog({msg, onOk, onCancel}) {
+  return (
+    <div className="confirm-overlay" onClick={onCancel}>
+      <div className="confirm-box" onClick={e=>e.stopPropagation()}>
+        <div className="confirm-icon">🗑</div>
+        <div className="confirm-title">¿Confirmar eliminación?</div>
+        <div className="confirm-msg">{msg}</div>
+        <div className="confirm-btns">
+          <button className="confirm-cancel" onClick={onCancel}>Cancelar</button>
+          <button className="confirm-ok" onClick={onOk}>Sí, eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
  function UsersPanel() {
   const [users, setUsers] = useState(()=>DB.getUsers());
   const [search, setSrc]  = useState("");
+  const [confirmState, setConfirmState] = useState(null); // {uid, nombre}
   const [filterP, setFP]  = useState("ALL");
   const [filterC, setFC]  = useState("ALL");
   const [filterPago, setFPago] = useState("ALL");
@@ -68,9 +98,6 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   const [sortBy, setSB]   = useState("nombre");
   const allPaises = [...new Set(users.map(u=>u.pais).filter(Boolean))].sort();
   const allComunidades = [...new Set(users.map(u=>u.comunidad).filter(Boolean))].sort();
-  const [idSearch, setIdSearch] = useState("");
-  const [idResult, setIdResult] = useState(null);
-  const [idMsg, setIdMsg] = useState("");
 
   const refresh = () => setUsers(DB.getUsers());
 
@@ -97,39 +124,20 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   };
 
   const deleteUser = (uid, nombre) => {
-    if(!window.confirm("¿Eliminar a "+nombre+"? Esta acción no se puede deshacer.")) return;
-    const all = DB.getUsers().filter(u=>u.uid!==uid);
+    setConfirmState({uid, nombre});
+  };
+
+  const doDelete = () => {
+    if(!confirmState) return;
+    const all = DB.getUsers().filter(u=>u.uid!==confirmState.uid);
     setLS("gm_users", all);
+    // Also clear session if this user is logged in
+    try {
+      const sess = JSON.parse(localStorage.getItem("gm_session")||"null");
+      if(sess && sess.uid === confirmState.uid) localStorage.removeItem("gm_session");
+    } catch(e){}
+    setConfirmState(null);
     refresh();
-  };
-
-  const searchById = () => {
-    const q = idSearch.trim().toUpperCase();
-    if(!q){ setIdMsg("Ingresá un ID"); setIdResult(null); return; }
-    const found = DB.getUsers().find(u => (u.playerId||"").toUpperCase() === q);
-    if(!found){ setIdMsg("❌ No se encontró ningún participante con ese ID"); setIdResult(null); }
-    else { setIdResult(found); setIdMsg(""); }
-  };
-
-  const idToggleBloqueo = () => {
-    if(!idResult) return;
-    toggleBloqueo(idResult.uid);
-    const updated = DB.getUsers().find(u=>u.uid===idResult.uid);
-    setIdResult(updated);
-  };
-
-  const idDelete = () => {
-    if(!idResult) return;
-    deleteUser(idResult.uid, idResult.nombre + " " + idResult.apellido);
-    setIdResult(null);
-    setIdSearch("");
-  };
-
-  const idTogglePago = () => {
-    if(!idResult) return;
-    togglePago(idResult.uid);
-    const updated = DB.getUsers().find(u=>u.uid===idResult.uid);
-    setIdResult(updated);
   };
 
   const filtered = useMemo(()=>{
@@ -153,68 +161,14 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      {confirmState&&<ConfirmDialog
+        msg={`¿Eliminar a ${confirmState.nombre}? Esta acción no se puede deshacer.`}
+        onOk={doDelete}
+        onCancel={()=>setConfirmState(null)}
+      />}
       {(pendientes>0||bloqueados>0)&&<div style={{background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"10px 14px",color:"#ef4444",fontWeight:600,fontSize:".85rem"}}>
         ⚠ {pendientes} pago{pendientes!==1?"s":""} pendiente{pendientes!==1?"s":""} · {bloqueados} cuenta{bloqueados!==1?"s":""} bloqueada{bloqueados!==1?"s":""}
       </div>}
-
-      {/* ── BÚSQUEDA POR ID ── */}
-      <div className="ap-card" style={{border:"1px solid rgba(255,215,0,.2)",background:"rgba(255,215,0,.03)"}}>
-        <div className="apc-t" style={{color:"#fbbf24"}}>🔍 Buscar participante por ID</div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-          <input
-            value={idSearch}
-            onChange={e=>setIdSearch(e.target.value.toUpperCase())}
-            onKeyDown={e=>e.key==="Enter"&&searchById()}
-            placeholder="Ej: GM-A3X7-K2P9"
-            className="mkt-search"
-            style={{flex:1,minWidth:200,fontFamily:"monospace",letterSpacing:1}}
-          />
-          <button onClick={searchById} className="btn-save" style={{padding:"9px 20px",fontSize:".9rem"}}>Buscar</button>
-          {idResult&&<button onClick={()=>{setIdResult(null);setIdSearch("");setIdMsg("");}} style={{padding:"9px 14px",background:"transparent",border:"1px solid #2a3a4a",color:"#5a7a8a",borderRadius:8,cursor:"pointer",fontSize:".85rem"}}>✕ Limpiar</button>}
-        </div>
-
-        {idMsg&&<div style={{fontSize:".85rem",color:"#ef4444",marginBottom:8}}>{idMsg}</div>}
-
-        {idResult&&<div style={{background:"#0a1525",border:"1px solid #1a3040",borderRadius:10,padding:"14px 16px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:14}}>
-            <div>
-              <div style={{fontFamily:"Oswald,sans-serif",fontSize:"1.1rem",fontWeight:700,color:"#e2e8f0"}}>{idResult.nombre} {idResult.apellido}</div>
-              <div style={{fontFamily:"monospace",color:"#4ade80",fontSize:".82rem",marginTop:2}}>{idResult.playerId}</div>
-              <div style={{fontSize:".78rem",color:"#5a7a8a",marginTop:4}}>{idResult.email} · DNI {idResult.dni}</div>
-              <div style={{fontSize:".78rem",color:"#5a7a8a"}}>{idResult.equipo} · {idResult.comunidad}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
-              <span style={{
-                padding:"3px 10px",borderRadius:10,fontSize:".72rem",fontWeight:700,
-                background:idResult.bloqueado?"rgba(239,68,68,.15)":"rgba(74,222,128,.1)",
-                color:idResult.bloqueado?"#ef4444":"#4ade80",border:"1px solid "+(idResult.bloqueado?"#ef4444":"#4ade80")
-              }}>{idResult.bloqueado?"🔒 Bloqueado":"✅ Activo"}</span>
-              <span style={{
-                padding:"3px 10px",borderRadius:10,fontSize:".72rem",fontWeight:700,
-                background:idResult.pagado?"rgba(74,222,128,.1)":"rgba(251,191,36,.1)",
-                color:idResult.pagado?"#4ade80":"#fbbf24",border:"1px solid "+(idResult.pagado?"#4ade80":"#fbbf24")
-              }}>{idResult.pagado?"💰 Pagado":"⏳ Pago pendiente"}</span>
-            </div>
-          </div>
-          {!idResult.admin&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={idToggleBloqueo} style={{
-              padding:"8px 16px",borderRadius:8,border:"1px solid "+(idResult.bloqueado?"#4ade80":"#ef4444"),
-              background:idResult.bloqueado?"rgba(74,222,128,.1)":"rgba(239,68,68,.1)",
-              color:idResult.bloqueado?"#4ade80":"#ef4444",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"
-            }}>{idResult.bloqueado?"🔓 Desbloquear":"🔒 Bloquear"}</button>
-            <button onClick={idTogglePago} style={{
-              padding:"8px 16px",borderRadius:8,border:"1px solid "+(idResult.pagado?"#fbbf24":"#4ade80"),
-              background:idResult.pagado?"rgba(251,191,36,.08)":"rgba(74,222,128,.08)",
-              color:idResult.pagado?"#fbbf24":"#4ade80",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"
-            }}>{idResult.pagado?"⏳ Marcar pendiente":"✅ Marcar pagado"}</button>
-            <button onClick={idDelete} style={{
-              padding:"8px 16px",borderRadius:8,border:"1px solid #ef4444",
-              background:"rgba(239,68,68,.08)",color:"#ef4444",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"
-            }}>🗑 Eliminar cuenta</button>
-          </div>}
-          {idResult.admin&&<div style={{color:"#fbbf24",fontSize:".8rem"}}>👑 Esta cuenta es administradora — no se puede modificar desde acá.</div>}
-        </div>}
-      </div>
       <div className="ap-card">
         <div style={{display:"flex",gap:9,flexWrap:"wrap"}}>
           <input value={search} onChange={e=>setSrc(e.target.value)} placeholder="🔍 Buscar nombre, email, DNI, ID..." className="mkt-search" style={{flex:2,minWidth:200}}/>
@@ -17951,35 +17905,6 @@ function UsersPanel() {
   const [filterC,  setFC]   = useState("ALL");
   const [sortBy,   setSB]   = useState("nombre");
   const allPaises = [...new Set(users.map(u=>u.pais).filter(Boolean))].sort();
-
-  const searchById = () => {
-    const q = idSearch.trim().toUpperCase();
-    if(!q){ setIdMsg("Ingresá un ID"); setIdResult(null); return; }
-    const found = DB.getUsers().find(u => (u.playerId||"").toUpperCase() === q);
-    if(!found){ setIdMsg("❌ No se encontró ningún participante con ese ID"); setIdResult(null); }
-    else { setIdResult(found); setIdMsg(""); }
-  };
-
-  const idToggleBloqueo = () => {
-    if(!idResult) return;
-    toggleBloqueo(idResult.uid);
-    const updated = DB.getUsers().find(u=>u.uid===idResult.uid);
-    setIdResult(updated);
-  };
-
-  const idDelete = () => {
-    if(!idResult) return;
-    deleteUser(idResult.uid, idResult.nombre + " " + idResult.apellido);
-    setIdResult(null);
-    setIdSearch("");
-  };
-
-  const idTogglePago = () => {
-    if(!idResult) return;
-    togglePago(idResult.uid);
-    const updated = DB.getUsers().find(u=>u.uid===idResult.uid);
-    setIdResult(updated);
-  };
 
   const filtered = useMemo(()=>{
     const s=search.toLowerCase();
