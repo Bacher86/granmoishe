@@ -18419,8 +18419,11 @@ function AdminPage() {
 
 
 function ApiPanel({ toast }) {
-  const FD_KEY = "1c2a17791d6b4dbfb5e0cb8d293045a0";   // football-data.org — fixture/resultados
-  const AF_KEY = "27aa8e260736b6b65b83d21a00358740";   // api-football.com — goles/asist/tarjetas
+  // ── KEYS — si la key de football-data.org tiene whitelist de dominio,
+  //    sólo funciona desde ese dominio. Ingresá una key sin whitelist desde
+  //    https://www.football-data.org/client/register (plan TIER_ONE gratis)
+  const FD_KEY = getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0");
+  const AF_KEY = getLS("gm_af_key","27aa8e260736b6b65b83d21a00358740");
 
   const PLAYERS = [
     [1,"E. Martínez","Argentina","GK"],[2,"N. Molina","Argentina","DEF"],[3,"C. Romero","Argentina","DEF"],
@@ -18512,19 +18515,108 @@ function ApiPanel({ toast }) {
 
   const compActual = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
 
+  const [showConfig, setShowConfig] = useState(false);
+  const [fdKeyInput, setFdKeyInput] = useState(()=>getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0"));
+  const [showManual, setShowManual] = useState(false);
+  const [manualJson, setManualJson] = useState("");
+
+  const saveKeys = () => {
+    setLS("gm_fd_key", fdKeyInput.trim());
+    setShowConfig(false);
+    toast("🔑 Key guardada. Ahora cargá los partidos.","success");
+  };
+
+  const loadManualJson = () => {
+    try {
+      const raw = JSON.parse(manualJson);
+      // Aceptar formato football-data.org {matches:[...]} O array directo
+      const arr = Array.isArray(raw) ? raw : (raw.matches || raw.rounds || []);
+      if(!arr.length) throw new Error("No se encontraron partidos en el JSON");
+      // Normalizar
+      const all = arr.flatMap(item => {
+        // Si viene en formato openfootball rounds
+        if(item.matches) return item.matches.map((m,i)=>({
+          id: m.id||`m_${Date.now()}_${i}`,
+          home: m.team1?.name||m.team1||"TBD",
+          away: m.team2?.name||m.team2||"TBD",
+          score_home: m.score?.ft?.[0]??null,
+          score_away: m.score?.ft?.[1]??null,
+          status: (m.score?.ft ? "FINISHED" : "SCHEDULED"),
+          date: m.date||new Date().toISOString(),
+          matchday: parseInt(item.name?.replace(/\D/g,""))||1,
+          stage:"GROUP_STAGE", group:null, af_id:null, _comp:"MANUAL",
+        }));
+        // Formato football-data.org estándar
+        return [{
+          id: item.id||`m_${Date.now()}_${Math.random()}`,
+          home: item.homeTeam?.name||item.home||"TBD",
+          away: item.awayTeam?.name||item.away||"TBD",
+          score_home: item.score?.fullTime?.home??item.score_home??null,
+          score_away: item.score?.fullTime?.away??item.score_away??null,
+          status: item.status||"SCHEDULED",
+          date: item.utcDate||item.date||new Date().toISOString(),
+          matchday: item.matchday||1,
+          stage: item.stage||"LEAGUE", group: item.group||null,
+          af_id:null, _comp:"MANUAL",
+        }];
+      });
+      setMatches(all);
+      setLS("gm_matches_cache",all);
+      setLS("gm_competicion","MANUAL");
+      const primero = [...new Set(all.map(m=>m.matchday).filter(Boolean))].sort((a,b)=>a-b)[0];
+      if(primero) setFecha(String(primero));
+      setShowManual(false);
+      setManualJson("");
+      toast(`✅ ${all.length} partidos cargados manualmente`,"success");
+    } catch(e){
+      toast("❌ JSON inválido: "+e.message,"error");
+    }
+  };
+
+
   const saveMatchStats = s => { setMatchStats(s); setLS("gm_match_stats",s); };
   const savePublished = p => { setPublished(p); setLS("gm_published_matches",p); };
 
-  // ── Cargar fixture desde football-data.org ──
-  const fetchMatches = async () => {
+  // ── Diagnóstico: muestra exactamente qué devuelve la API ──
+  const runDiag = async () => {
+    toast("🔍 Diagnosticando...","info");
+    const tests = [
+      {label:"Competiciones",    url:"https://api.football-data.org/v4/competitions/"},
+      {label:"WC 2026 partidos", url:"https://api.football-data.org/v4/competitions/WC/matches?season=2026"},
+      {label:"PL 2024 jornada1", url:"https://api.football-data.org/v4/competitions/PL/matches?season=2024&matchday=1"},
+    ];
+    const lines = [];
+    for(const t of tests){
+      try{
+        const r = await fetch(t.url,{headers:{"X-Auth-Token":FD_KEY,"Accept":"application/json"}});
+        const txt = await r.text();
+        let info;
+        try{
+          const j=JSON.parse(txt);
+          info = j.message || (j.matches ? `✅ ${j.matches.length} partidos` : JSON.stringify(j).slice(0,100));
+        }catch(e){ info=txt.slice(0,120); }
+        lines.push(`[${r.status}] ${t.label}:\n${info}`);
+      }catch(e){
+        lines.push(`[ERROR] ${t.label}: ${e.message}`);
+      }
+    }
+    alert("=== DIAGNÓSTICO API ===\n\n"+lines.join("\n\n")+"\n\n=== KEY USADA ===\n"+FD_KEY.slice(0,8)+"...");
+  };
+
+
     setLoading(true);
     const comp = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
     try {
       const url = `https://api.football-data.org/v4/competitions/${comp.code}/matches?season=${comp.season}`;
       const res = await fetch(url, {headers:{"X-Auth-Token":FD_KEY, "Accept":"application/json"}});
       if(!res.ok){
-        const errData = await res.json().catch(()=>({}));
-        toast("Error "+res.status+": "+(errData.message||"No autorizado o competición no disponible"),"error");
+        const errText = await res.text().catch(()=>"");
+        const isWhitelist = errText.includes("allowlist") || errText.includes("whitelist");
+        if(isWhitelist){
+          toast("🔒 La API key tiene restricción de dominio. Usá una key sin whitelist (ver ⚙️ Config) o cargá el fixture manualmente.","error");
+        } else {
+          toast("Error "+res.status+": "+(errText||"No autorizado"),"error");
+        }
         setLoading(false);return;
       }
       const data = await res.json();
@@ -18839,9 +18931,53 @@ function ApiPanel({ toast }) {
       , React.createElement('button',{onClick:reiniciar,style:{padding:"9px 18px",borderRadius:7,border:"2px solid #ef4444",background:"rgba(239,68,68,.15)",color:"#ef4444",fontFamily:"'Oswald',sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}},"🔄 Reiniciar")
     )
 
+    // ── CONFIG KEY + CARGA MANUAL ──
+    , showConfig&&React.createElement('div',{className:"ap-card",style:{display:"flex",flexDirection:"column",gap:10}}
+      , React.createElement('div',{style:{fontFamily:"'Oswald',sans-serif",fontWeight:700,color:"#e2e8f0",marginBottom:2}},"🔑 API Key — football-data.org")
+      , React.createElement('div',{style:{fontSize:".75rem",color:"#5a7a8a",lineHeight:1.6,marginBottom:6}},
+        "Si ves 'Host not in allowlist', tu key tiene restricción de dominio.",React.createElement('br',null),
+        "Solución: entrá a ",React.createElement('a',{href:"https://www.football-data.org/client/register",target:"_blank",style:{color:"#60a5fa"}},"football-data.org/client/register"),
+        " → gratis → copiá tu nueva key → pegala abajo → guardá.")
+      , React.createElement('div',{style:{display:"flex",gap:8}}
+        , React.createElement('input',{value:fdKeyInput,onChange:e=>setFdKeyInput(e.target.value),
+            placeholder:"Pegá tu API key acá...",
+            style:{flex:1,background:"#0a1525",border:"1px solid #2a4a38",color:"#e2e8f0",borderRadius:7,padding:"8px 11px",fontFamily:"'Inter',sans-serif",fontSize:".85rem",outline:"none"}})
+        , React.createElement('button',{onClick:saveKeys,style:{padding:"8px 16px",borderRadius:7,background:"#4ade80",color:"#07111e",border:"none",fontFamily:"'Oswald',sans-serif",fontWeight:700,cursor:"pointer"}},"Guardar")
+        , React.createElement('button',{onClick:()=>setShowConfig(false),style:{padding:"8px 12px",borderRadius:7,border:"1px solid #1a2d40",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"'Oswald',sans-serif"}},"✕")
+      )
+    )
+
+    , showManual&&React.createElement('div',{className:"ap-card",style:{display:"flex",flexDirection:"column",gap:10}}
+      , React.createElement('div',{style:{fontFamily:"'Oswald',sans-serif",fontWeight:700,color:"#e2e8f0"}},"📋 Carga Manual de Fixture")
+      , React.createElement('div',{style:{fontSize:".75rem",color:"#5a7a8a",lineHeight:1.6}},
+        "Pegá un JSON con los partidos. Formatos aceptados:",React.createElement('br',null),
+        "• football-data.org: ",React.createElement('code',{style:{color:"#fbbf24",fontSize:".7rem"}},'{"matches":[{"id":1,"homeTeam":{"name":"Arsenal"},"awayTeam":{"name":"Chelsea"},"utcDate":"2025-01-01T15:00:00Z","status":"FINISHED","score":{"fullTime":{"home":2,"away":1}},"matchday":1}]}'),React.createElement('br',null),
+        "• Array simple: ",React.createElement('code',{style:{color:"#fbbf24",fontSize:".7rem"}},'[{"id":1,"home":"Arsenal","away":"Chelsea","date":"2025-01-01","status":"FINISHED","score_home":2,"score_away":1,"matchday":1}]'))
+      , React.createElement('textarea',{value:manualJson,onChange:e=>setManualJson(e.target.value),
+          rows:6,placeholder:'Pegá el JSON acá...',
+          style:{background:"#0a1525",border:"1px solid #2a4a38",color:"#e2e8f0",borderRadius:7,padding:"10px",fontFamily:"monospace",fontSize:".75rem",resize:"vertical",outline:"none"}})
+      , React.createElement('div',{style:{display:"flex",gap:8,justifyContent:"flex-end"}}
+        , React.createElement('button',{onClick:()=>setShowManual(false),style:{padding:"8px 14px",borderRadius:7,border:"1px solid #1a2d40",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"'Oswald',sans-serif"}},"Cancelar")
+        , React.createElement('button',{onClick:loadManualJson,disabled:!manualJson.trim(),style:{padding:"8px 18px",borderRadius:7,background:"#4ade80",color:"#07111e",border:"none",fontFamily:"'Oswald',sans-serif",fontWeight:700,cursor:"pointer"}},"✅ Cargar")
+      )
+    )
+
     // ── CARGAR FIXTURE ──
     , React.createElement('div',{className:"ap-card",style:{display:"flex",flexDirection:"column",gap:12}}
-      , React.createElement('div',{style:{fontFamily:"'Oswald',sans-serif",fontSize:".75rem",fontWeight:700,letterSpacing:1.5,color:"#4a6a5a",marginBottom:2}},"COMPETICIÓN")
+      , React.createElement('div',{style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}
+        , React.createElement('div',{style:{fontFamily:"'Oswald',sans-serif",fontSize:".75rem",fontWeight:700,letterSpacing:1.5,color:"#4a6a5a"}},"COMPETICIÓN")
+        , React.createElement('div',{style:{display:"flex",gap:6}}
+          , React.createElement('button',{onClick:runDiag,
+              title:"Ver qué responde exactamente la API",
+              style:{padding:"5px 10px",borderRadius:6,border:"1px solid #1a2d40",background:"transparent",color:"#fbbf24",fontFamily:"'Oswald',sans-serif",fontSize:".72rem",fontWeight:700,cursor:"pointer"}},"🔍 Diagnóstico")
+          , React.createElement('button',{onClick:()=>{setShowManual(v=>!v);setShowConfig(false);},
+              title:"Cargar fixture manualmente (sin API)",
+              style:{padding:"5px 10px",borderRadius:6,border:"1px solid #1a3a28",background:showManual?"rgba(74,222,128,.15)":"transparent",color:"#4ade80",fontFamily:"'Oswald',sans-serif",fontSize:".72rem",fontWeight:700,cursor:"pointer"}},"📋 Manual")
+          , React.createElement('button',{onClick:()=>{setShowConfig(v=>!v);setShowManual(false);},
+              title:"Configurar API key",
+              style:{padding:"5px 10px",borderRadius:6,border:"1px solid #1a2d40",background:showConfig?"rgba(96,165,250,.15)":"transparent",color:"#60a5fa",fontFamily:"'Oswald',sans-serif",fontSize:".72rem",fontWeight:700,cursor:"pointer"}},"⚙️ Config Key")
+        )
+      )
       , React.createElement('div',{style:{display:"flex",flexWrap:"wrap",gap:6}},
           COMPETICIONES.map(c=>
             React.createElement('button',{key:c.code,
