@@ -18493,32 +18493,31 @@ function ApiPanel({ toast }) {
   };
 
   // ── State ──
-  const [fecha, setFecha] = useState("1");
-  const [matches, setMatches] = useState(() => getLS("gm_matches_cache",[]));
-  const [loading, setLoading] = useState(false);
-  const [loadingAF, setLoadingAF] = useState(null); // matchId being auto-loaded
-  const [openMatch, setOpenMatch] = useState(null);
-  const [matchStats, setMatchStats] = useState(() => getLS("gm_match_stats",{}));
-  const [published, setPublished] = useState(() => getLS("gm_published_matches",{}));
-  const [afStatus, setAfStatus] = useState({}); // {matchId: "ok"|"error"|"loading"|"nodata"}
-  const [competicion, setCompeticion] = useState(() => getLS("gm_competicion","WC"));
-
   const COMPETICIONES = [
-    {code:"WC",     label:"🌍 Mundial 2026",      season:2026, type:"wc"},
-    {code:"PL",     label:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",  season:2024, type:"league"},
-    {code:"PD",     label:"🇪🇸 La Liga",            season:2024, type:"league"},
-    {code:"CL",     label:"⭐ Champions League",   season:2024, type:"league"},
-    {code:"BL1",    label:"🇩🇪 Bundesliga",         season:2024, type:"league"},
-    {code:"SA",     label:"🇮🇹 Serie A",            season:2024, type:"league"},
-    {code:"FL1",    label:"🇫🇷 Ligue 1",            season:2024, type:"league"},
+    {code:"WC",  label:"🌍 Mundial 2026",    season:2026, type:"wc"},
+    {code:"PL",  label:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", season:2024, type:"league"},
+    {code:"PD",  label:"🇪🇸 La Liga",          season:2024, type:"league"},
+    {code:"CL",  label:"⭐ Champions League", season:2024, type:"league"},
+    {code:"BL1", label:"🇩🇪 Bundesliga",       season:2024, type:"league"},
+    {code:"SA",  label:"🇮🇹 Serie A",          season:2024, type:"league"},
+    {code:"FL1", label:"🇫🇷 Ligue 1",          season:2024, type:"league"},
   ];
 
-  const compActual = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
+  const [fecha,       setFecha]      = useState("1");
+  const [matches,     setMatches]    = useState(() => getLS("gm_matches_cache",[]));
+  const [loading,     setLoading]    = useState(false);
+  const [loadingAF,   setLoadingAF]  = useState(null);
+  const [openMatch,   setOpenMatch]  = useState(null);
+  const [matchStats,  setMatchStats] = useState(() => getLS("gm_match_stats",{}));
+  const [published,   setPublished]  = useState(() => getLS("gm_published_matches",{}));
+  const [afStatus,    setAfStatus]   = useState({});
+  const [competicion, setCompeticion]= useState(() => getLS("gm_competicion","WC"));
+  const [showConfig,  setShowConfig] = useState(false);
+  const [fdKeyInput,  setFdKeyInput] = useState(()=>getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0"));
+  const [showManual,  setShowManual] = useState(false);
+  const [manualJson,  setManualJson] = useState("");
 
-  const [showConfig, setShowConfig] = useState(false);
-  const [fdKeyInput, setFdKeyInput] = useState(()=>getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0"));
-  const [showManual, setShowManual] = useState(false);
-  const [manualJson, setManualJson] = useState("");
+  const compActual = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
 
   const saveKeys = () => {
     setLS("gm_fd_key", fdKeyInput.trim());
