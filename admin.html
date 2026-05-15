@@ -18498,6 +18498,19 @@ function ApiPanel({ toast }) {
   const [matchStats, setMatchStats] = useState(() => getLS("gm_match_stats",{}));
   const [published, setPublished] = useState(() => getLS("gm_published_matches",{}));
   const [afStatus, setAfStatus] = useState({}); // {matchId: "ok"|"error"|"loading"|"nodata"}
+  const [competicion, setCompeticion] = useState(() => getLS("gm_competicion","WC"));
+
+  const COMPETICIONES = [
+    {code:"WC",     label:"🌍 Mundial 2026",      season:2026, type:"wc"},
+    {code:"PL",     label:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",  season:2024, type:"league"},
+    {code:"PD",     label:"🇪🇸 La Liga",            season:2024, type:"league"},
+    {code:"CL",     label:"⭐ Champions League",   season:2024, type:"league"},
+    {code:"BL1",    label:"🇩🇪 Bundesliga",         season:2024, type:"league"},
+    {code:"SA",     label:"🇮🇹 Serie A",            season:2024, type:"league"},
+    {code:"FL1",    label:"🇫🇷 Ligue 1",            season:2024, type:"league"},
+  ];
+
+  const compActual = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
 
   const saveMatchStats = s => { setMatchStats(s); setLS("gm_match_stats",s); };
   const savePublished = p => { setPublished(p); setLS("gm_published_matches",p); };
@@ -18505,18 +18518,20 @@ function ApiPanel({ toast }) {
   // ── Cargar fixture desde football-data.org ──
   const fetchMatches = async () => {
     setLoading(true);
+    const comp = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
     try {
-      // football-data.org soporta CORS nativamente — llamada directa
-      const res = await fetch(
-        "https://api.football-data.org/v4/competitions/WC/matches?season=2026",
-        {headers:{"X-Auth-Token":FD_KEY, "Accept":"application/json"}}
-      );
-      if(!res.ok){toast("Error "+res.status,"error");setLoading(false);return;}
+      const url = `https://api.football-data.org/v4/competitions/${comp.code}/matches?season=${comp.season}`;
+      const res = await fetch(url, {headers:{"X-Auth-Token":FD_KEY, "Accept":"application/json"}});
+      if(!res.ok){
+        const errData = await res.json().catch(()=>({}));
+        toast("Error "+res.status+": "+(errData.message||"No autorizado o competición no disponible"),"error");
+        setLoading(false);return;
+      }
       const data = await res.json();
       const all = (data.matches||[]).map(m=>({
         id: m.id,
-        home: m.homeTeam?.name||"TBD",
-        away: m.awayTeam?.name||"TBD",
+        home: m.homeTeam?.name||m.homeTeam?.shortName||"TBD",
+        away: m.awayTeam?.name||m.awayTeam?.shortName||"TBD",
         score_home: m.score?.fullTime?.home,
         score_away: m.score?.fullTime?.away,
         status: m.status,
@@ -18524,12 +18539,20 @@ function ApiPanel({ toast }) {
         matchday: m.matchday,
         stage: m.stage,
         group: m.group,
-        // api-football fixture id (different from FD id — we'll map by teams+date)
         af_id: null,
+        _comp: comp.code,
       }));
+      if(all.length===0){
+        toast("⚠️ La API devolvió 0 partidos. La competición puede no haber empezado o tu plan no la incluye.","warn");
+        setLoading(false);return;
+      }
       setMatches(all);
       setLS("gm_matches_cache",all);
-      toast("✅ "+all.length+" partidos cargados","success");
+      setLS("gm_competicion",comp.code);
+      // reset fecha al primer matchday disponible
+      const primero = [...new Set(all.map(m=>m.matchday).filter(Boolean))].sort((a,b)=>a-b)[0];
+      if(primero) setFecha(String(primero));
+      toast("✅ "+all.length+" partidos cargados ("+comp.label+")","success");
     } catch(e){toast("Error: "+e.message,"error");}
     setLoading(false);
   };
@@ -18762,7 +18785,10 @@ function ApiPanel({ toast }) {
 
   // Filtrar por fecha
   const matchesByFecha = matches.filter(m=>{
-    if(fecha==="eliminacion") return !m.matchday || m.stage!=="GROUP_STAGE";
+    if(compActual.type==="wc"){
+      if(fecha==="eliminacion") return !m.matchday || m.stage!=="GROUP_STAGE";
+      return m.matchday===parseInt(fecha);
+    }
     return m.matchday===parseInt(fecha);
   }).sort((a,b)=>new Date(a.date)-new Date(b.date));
 
@@ -18814,29 +18840,56 @@ function ApiPanel({ toast }) {
     )
 
     // ── CARGAR FIXTURE ──
-    , React.createElement('div',{className:"ap-card",style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}
+    , React.createElement('div',{className:"ap-card",style:{display:"flex",flexDirection:"column",gap:12}}
+      , React.createElement('div',{style:{fontFamily:"'Oswald',sans-serif",fontSize:".75rem",fontWeight:700,letterSpacing:1.5,color:"#4a6a5a",marginBottom:2}},"COMPETICIÓN")
+      , React.createElement('div',{style:{display:"flex",flexWrap:"wrap",gap:6}},
+          COMPETICIONES.map(c=>
+            React.createElement('button',{key:c.code,
+              onClick:()=>{setCompeticion(c.code);setLS("gm_competicion",c.code);},
+              style:{padding:"6px 12px",borderRadius:7,border:"1.5px solid "+(competicion===c.code?"#4ade80":"#1a2d40"),
+                     background:competicion===c.code?"rgba(74,222,128,.15)":"transparent",
+                     color:competicion===c.code?"#4ade80":"#5a7a8a",
+                     fontFamily:"'Oswald',sans-serif",fontSize:".78rem",fontWeight:700,cursor:"pointer"}},
+              c.label)
+          )
+        )
       , React.createElement('div',{style:{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}
         , React.createElement('button',{onClick:fetchMatches,disabled:loading,style:{padding:"9px 18px",borderRadius:7,background:"#4ade80",color:"#07111e",border:"none",fontFamily:"'Oswald',sans-serif",fontSize:".88rem",fontWeight:700,cursor:loading?"not-allowed":"pointer",opacity:loading?.6:1}},
-          loading?"⏳ Cargando...":"📥 Cargar partidos del Mundial")
+          loading?"⏳ Cargando...":"📥 Cargar partidos — "+compActual.label)
         , matches.length>0&&React.createElement('span',{style:{fontSize:".75rem",color:"#4a6a5a"}},matches.length+" partidos · ",matches.filter(m=>m.status==="FINISHED").length," finalizados")
       )
-      , React.createElement('div',{style:{fontSize:".68rem",color:"#2a4a3a",textAlign:"right",lineHeight:1.5}},
-        "📡 football-data.org — fixture",React.createElement('br',null),
-        "⚡ api-football.com — goles/asist/tarjetas (auto)")
+      , React.createElement('div',{style:{fontSize:".68rem",color:"#2a4a3a",lineHeight:1.6}},
+        "📡 football-data.org — fixture (CORS nativo ✅)",React.createElement('br',null),
+        "⚡ api-football.com — goles/asist/tarjetas (auto, via proxy)")
     )
 
     // ── SELECTOR FECHA ──
     , matches.length>0&&!openMatch&&React.createElement('div',{className:"ap-card",style:{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}
-      , React.createElement('span',{style:{fontFamily:"'Oswald',sans-serif",fontWeight:600,color:"#e2e8f0",fontSize:".85rem",flexShrink:0}},"Jornada:")
+      , React.createElement('span',{style:{fontFamily:"'Oswald',sans-serif",fontWeight:600,color:"#e2e8f0",fontSize:".85rem",flexShrink:0}},
+          compActual.type==="wc"?"Jornada:":"Fecha:")
       , React.createElement('div',{style:{display:"flex",gap:5,flexWrap:"wrap"}},
-          ["1","2","3","eliminacion"].map(f=>
-            React.createElement('button',{key:f,onClick:()=>{setFecha(f);setOpenMatch(null);},
-              style:{padding:"6px 13px",borderRadius:7,border:"1.5px solid "+(fecha===f?"#4ade80":"#1a2d40"),
-                     background:fecha===f?"rgba(74,222,128,.15)":"transparent",
-                     color:fecha===f?"#4ade80":"#5a7a8a",
-                     fontFamily:"'Oswald',sans-serif",fontSize:".8rem",fontWeight:700,cursor:"pointer"}},
-              f==="eliminacion"?"⚔️ Eliminatorias":"Fecha "+f)
-          )
+          (() => {
+            if(compActual.type==="wc"){
+              return ["1","2","3","eliminacion"].map(f=>
+                React.createElement('button',{key:f,onClick:()=>{setFecha(f);setOpenMatch(null);},
+                  style:{padding:"6px 13px",borderRadius:7,border:"1.5px solid "+(fecha===f?"#4ade80":"#1a2d40"),
+                         background:fecha===f?"rgba(74,222,128,.15)":"transparent",
+                         color:fecha===f?"#4ade80":"#5a7a8a",
+                         fontFamily:"'Oswald',sans-serif",fontSize:".8rem",fontWeight:700,cursor:"pointer"}},
+                  f==="eliminacion"?"⚔️ Eliminatorias":"Fecha "+f)
+              );
+            } else {
+              const days = [...new Set(matches.map(m=>m.matchday).filter(Boolean))].sort((a,b)=>a-b);
+              return days.map(f=>
+                React.createElement('button',{key:f,onClick:()=>{setFecha(String(f));setOpenMatch(null);},
+                  style:{padding:"6px 13px",borderRadius:7,border:"1.5px solid "+(fecha===String(f)?"#4ade80":"#1a2d40"),
+                         background:fecha===String(f)?"rgba(74,222,128,.15)":"transparent",
+                         color:fecha===String(f)?"#4ade80":"#5a7a8a",
+                         fontFamily:"'Oswald',sans-serif",fontSize:".8rem",fontWeight:700,cursor:"pointer"}},
+                  "J"+f)
+              );
+            }
+          })()
         )
     )
 
