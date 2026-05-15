@@ -305,11 +305,11 @@
 </div>
 
 <div class="community-strip">
-  <div class="comm-logo">✡</div>
   <div class="comm-name">Olami Almagro</div>
-  <div class="comm-sub">Buenos Aires, Argentina</div>
+  <div class="comm-sub">Comunidad judía · Buenos Aires, Argentina</div>
   <div class="comm-tags">
     <span class="comm-tag">🏡 Almagro, CABA</span>
+    <span class="comm-tag">✡ Comunidad judía</span>
     <span class="comm-tag">⚽ Gran Moishe 2026</span>
     <span class="comm-tag">🌍 Olami Latino</span>
   </div>
@@ -330,7 +330,7 @@
 <div class="overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-logo">✡</div>
+    <div class="modal-logo"><img src="almagro.jpg" alt="Olami Almagro" style="width:56px;height:56px;object-fit:cover;border-radius:12px;display:block;margin:0 auto;" onerror="this.outerHTML='✡'"/></div>
     <div class="modal-title" id="modalTitle">Ingresar</div>
     <div class="modal-price" id="modalPrice" style="display:none;">
     Precio por cuenta: <strong style="color:var(--celeste)">$6.000</strong> · Máx. 5 cuentas por DNI
@@ -345,7 +345,7 @@
 <!-- PAYMENT MODAL -->
 <div class="pay-modal" id="payModal" style="display:none;">
   <div class="pay-box">
-    <div class="pay-star">✡</div>
+    <div class="pay-star"><img src="almagro.jpg" alt="Olami Almagro" style="width:64px;height:64px;object-fit:cover;border-radius:14px;display:block;margin:0 auto;" onerror="this.outerHTML='✡'"/></div>
     <div class="pay-title">¡Registro exitoso!</div>
     <div class="pay-sub" style="font-size:.92rem;color:#a0b0c0;line-height:1.8;">
       ¡Bienvenido/a al Gran Moishe 2026! 🎉✡<br><br>
@@ -568,20 +568,19 @@ async function submitAuth(){
   if(users.find(u=>u.email===email&&u.dni!==dni)){showErr('Email ya registrado con otro DNI');btn.disabled=false;return;}
   const cantidad = window._cantidad||1;
   const newUsers = [];
-  const allIds = [];
+  // Un solo playerId por usuario (compartido por todas sus cuentas)
+  const sharedPlayerId='GM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Date.now().toString(36).slice(-4).toUpperCase();
   for(let i=1;i<=cantidad;i++){
     const uid='u_'+Math.random().toString(36).slice(2)+(i>1?'_'+i:'');
-    const playerId='GM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Date.now().toString(36).slice(-4).toUpperCase();
     const eqp = i===1 ? equipo : (gv('ex_equipo_'+i)||equipo+' '+i);
     if(i>1 && !gv('ex_equipo_'+i)){showErr('Ponele nombre al equipo '+i);btn.disabled=false;return;}
     // Mismo formato exacto que Auth.register de juego.html
     newUsers.push({
-      uid, playerId, email, password:pw, dni, nombre, apellido,
+      uid, playerId:sharedPlayerId, email, password:pw, dni, nombre, apellido,
       comunidad:com, pais, provincia, edad:parseInt(edad)||0,
       equipo:eqp, admin:false, pts:0, profileComplete:true,
       liga:null, pagado:false, bloqueado:false, cuentaExtra:i>1
     });
-    allIds.push(playerId);
   }
   if(email===ADMIN_EMAIL){ newUsers[0].admin=true; newUsers[0].pagado=true; }
   setLS('gm_users',[...users,...newUsers]);
@@ -592,8 +591,8 @@ async function submitAuth(){
   }
   window._cantidad=1;
   closeModal();
-  document.getElementById('payId').innerHTML=allIds.map(id=>`<div>${id}</div>`).join('');
-  document.getElementById('paySubject').textContent=allIds.length>1?`Comprobante Gran Moishe · ${allIds.join(', ')}`:`Comprobante Gran Moishe · ${allIds[0]}`;
+  document.getElementById('payId').textContent=sharedPlayerId;
+  document.getElementById('paySubject').textContent=`Comprobante Gran Moishe · ${sharedPlayerId}`;
   document.getElementById('payModal').style.display='flex';
   btn.disabled=false;
 }
