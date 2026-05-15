@@ -17898,54 +17898,256 @@ function StatsPanel() {
 }
 
 // ── USERS ───────────────────────────────────────────────────────────────────
+function ConfirmModal({msg, onOk, onCancel}) {
+  return React.createElement('div', {
+    onClick: onCancel,
+    style: {position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(6px)"}
+  },
+    React.createElement('div', {
+      onClick: e=>e.stopPropagation(),
+      style: {background:"#0d1b2a",border:"1px solid rgba(239,68,68,.3)",borderRadius:14,padding:28,maxWidth:380,width:"100%",textAlign:"center"}
+    },
+      React.createElement('div', {style:{fontSize:"2.4rem",marginBottom:12}}, "🗑"),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",fontWeight:700,color:"#e2e8f0",marginBottom:8}}, "¿Confirmar eliminación?"),
+      React.createElement('div', {style:{fontSize:".85rem",color:"#5a7a8a",marginBottom:22,lineHeight:1.6}}, msg),
+      React.createElement('div', {style:{display:"flex",gap:10,justifyContent:"center"}},
+        React.createElement('button', {onClick:onCancel, style:{padding:"10px 22px",borderRadius:8,border:"1px solid #2a3a4a",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:600,fontSize:".9rem"}}, "Cancelar"),
+        React.createElement('button', {onClick:onOk,     style:{padding:"10px 22px",borderRadius:8,border:"none",background:"#ef4444",color:"#fff",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".9rem"}}, "Sí, eliminar")
+      )
+    )
+  );
+}
+
 function UsersPanel() {
-  const [users]          = useState(()=>DB.getUsers());
-  const [search,   setSrc]  = useState("");
-  const [filterP,  setFP]   = useState("ALL");
-  const [filterC,  setFC]   = useState("ALL");
-  const [sortBy,   setSB]   = useState("nombre");
-  const allPaises = [...new Set(users.map(u=>u.pais).filter(Boolean))].sort();
+  const [users, setUsers] = useState(()=>DB.getUsers());
+  const [search, setSrc]  = useState("");
+  const [filterP, setFP]  = useState("ALL");
+  const [filterC, setFC]  = useState("ALL");
+  const [filterPago, setFPago]    = useState("ALL");
+  const [filterBloqueo, setFBloqueo] = useState("ALL");
+  const [sortBy, setSB]   = useState("nombre");
+  const [confirmState, setConfirmState] = useState(null);
+  const [idSearch, setIdSearch] = useState("");
+  const [idResult, setIdResult] = useState(null);
+  const [idMsg, setIdMsg] = useState("");
+
+  const allPaises      = [...new Set(users.map(u=>u.pais).filter(Boolean))].sort();
+  const allComunidades = [...new Set(users.map(u=>u.comunidad).filter(Boolean))].sort();
+
+  const refresh = () => setUsers(DB.getUsers());
+
+  const togglePago = (uid) => {
+    const all = DB.getUsers();
+    const idx = all.findIndex(u=>u.uid===uid);
+    if(idx===-1) return;
+    all[idx].pagado = !all[idx].pagado;
+    setLS("gm_users", all);
+    refresh();
+    if(idResult && idResult.uid===uid) setIdResult({...all[idx]});
+  };
+
+  const toggleBloqueo = (uid) => {
+    const all = DB.getUsers();
+    const idx = all.findIndex(u=>u.uid===uid);
+    if(idx===-1) return;
+    all[idx].bloqueado = !all[idx].bloqueado;
+    setLS("gm_users", all);
+    try {
+      const sess = JSON.parse(localStorage.getItem("gm_session")||"null");
+      if(sess && sess.uid===uid){ sess.bloqueado=all[idx].bloqueado; localStorage.setItem("gm_session",JSON.stringify(sess)); }
+    } catch(e){}
+    refresh();
+    if(idResult && idResult.uid===uid) setIdResult({...all[idx]});
+  };
+
+  const deleteUser = (uid, nombre) => setConfirmState({uid, nombre});
+
+  const doDelete = () => {
+    if(!confirmState) return;
+    const all = DB.getUsers().filter(u=>u.uid!==confirmState.uid);
+    setLS("gm_users", all);
+    try {
+      const sess = JSON.parse(localStorage.getItem("gm_session")||"null");
+      if(sess && sess.uid===confirmState.uid) localStorage.removeItem("gm_session");
+    } catch(e){}
+    if(idResult && idResult.uid===confirmState.uid){ setIdResult(null); setIdSearch(""); setIdMsg(""); }
+    setConfirmState(null);
+    refresh();
+  };
+
+  const searchById = () => {
+    const q = idSearch.trim().toUpperCase();
+    if(!q){ setIdMsg("Ingresá un ID"); setIdResult(null); return; }
+    const found = DB.getUsers().find(u=>(u.playerId||"").toUpperCase()===q);
+    if(!found){ setIdMsg("❌ No se encontró ningún participante con ese ID"); setIdResult(null); }
+    else { setIdResult(found); setIdMsg(""); }
+  };
 
   const filtered = useMemo(()=>{
     const s=search.toLowerCase();
     return users.filter(u=>{
-      if(s&&!_optionalChain([u, 'access', _5 => _5.nombre, 'optionalAccess', _6 => _6.toLowerCase, 'call', _7 => _7(), 'access', _8 => _8.includes, 'call', _9 => _9(s)])&&!_optionalChain([u, 'access', _10 => _10.apellido, 'optionalAccess', _11 => _11.toLowerCase, 'call', _12 => _12(), 'access', _13 => _13.includes, 'call', _14 => _14(s)])&&!_optionalChain([u, 'access', _15 => _15.email, 'optionalAccess', _16 => _16.toLowerCase, 'call', _17 => _17(), 'access', _18 => _18.includes, 'call', _19 => _19(s)])&&!_optionalChain([u, 'access', _20 => _20.dni, 'optionalAccess', _21 => _21.includes, 'call', _22 => _22(s)])) return false;
+      if(s && !((u.nombre||"").toLowerCase().includes(s)||(u.apellido||"").toLowerCase().includes(s)||(u.email||"").toLowerCase().includes(s)||(u.dni||"").includes(s)||(u.playerId||"").toLowerCase().includes(s))) return false;
       if(filterP!=="ALL"&&u.pais!==filterP) return false;
       if(filterC!=="ALL"&&u.comunidad!==filterC) return false;
+      if(filterPago==="PAGADO"&&!u.pagado) return false;
+      if(filterPago==="PENDIENTE"&&u.pagado) return false;
+      if(filterBloqueo==="BLOQUEADO"&&!u.bloqueado) return false;
+      if(filterBloqueo==="ACTIVO"&&u.bloqueado) return false;
       return true;
     }).sort((a,b)=>sortBy==="nombre"?(a.nombre||"").localeCompare(b.nombre||""):sortBy==="pts"?(b.pts||0)-(a.pts||0):(a.edad||0)-(b.edad||0));
-  },[users,search,filterP,filterC,sortBy]);
+  },[users,search,filterP,filterC,filterPago,filterBloqueo,sortBy]);
 
-  return (
-    React.createElement('div', { style: { display:"flex",flexDirection:"column",gap:14 },}
-      , React.createElement('div', { className: "ap-card",}
-        , React.createElement('div', { style: { display:"flex",gap:9,flexWrap:"wrap" },}
-          , React.createElement('input', { value: search, onChange: e=>setSrc(e.target.value), placeholder: "🔍 Buscar nombre, apellido, email, DNI..."     , className: "mkt-search", style: { flex:2,minWidth:200 },})
-          , React.createElement('select', { value: filterP, onChange: e=>setFP(e.target.value), className: "mkt-sel",}, React.createElement('option', { value: "ALL",}, "🌍 Todos los países"   ), allPaises.map(p=>React.createElement('option', { key: p, value: p,}, flag(p), " " , p)))
-          , React.createElement('select', { value: filterC, onChange: e=>setFC(e.target.value), className: "mkt-sel",}, React.createElement('option', { value: "ALL",}, "🏘 Todas las comunidades"   ), COMMUNITIES.map(c=>React.createElement('option', { key: c, value: c,}, c)))
-          , React.createElement('select', { value: sortBy, onChange: e=>setSB(e.target.value), className: "mkt-sel",}, React.createElement('option', { value: "nombre",}, "A→Z"), React.createElement('option', { value: "pts",}, "↓ Puntos" ), React.createElement('option', { value: "edad",}, "↑ Edad" ))
-        )
-        , React.createElement('div', { style: { marginTop:8,fontSize:".75rem",color:"#4a6a7a" },}, filtered.length, " de "  , users.length, " usuarios" )
+  const pendientes = users.filter(u=>!u.pagado&&!u.admin).length;
+  const bloqueados = users.filter(u=>u.bloqueado&&!u.admin).length;
+
+  const btnStyle = (color, bg) => ({padding:"3px 9px",borderRadius:5,border:"1px solid "+color,background:bg,color:color,fontSize:".72rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"});
+
+  return React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:14}},
+    confirmState && React.createElement(ConfirmModal, {
+      msg: "¿Eliminar a "+confirmState.nombre+"? Esta acción no se puede deshacer.",
+      onOk: doDelete,
+      onCancel: ()=>setConfirmState(null)
+    }),
+
+    /* ── BUSCAR POR ID ── */
+    React.createElement('div', {className:"ap-card", style:{border:"1px solid rgba(255,215,0,.2)",background:"rgba(255,215,0,.03)"}},
+      React.createElement('div', {className:"apc-t",style:{color:"#fbbf24"}}, "🔍 Buscar participante por ID"),
+      React.createElement('div', {style:{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}},
+        React.createElement('input', {
+          value:idSearch, onChange:e=>setIdSearch(e.target.value.toUpperCase()),
+          onKeyDown:e=>e.key==="Enter"&&searchById(),
+          placeholder:"Ej: GM-A3X7-K2P9", className:"mkt-search",
+          style:{flex:1,minWidth:200,fontFamily:"monospace",letterSpacing:1}
+        }),
+        React.createElement('button', {onClick:searchById, className:"btn-save", style:{padding:"9px 20px",fontSize:".9rem"}}, "Buscar"),
+        idResult && React.createElement('button', {onClick:()=>{setIdResult(null);setIdSearch("");setIdMsg("");},
+          style:{padding:"9px 14px",background:"transparent",border:"1px solid #2a3a4a",color:"#5a7a8a",borderRadius:8,cursor:"pointer",fontSize:".85rem"}}, "✕ Limpiar")
+      ),
+      idMsg && React.createElement('div', {style:{fontSize:".85rem",color:"#ef4444",marginBottom:8}}, idMsg),
+      idResult && React.createElement('div', {style:{background:"#0a1525",border:"1px solid #1a3040",borderRadius:10,padding:"14px 16px"}},
+        React.createElement('div', {style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:14}},
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.1rem",fontWeight:700,color:"#e2e8f0"}}, idResult.nombre+" "+idResult.apellido),
+            React.createElement('div', {style:{fontFamily:"monospace",color:"#4ade80",fontSize:".82rem",marginTop:2}}, idResult.playerId),
+            React.createElement('div', {style:{fontSize:".78rem",color:"#5a7a8a",marginTop:4}}, idResult.email+" · DNI "+idResult.dni),
+            React.createElement('div', {style:{fontSize:".78rem",color:"#5a7a8a"}}, idResult.equipo+" · "+idResult.comunidad)
+          ),
+          React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}},
+            React.createElement('span', {style:{padding:"3px 10px",borderRadius:10,fontSize:".72rem",fontWeight:700,
+              background:idResult.bloqueado?"rgba(239,68,68,.15)":"rgba(74,222,128,.1)",
+              color:idResult.bloqueado?"#ef4444":"#4ade80",border:"1px solid "+(idResult.bloqueado?"#ef4444":"#4ade80")}},
+              idResult.bloqueado?"🔒 Bloqueado":"✅ Activo"),
+            React.createElement('span', {style:{padding:"3px 10px",borderRadius:10,fontSize:".72rem",fontWeight:700,
+              background:idResult.pagado?"rgba(74,222,128,.1)":"rgba(251,191,36,.1)",
+              color:idResult.pagado?"#4ade80":"#fbbf24",border:"1px solid "+(idResult.pagado?"#4ade80":"#fbbf24")}},
+              idResult.pagado?"💰 Pagado":"⏳ Pago pendiente")
+          )
+        ),
+        !idResult.admin && React.createElement('div', {style:{display:"flex",gap:8,flexWrap:"wrap"}},
+          React.createElement('button', {onClick:()=>toggleBloqueo(idResult.uid), style:{
+            padding:"8px 16px",borderRadius:8,border:"1px solid "+(idResult.bloqueado?"#4ade80":"#ef4444"),
+            background:idResult.bloqueado?"rgba(74,222,128,.1)":"rgba(239,68,68,.1)",
+            color:idResult.bloqueado?"#4ade80":"#ef4444",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"}},
+            idResult.bloqueado?"🔓 Desbloquear":"🔒 Bloquear"),
+          React.createElement('button', {onClick:()=>togglePago(idResult.uid), style:{
+            padding:"8px 16px",borderRadius:8,border:"1px solid "+(idResult.pagado?"#fbbf24":"#4ade80"),
+            background:idResult.pagado?"rgba(251,191,36,.08)":"rgba(74,222,128,.08)",
+            color:idResult.pagado?"#fbbf24":"#4ade80",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"}},
+            idResult.pagado?"⏳ Marcar pendiente":"✅ Marcar pagado"),
+          React.createElement('button', {onClick:()=>deleteUser(idResult.uid, idResult.nombre+" "+idResult.apellido), style:{
+            padding:"8px 16px",borderRadius:8,border:"1px solid #ef4444",
+            background:"rgba(239,68,68,.08)",color:"#ef4444",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".85rem"}},
+            "🗑 Eliminar")
+        ),
+        idResult.admin && React.createElement('div', {style:{color:"#fbbf24",fontSize:".8rem"}}, "👑 Cuenta administradora — no se puede modificar.")
       )
-      , React.createElement('div', { className: "ap-card",}
-        , React.createElement('div', { className: "apc-t",}, "👥 Usuarios ("  , filtered.length, ")")
-        , React.createElement('div', { style: { overflowX:"auto" },}
-          , React.createElement('table', { className: "ap-tbl",}
-            , React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, "Nombre"), React.createElement('th', null, "DNI"), React.createElement('th', null, "Email"), React.createElement('th', null, "Equipo"), React.createElement('th', null, "Comunidad"), React.createElement('th', null, "País"), React.createElement('th', null, "Provincia"), React.createElement('th', null, "Edad"), React.createElement('th', null, "Pts"), React.createElement('th', null, "Liga")))
-            , React.createElement('tbody', null, filtered.map(u=>(
-              React.createElement('tr', { key: u.uid, style: { background:u.admin?"rgba(255,215,0,.04)":undefined },}
-                , React.createElement('td', { style: { fontWeight:600 },}, u.nombre, " " , u.apellido, u.admin&&React.createElement('span', { style: { marginLeft:5,color:"#fbbf24",fontSize:".72rem" },}, "👑"))
-                , React.createElement('td', { style: { fontFamily:"monospace",color:"#5a7a8a",fontSize:".8rem" },}, u.dni||"—")
-                , React.createElement('td', { style: { color:"#5a7a8a",fontSize:".73rem" },}, u.email)
-                , React.createElement('td', null, u.equipo)
-                , React.createElement('td', { style: { fontSize:".78rem" },}, u.comunidad)
-                , React.createElement('td', null, flag(u.pais), " " , u.pais)
-                , React.createElement('td', { style: { fontSize:".78rem",color:"#7a8a9a" },}, u.provincia)
-                , React.createElement('td', { style: { fontFamily:"Oswald,sans-serif" },}, u.edad)
-                , React.createElement('td', { style: { fontFamily:"Oswald,sans-serif",color:"#4ade80",fontWeight:700 },}, u.pts||0)
-                , React.createElement('td', null, u.liga?React.createElement('span', { style: { color:"#4ade80",fontWeight:700 },}, "✓"):React.createElement('span', { style: { color:"#2a3a4a" },}, "—"))
+    ),
+
+    /* ── ALERTAS ── */
+    (pendientes>0||bloqueados>0) && React.createElement('div', {style:{background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"10px 14px",color:"#ef4444",fontWeight:600,fontSize:".85rem"}},
+      "⚠ "+pendientes+" pago"+(pendientes!==1?"s":"")+" pendiente"+(pendientes!==1?"s":"")+" · "+bloqueados+" cuenta"+(bloqueados!==1?"s":"")+" bloqueada"+(bloqueados!==1?"s":"")
+    ),
+
+    /* ── FILTROS ── */
+    React.createElement('div', {className:"ap-card"},
+      React.createElement('div', {style:{display:"flex",gap:9,flexWrap:"wrap"}},
+        React.createElement('input', {value:search, onChange:e=>setSrc(e.target.value), placeholder:"🔍 Buscar nombre, email, DNI, ID...", className:"mkt-search", style:{flex:2,minWidth:200}}),
+        React.createElement('select', {value:filterBloqueo, onChange:e=>setFBloqueo(e.target.value), className:"mkt-sel"},
+          React.createElement('option', {value:"ALL"}, "🔓 Todos los accesos"),
+          React.createElement('option', {value:"ACTIVO"}, "✅ Con acceso"),
+          React.createElement('option', {value:"BLOQUEADO"}, "🔒 Bloqueados")
+        ),
+        React.createElement('select', {value:filterPago, onChange:e=>setFPago(e.target.value), className:"mkt-sel"},
+          React.createElement('option', {value:"ALL"}, "💰 Todos los pagos"),
+          React.createElement('option', {value:"PAGADO"}, "✅ Pagados"),
+          React.createElement('option', {value:"PENDIENTE"}, "⏳ Pendientes")
+        ),
+        React.createElement('select', {value:filterP, onChange:e=>setFP(e.target.value), className:"mkt-sel"},
+          React.createElement('option', {value:"ALL"}, "🌍 Todos los países"),
+          ...allPaises.map(p=>React.createElement('option', {key:p,value:p}, flag(p)+" "+p))
+        ),
+        React.createElement('select', {value:filterC, onChange:e=>setFC(e.target.value), className:"mkt-sel"},
+          React.createElement('option', {value:"ALL"}, "🏘 Todas las comunidades"),
+          ...allComunidades.map(c=>React.createElement('option', {key:c,value:c}, c))
+        ),
+        React.createElement('select', {value:sortBy, onChange:e=>setSB(e.target.value), className:"mkt-sel"},
+          React.createElement('option', {value:"nombre"}, "A→Z"),
+          React.createElement('option', {value:"pts"}, "↓ Puntos")
+        )
+      ),
+      React.createElement('div', {style:{marginTop:8,fontSize:".75rem",color:"#4a6a7a"}},
+        filtered.length+" de "+users.length+" usuarios · "+users.filter(u=>u.pagado).length+" pagados · "+bloqueados+" bloqueados"
+      )
+    ),
+
+    /* ── TABLA ── */
+    React.createElement('div', {className:"ap-card"},
+      React.createElement('div', {className:"apc-t"}, "👥 Usuarios ("+filtered.length+")"),
+      React.createElement('div', {style:{overflowX:"auto"}},
+        React.createElement('table', {className:"ap-tbl"},
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              React.createElement('th', null, "ID"),
+              React.createElement('th', null, "Nombre"),
+              React.createElement('th', null, "DNI"),
+              React.createElement('th', null, "Email"),
+              React.createElement('th', null, "Equipo"),
+              React.createElement('th', null, "Comunidad"),
+              React.createElement('th', null, "Pts"),
+              React.createElement('th', null, "Pago"),
+              React.createElement('th', null, "Acceso"),
+              React.createElement('th', null, "Eliminar")
+            )
+          ),
+          React.createElement('tbody', null,
+            filtered.map(u=>React.createElement('tr', {key:u.uid,
+              style:{background:u.admin?"rgba(255,215,0,.04)":u.bloqueado?"rgba(239,68,68,.03)":!u.pagado?"rgba(255,165,0,.02)":undefined}},
+              React.createElement('td', {style:{fontFamily:"monospace",color:"#4ade80",fontSize:".72rem",fontWeight:700}}, u.playerId||"—"),
+              React.createElement('td', {style:{fontWeight:600,whiteSpace:"nowrap"}}, u.nombre+" "+u.apellido, u.admin&&React.createElement('span',{style:{marginLeft:5,color:"#fbbf24",fontSize:".72rem"}},"👑")),
+              React.createElement('td', {style:{fontFamily:"monospace",color:"#5a7a8a",fontSize:".8rem"}}, u.dni||"—"),
+              React.createElement('td', {style:{color:"#5a7a8a",fontSize:".73rem"}}, u.email),
+              React.createElement('td', null, u.equipo),
+              React.createElement('td', {style:{fontSize:".78rem"}}, u.comunidad),
+              React.createElement('td', {style:{fontFamily:"Oswald,sans-serif",color:"#4ade80",fontWeight:700}}, u.pts||0),
+              React.createElement('td', null,
+                u.admin
+                  ? React.createElement('span',{style:{color:"#fbbf24",fontSize:".75rem"}},"Admin")
+                  : React.createElement('button',{onClick:()=>togglePago(u.uid),
+                      style:btnStyle(u.pagado?"#4ade80":"#ef4444", u.pagado?"rgba(74,222,128,.1)":"rgba(239,68,68,.1)")},
+                      u.pagado?"✅ Pagado":"⏳ Pendiente")
+              ),
+              React.createElement('td', null,
+                u.admin
+                  ? React.createElement('span',{style:{color:"#fbbf24",fontSize:".75rem"}},"—")
+                  : React.createElement('button',{onClick:()=>toggleBloqueo(u.uid),
+                      style:btnStyle(u.bloqueado?"#ef4444":"#5a7a8a", u.bloqueado?"rgba(239,68,68,.12)":"rgba(255,255,255,.04)")},
+                      u.bloqueado?"🔒 Bloqueado":"🔓 Activo")
+              ),
+              React.createElement('td', null,
+                !u.admin && React.createElement('button',{onClick:()=>deleteUser(u.uid,u.nombre+" "+u.apellido),
+                  style:btnStyle("#ef4444","rgba(239,68,68,.08)")}, "🗑")
               )
-            )))
+            ))
           )
         )
       )
