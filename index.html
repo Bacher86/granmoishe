@@ -370,7 +370,7 @@ function renderForm() {
   const isReg = authMode==='register';
   document.getElementById('modalTitle').textContent = isReg?'Crear cuenta':'Ingresar';
   document.getElementById('modalPrice').style.display = isReg?'block':'none';
-  document.getElementById('btnSubmit').textContent = isReg?('Registrarse · 
+  document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + (window._cantidad||1)*6000) : 'Ingresar';
   document.getElementById('btnSwitch').textContent = isReg?'¿Ya tenés cuenta? Ingresá':'¿No tenés cuenta? Registrate';
   const coms = getComs();
   document.getElementById('modalForm').innerHTML = isReg ? `
@@ -435,9 +435,25 @@ function setCantidad(n) {
     b.style.background = i===n?'rgba(74,124,201,.25)':'transparent';
   });
   const total = document.getElementById('precioTotal');
-  if(total) total.textContent = '
+  if(total) total.textContent = '$' + (n * PRICE).toLocaleString('es-AR');
+  const btn2 = document.getElementById('btnSubmit');
+  if(btn2) btn2.textContent = 'Registrarse · $' + (n * PRICE).toLocaleString('es-AR');
+  const extra = document.getElementById('cuentasExtra');
+  const extraForm = document.getElementById('extraAccountsForm');
+  if(extra && extraForm) {
+    if(n > 1) {
+      extra.style.display = 'block';
+      let html = '';
+      for(let i=2;i<=n;i++) html += '<div style="margin:6px 0;padding:10px;background:rgba(27,58,107,.2);border-radius:8px;"><div style="font-size:.78rem;color:var(--celeste);font-weight:700;margin-bottom:6px;">⚽ Equipo '+i+'</div><input id="ex_equipo_'+i+'" placeholder="Nombre del equipo '+i+'" maxlength="40" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(74,124,201,.3);background:#0D1B35;color:#F5F7FA;font-size:.9rem;"/><div style="font-size:.68rem;color:var(--gris);margin-top:4px;">Usa el mismo email y contraseña para ingresar</div></div>';
+      extraForm.innerHTML = html;
+    } else {
+      extra.style.display = 'none';
+      extraForm.innerHTML = '';
+    }
+  }
+}
+function gv(id){ return document.getElementById(id)?.value?.trim()||''; }
 function showErr(m){ const e=document.getElementById('authErr'); e.textContent='⚠ '+m; e.style.display='block'; }
-
 async function submitAuth(){
   const btn=document.getElementById('btnSubmit'); btn.disabled=true;
   document.getElementById('authErr').style.display='none';
@@ -462,17 +478,16 @@ async function submitAuth(){
   if(!edad){showErr('Ingresá tu edad');btn.disabled=false;return;}
   const users=getLS('gm_users',[]);
   if(users.filter(u=>u.dni===dni).length>=5){showErr('Ya hay 5 cuentas con ese DNI');btn.disabled=false;return;}
-  if(users.find(u=>u.email===email)){showErr('Email ya registrado');btn.disabled=false;return;}
+  if(users.find(u=>u.email===email&&u.dni!==dni)){showErr('Email ya registrado con otro DNI');btn.disabled=false;return;}
   const cantidad = window._cantidad||1;
   const newUsers = [];
   const allIds = [];
   for(let i=1;i<=cantidad;i++){
     const uid='u_'+Math.random().toString(36).slice(2)+(i>1?'_'+i:'');
-    const playerId='GM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Date.now().toString(36).slice(-4+i-1?-3:-4).toUpperCase();
-    const nom = i===1 ? nombre : (gv('extra_nombre_'+i)||nombre+' '+i);
-    const ape = i===1 ? apellido : (gv('extra_apellido_'+i)||apellido);
-    const eqp = i===1 ? equipo : (gv('extra_equipo_'+i)||equipo+' '+i);
-    newUsers.push({uid,playerId,email:i===1?email:email.replace('@','_c'+i+'@'),password:pw,dni,nombre:nom,apellido:ape,comunidad:com,pais,provincia,edad:parseInt(edad)||0,equipo:eqp,admin:false,pts:0,profileComplete:true,liga:null,pagado:false});
+    const playerId='GM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Date.now().toString(36).slice(-4).toUpperCase();
+    const eqp = i===1 ? equipo : (gv('ex_equipo_'+i)||equipo+' '+i);
+    if(i>1 && !gv('ex_equipo_'+i)){showErr('Ponele nombre al equipo '+i);btn.disabled=false;return;}
+    newUsers.push({uid,playerId,email,password:pw,dni,nombre,apellido,comunidad:com,pais,provincia,edad:parseInt(edad)||0,equipo:eqp,admin:false,pts:0,profileComplete:true,liga:null,pagado:false,cuentaExtra:i>1});
     allIds.push(playerId);
   }
   if(email===ADMIN_EMAIL){ newUsers[0].admin=true; newUsers[0].pagado=true; }
