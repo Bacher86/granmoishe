@@ -18579,74 +18579,93 @@ function ApiPanel({ toast }) {
   // ── Diagnóstico: muestra exactamente qué devuelve la API ──
   const runDiag = async () => {
     toast("🔍 Diagnosticando...","info");
-    const tests = [
-      {label:"Competiciones",    url:"https://api.football-data.org/v4/competitions/"},
-      {label:"WC 2026 partidos", url:"https://api.football-data.org/v4/competitions/WC/matches?season=2026"},
-      {label:"PL 2024 jornada1", url:"https://api.football-data.org/v4/competitions/PL/matches?season=2024&matchday=1"},
+    const paths = [
+      {label:"Competiciones",    path:"/v4/competitions/"},
+      {label:"WC 2026 partidos", path:"/v4/competitions/WC/matches?season=2026"},
+      {label:"PL 2024 jornada1", path:"/v4/competitions/PL/matches?season=2024&matchday=1"},
     ];
-    const lines = [];
-    for(const t of tests){
-      try{
-        const r = await fetch(t.url,{headers:{"X-Auth-Token":FD_KEY,"Accept":"application/json"}});
-        const txt = await r.text();
-        let info;
-        try{
-          const j=JSON.parse(txt);
-          info = j.message || (j.matches ? `✅ ${j.matches.length} partidos` : JSON.stringify(j).slice(0,100));
-        }catch(e){ info=txt.slice(0,120); }
-        lines.push(`[${r.status}] ${t.label}:\n${info}`);
-      }catch(e){
-        lines.push(`[ERROR] ${t.label}: ${e.message}`);
+    const out = [];
+    for (const t of paths) {
+      try {
+        const data = await fdFetch(t.path);
+        const info = data.message || (data.matches ? "OK " + data.matches.length + " partidos" : "OK " + JSON.stringify(data).slice(0,60));
+        out.push("[OK] " + t.label + ": " + info);
+      } catch(e) {
+        out.push("[ERROR] " + t.label + ": " + e.message);
       }
     }
-    alert("=== DIAGNÓSTICO API ===\n\n"+lines.join("\n\n")+"\n\n=== KEY USADA ===\n"+FD_KEY.slice(0,8)+"...");
+    const FD = getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0");
+    alert("=== DIAGNOSTICO API ===\n\n" + out.join("\n\n") + "\n\n=== KEY ===\n" + FD.slice(0,8) + "...");
   };
 
+
+  // ── Cargar fixture desde football-data.org ──
+  // ── Helper: fetch via proxy CORS (football-data.org bloquea browsers directos) ──
+  const fdFetch = async (path) => {
+    const FD = getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0");
+    const fullUrl = "https://api.football-data.org" + path;
+    // Intento 1: allorigins (no reenvía headers, pero football-data acepta key en query param)
+    try {
+      const urlWithKey = fullUrl + (fullUrl.includes("?")?"&":"?") + "apikey=" + FD;
+      const r = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(urlWithKey),
+        { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const txt = await r.text();
+        if (txt && txt[0] === "{") return JSON.parse(txt);
+      }
+    } catch(e) {}
+    // Intento 2: corsproxy.io con header X-Auth-Token
+    try {
+      const r = await fetch("https://corsproxy.io/?" + encodeURIComponent(fullUrl), {
+        headers: { "X-Auth-Token": FD },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    // Intento 3: directo (puede funcionar si el hosting tiene proxy o CORS abierto)
+    const r = await fetch(fullUrl, {
+      headers: { "X-Auth-Token": FD, "Accept": "application/json" },
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!r.ok) {
+      const err = await r.text().catch(()=>"");
+      throw new Error(r.status + ": " + err.slice(0,100));
+    }
+    return await r.json();
+  };
 
   // ── Cargar fixture desde football-data.org ──
   const fetchMatches = async () => {
     setLoading(true);
     const comp = COMPETICIONES.find(c=>c.code===competicion) || COMPETICIONES[0];
     try {
-      const url = `https://api.football-data.org/v4/competitions/${comp.code}/matches?season=${comp.season}`;
-      const res = await fetch(url, {headers:{"X-Auth-Token":FD_KEY, "Accept":"application/json"}});
-      if(!res.ok){
-        const errText = await res.text().catch(()=>"");
-        const isWhitelist = errText.includes("allowlist") || errText.includes("whitelist");
-        if(isWhitelist){
-          toast("🔒 La API key tiene restricción de dominio. Usá una key sin whitelist (ver ⚙️ Config) o cargá el fixture manualmente.","error");
-        } else {
-          toast("Error "+res.status+": "+(errText||"No autorizado"),"error");
-        }
-        setLoading(false);return;
-      }
-      const data = await res.json();
+      const data = await fdFetch("/v4/competitions/" + comp.code + "/matches?season=" + comp.season);
       const all = (data.matches||[]).map(m=>({
         id: m.id,
         home: m.homeTeam?.name||m.homeTeam?.shortName||"TBD",
         away: m.awayTeam?.name||m.awayTeam?.shortName||"TBD",
-        score_home: m.score?.fullTime?.home,
-        score_away: m.score?.fullTime?.away,
+        score_home: m.score?.fullTime?.home??null,
+        score_away: m.score?.fullTime?.away??null,
         status: m.status,
         date: m.utcDate,
         matchday: m.matchday,
         stage: m.stage,
         group: m.group,
-        af_id: null,
-        _comp: comp.code,
+        af_id: null, _comp: comp.code,
       }));
-      if(all.length===0){
-        toast("⚠️ La API devolvió 0 partidos. La competición puede no haber empezado o tu plan no la incluye.","warn");
-        setLoading(false);return;
+      if (!all.length) {
+        toast("⚠️ 0 partidos. El torneo puede no haber empezado o el plan no incluye esta liga.","warn");
+        setLoading(false); return;
       }
       setMatches(all);
-      setLS("gm_matches_cache",all);
-      setLS("gm_competicion",comp.code);
-      // reset fecha al primer matchday disponible
+      setLS("gm_matches_cache", all);
+      setLS("gm_competicion", comp.code);
       const primero = [...new Set(all.map(m=>m.matchday).filter(Boolean))].sort((a,b)=>a-b)[0];
-      if(primero) setFecha(String(primero));
-      toast("✅ "+all.length+" partidos cargados ("+comp.label+")","success");
-    } catch(e){toast("Error: "+e.message,"error");}
+      if (primero) setFecha(String(primero));
+      toast("✅ " + all.length + " partidos cargados (" + comp.label + ")","success");
+    } catch(e) {
+      toast("❌ Error: " + e.message,"error");
+    }
     setLoading(false);
   };
 
