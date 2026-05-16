@@ -17693,11 +17693,12 @@ const FLAGS = { Argentina:"🇦🇷",Brasil:"🇧🇷",Chile:"🇨🇱",Colombia
 const flag = p => FLAGS[p] || "🌍";
 
 const AD_TIERS = {
-  elite:    { name:"Elite",    price:1000000, color:"#FFD700", desc:"Pantalla completa al finalizar login (10s, máx. 3)" },
-  diamante: { name:"Diamante", price:750000,  color:"#b9f2ff", desc:"Tras 3 acciones del usuario (10s, rotativa)" },
-  oro:      { name:"Oro",      price:500000,  color:"#FFA500", desc:"Al costado de la cancha (15s, 4 espacios)" },
-  plata:    { name:"Plata",    price:300000,  color:"#C0C0C0", desc:"Carrousel debajo del login en el Index" },
-  bronce:   { name:"Bronce",   price:100000,  color:"#CD7F32", desc:"Panel lateral rotativo en todas las pantallas (8s)" },
+  login:   { name:"Pantalla de inicio", price:1000000, color:"#FFD700", seconds:10,
+             desc:"Aparece al iniciar sesión y al registrarse. Pantalla completa." },
+  resto:   { name:"El resto",           price:300000,  color:"#4ade80", seconds:8,
+             desc:"Rota en todos los demás espacios: sidebar, carrusel del index y costados de cancha." },
+  todo:    { name:"Todo",               price:1200000, color:"#a78bfa", seconds:10,
+             desc:"Pantalla de inicio (login y registro) + todos los demás espacios. Máxima exposición." },
 };
 
 const COMMUNITIES = [
@@ -18204,7 +18205,7 @@ function UsersPanel() {
 function AdManager({ toast }) {
   const [ads,    setAds]  = useState(()=>DB.getAds());
   const [editId, setEdit] = useState(null);
-  const [form,   setForm] = useState({ tier:"bronce",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true });
+  const [form,   setForm] = useState({ tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true });
   const save = u => { setAds(u); DB.saveAds(u); };
 
   const TIER_COLORS = {elite:"#a855f7",diamante:"#60a5fa",oro:"#fbbf24",plata:"#94a3b8",bronce:"#c8793a"};
@@ -18214,12 +18215,12 @@ function AdManager({ toast }) {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
     else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Publicidad creada ✅","success"); }
-    setForm({tier:"bronce",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true});
+    setForm({tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true});
   };
   const edit   = a => { setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,descripcion:a.descripcion||"",url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active!==false}); };
   const toggle = id => save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id => { if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","success"); };
-  const cancel = () => { setEdit(null); setForm({tier:"bronce",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true}); };
+  const cancel = () => { setEdit(null); setForm({tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true}); };
   const resetViews = id => { save(ads.map(a=>a.id===id?{...a,views:0,clicks:0}:a)); toast("Vistas reseteadas","success"); };
 
   const tv = ads.reduce((s,a)=>s+(a.views||0),0);
@@ -18296,7 +18297,7 @@ function AdManager({ toast }) {
                       !a.active && React.createElement("span", {style:{fontSize:".65rem",background:"rgba(239,68,68,.15)",color:"#ef4444",borderRadius:4,padding:"1px 6px"}}, "PAUSADA")
                     ),
                     a.descripcion && React.createElement("div", {style:{fontSize:".75rem",color:"#5a7a8a",marginBottom:2}}, a.descripcion),
-                    React.createElement("div", {style:{fontSize:".65rem",color:col,letterSpacing:1,textTransform:"uppercase"}}, a.tier + " · " + (a.seconds||8) + "s")
+                    React.createElement("div", {style:{fontSize:".65rem",color:col,letterSpacing:1,textTransform:"uppercase"}}, (AD_TIERS[a.tier]?.name||a.tier) + " · " + (a.seconds||8) + "s")
                   ),
                   // Stats
                   React.createElement("div", {style:{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}},
@@ -18391,6 +18392,285 @@ function ScoreManager({ toast }) {
 }
 
 // ── ROOT ─────────────────────────────────────────────────────────────────────
+
+function PlantillasPanel({ toast }) {
+  const PAISES_WC = [
+    "Argentina","Brasil","Francia","España","Alemania","Portugal","Inglaterra",
+    "Países Bajos","Uruguay","Colombia","México","Marruecos","Japón","Senegal",
+    "Bélgica","Croacia","Ecuador","Austria","Argelia","Noruega","Sudáfrica",
+    "Corea del Sur","Rep. Checa","Canadá","Bosnia-Herzegovina","Qatar","Suiza",
+    "Haití","Escocia","Estados Unidos","Paraguay","Australia","Turquía","Curazao",
+    "Costa de Marfil","Túnez","Irán","Nueva Zelanda","Egipto","Cabo Verde",
+    "Arabia Saudita","Jordania","R.D. Congo","Uzbekistán","Ghana","Panamá","Irak",
+  ];
+
+  const [pais,      setPais]      = useState("Argentina");
+  const [rawText,   setRawText]   = useState("");
+  const [parsed,    setParsed]    = useState([]);
+  const [saved,     setSaved]     = useState(false);
+
+
+
+  // guessTier → replaced by calcTier+calcValor above
+
+  // Selecciones de élite (modifican el valor)
+  const ELITE_NATIONS = ["Argentina","Brasil","Francia","España","Alemania","Portugal","Inglaterra","Países Bajos"];
+  const MID_NATIONS   = ["Uruguay","Colombia","Bélgica","Croacia","Japón","Marruecos","Senegal","Dinamarca","Suiza","México","Estados Unidos","Noruega","Austria","Turquía","Ecuador","Ghana","Corea del Sur","Polonia","Suecia","Túnez","Irán","Costa de Marfil","Escocia","Canadá"];
+
+  // Jugadores estrella conocidos (último apellido alcanza)
+  const STARS = ["messi","lautaro","alvarez","de paul","dybala","di maria","vinicius","rodrygo","raphinha","endrick","paqueta","guimaraes","mbappé","mbappe","griezmann","dembele","thuram","kante","kanté","pedri","gavi","yamal","morata","rodri","wirtz","havertz","muller","müller","ronaldo","leao","leão","b. fernandes","kane","saka","bellingham","foden","rashford","van dijk","de jong","gakpo","depay","haaland","de bruyne","modric","modrić","salah","mane","mané","lewandowski","son heung","isak","gyokeres","gyökeres","doan","kubo","kessie","kessié","sangaré","sangare","neymar"];
+
+  const isStar = (nombre) => {
+    const n = nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    return STARS.some(s => {
+      const sn = s.normalize("NFD").replace(/[̀-ͯ]/g,"");
+      return n.includes(sn);
+    });
+  };
+
+  const calcValor = (nombre, pos, pais) => {
+    const star = isStar(nombre);
+    const elite = ELITE_NATIONS.includes(pais);
+    const mid   = MID_NATIONS.includes(pais);
+    const rand  = (a,b) => Math.round((a + Math.random()*(b-a)) * 10) / 10;
+
+    if (star)         return rand(10,14) * 1e6;   // Estrella mundial
+    if (elite) {
+      if (pos==="GK") return rand(7,10) * 1e6;    // Arquero élite
+      if (pos==="DEF")return rand(6,10) * 1e6;
+      if (pos==="MID")return rand(7,11) * 1e6;
+      return             rand(6,10) * 1e6;          // FWD élite
+    }
+    if (mid) {
+      if (pos==="GK") return rand(4,7)  * 1e6;
+      return             rand(3,7)  * 1e6;
+    }
+    // Resto
+    if (pos==="GK")   return rand(2,5)  * 1e6;
+    return               rand(1,4)  * 1e6;
+  };
+
+  const calcTier = (nombre, valor) => {
+    if (isStar(nombre) || valor >= 10e6) return "estrella";
+    if (valor >= 5e6)                    return "titular";
+    return "suplente";
+  };
+
+  const guessPos = (raw) => {
+    const r = (raw||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\./g,"").trim();
+    if (["GK","ARQ","POR","P","PORTERO","ARQUERO","GOALKEEPER","PORTEROS","ARQUEROS"].includes(r)) return "GK";
+    if (["DEF","CB","LB","RB","LI","LD","DEFENSA","DEFENSAS","LATERAL","CENTRAL","ZAG","LT","RT","DEFENSORES","ZAGUERO","ZAGUEROS"].includes(r)) return "DEF";
+    if (["MID","CM","DM","AM","MC","MCD","MCI","MED","MEDIOCAMPISTA","MEDIOCAMPISTAS","VOL","VOLANTE","VOLANTES","MEDIOC","CAM","CDM","CENTROCAMPISTA","CENTROCAMPISTAS"].includes(r)) return "MID";
+    if (["FWD","FW","ATT","DEL","CF","SS","LW","RW","ST","DELANTERO","DELANTEROS","EXTREMO","EXTREMOS","EXT","PT","ATACANTE","ATACANTES","PUNTA","PUNTAS"].includes(r)) return "FWD";
+    return null;
+  };
+
+  const parseText = () => {
+    if (!rawText.trim()) return toast("Pegá el listado primero","warn");
+    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const players = [];
+    let currentPos = "MID";
+    let currentPais = pais;
+
+    // ── Detect country name line ──────────────────────────────────
+    const PAISES_NORM = PAISES_WC.map(p => ({
+      orig: p,
+      norm: p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    }));
+    const detectCountry = (line) => {
+      const n = line.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[•\-*]/g,"").trim();
+      const m = PAISES_NORM.find(p => p.norm === n || n === p.norm);
+      return m ? m.orig : null;
+    };
+
+    for (const line of lines) {
+      // Skip decorative lines
+      if (/^[-=_*•#\s]+$/.test(line)) continue;
+
+      // ── Check if it's a country name ──
+      const foundCountry = detectCountry(line);
+      if (foundCountry) { currentPais = foundCountry; continue; }
+
+      // ── Check if line starts with a position header ──
+      // Format: "Porteros: ..." or just "Defensas"
+      const colonIdx = line.indexOf(":");
+      if (colonIdx > 0 && colonIdx < 25) {
+        const header = line.slice(0, colonIdx).trim();
+        const posHeader = guessPos(header);
+        if (posHeader) {
+          currentPos = posHeader;
+          // Rest of line after colon may contain players
+          const rest = line.slice(colonIdx + 1).trim();
+          if (!rest) continue;
+          // Parse players from rest of line (comma-separated)
+          const entries = rest.split(",").map(e => e.trim()).filter(Boolean);
+          for (const entry of entries) {
+            // Remove club in parentheses: "Mike Maignan (AC Milan)" → "Mike Maignan"
+            const nombre = entry.replace(/\s*\([^)]*\)/g,"").replace(/;/g,"").trim();
+            if (!nombre || nombre.length < 2) continue;
+            const valor = calcValor(nombre, currentPos, currentPais);
+            players.push({ nombre, pais: currentPais, posicion: currentPos, tier: calcTier(nombre, valor), valor });
+          }
+          continue;
+        }
+      }
+
+      // ── Check if whole line is a position header ──
+      const wholeLinePos = guessPos(line.replace(/:/g,"").trim());
+      if (wholeLinePos) { currentPos = wholeLinePos; continue; }
+
+      // ── Parse as individual player line ──
+      // Remove club in parentheses
+      let clean = line.replace(/\s*\([^)]*\)/g,"").replace(/;/g,"").trim();
+      // Remove leading numbers / bullet
+      clean = clean.replace(/^[\d\.•\-*]+\s*/, "").trim();
+      if (!clean || clean.length < 2) continue;
+
+      // Split by comma in case multiple players on one line
+      const entries = clean.split(",").map(e => e.trim()).filter(e => e.length >= 2);
+      for (const entry of entries) {
+        let nombre = entry, posicion = currentPos;
+        // Detect inline pos tag at end: "Messi MID"
+        const words = entry.split(/\s+/);
+        const lastWord = words[words.length - 1];
+        const inlinePos = guessPos(lastWord);
+        if (inlinePos && words.length > 1) { posicion = inlinePos; nombre = words.slice(0,-1).join(" "); }
+        nombre = nombre.trim();
+        if (!nombre || nombre.length < 2) continue;
+        const valor = calcValor(nombre, posicion, currentPais);
+        players.push({ nombre, pais: currentPais, posicion, tier: calcTier(nombre, valor), valor });
+      }
+    }
+
+    if (!players.length) return toast("No se detectaron jugadores. Revisá el formato.","warn");
+    setParsed(players);
+    toast("✅ " + players.length + " jugadores detectados — revisá y guardá.","success");
+  };
+
+  const saveToJuego = () => {
+    if (!parsed.length) return;
+    // Read current RAW-equivalent from gm_custom_players
+    const custom = getLS("gm_custom_players", {});
+    custom[pais] = parsed;
+    setLS("gm_custom_players", custom);
+    // Also update gm_stats_by_name keys to match new names
+    setSaved(true);
+    toast(`✅ Plantilla de ${pais} guardada (${parsed.length} jugadores)`, "success");
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const updatePlayer = (i, field, val) => {
+    setParsed(p => p.map((pl,j) => j===i ? {...pl,[field]:val} : pl));
+  };
+
+  const removePlayer = (i) => {
+    setParsed(p => p.filter((_,j) => j!==i));
+  };
+
+  const POS_COLORS = {GK:"#F59E0B",DEF:"#10B981",MID:"#3B82F6",FWD:"#EF4444"};
+
+  return React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:14}},
+
+    // Header info
+    React.createElement("div", {className:"ap-card",style:{background:"rgba(96,165,250,.05)",borderColor:"rgba(96,165,250,.2)"}},
+      React.createElement("div", {className:"apc-t"}, "📋 Cómo funciona"),
+      React.createElement("div", {style:{fontSize:".78rem",color:"#5a7a8a",lineHeight:1.8}},
+        "1. Elegís el país · 2. Pegás la lista de jugadores (de Word, Excel, WhatsApp, lo que sea) · 3. Revisás las posiciones · 4. Guardás",
+        React.createElement("br",null),
+        "Formatos aceptados: una columna (solo nombres), dos columnas (nombre + posición), con o sin números de camiseta.",
+        React.createElement("br",null),
+        React.createElement("strong",{style:{color:"#fbbf24"}}, "Ejemplo:"),
+        " E. Martínez GK · C. Romero DEF · L. Messi MID · J. Álvarez FWD"
+      )
+    ),
+
+    // País selector
+    React.createElement("div", {className:"ap-card",style:{display:"flex",flexDirection:"column",gap:10}},
+      React.createElement("div", {className:"apc-t"}, "🌍 Selección"),
+      React.createElement("div", {style:{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}},
+        React.createElement("select", {
+          value:pais, onChange:e=>setPais(e.target.value),
+          style:{background:"#0a1525",border:"1px solid #2a4a38",color:"#e2e8f0",borderRadius:7,
+                 padding:"8px 12px",fontFamily:"Inter,sans-serif",fontSize:".88rem",outline:"none",minWidth:180}
+        }, PAISES_WC.map(p => React.createElement("option",{key:p,value:p},p))),
+        React.createElement("div", {style:{fontSize:".72rem",color:"#4a6a5a"}},
+          "Plantilla actual: " + (getLS("gm_custom_players",{})[pais]||[]).length + " jugadores")
+      )
+    ),
+
+    // Paste area
+    React.createElement("div", {className:"ap-card",style:{display:"flex",flexDirection:"column",gap:10}},
+      React.createElement("div", {className:"apc-t"}, "📝 Pegá el listado"),
+      React.createElement("textarea", {
+        value:rawText, onChange:e=>setRawText(e.target.value),
+        rows:10, placeholder:
+"E. Martínez\tGK\nN. Molina\tDEF\nC. Romero\tDEF\nL. Martínez\tDEF\nN. Tagliafico\tDEF\nL. Messi\tMID\nR. De Paul\tMID\nE. Fernández\tMID\nA. Mac Allister\tMID\nJ. Álvarez\tFWD\nL. Lautaro\tFWD",
+        style:{background:"#0a1525",border:"1px solid #2a4a38",color:"#e2e8f0",borderRadius:7,
+               padding:"10px",fontFamily:"monospace",fontSize:".78rem",resize:"vertical",outline:"none",lineHeight:1.7}
+      }),
+      React.createElement("div", {style:{display:"flex",gap:8,flexWrap:"wrap"}},
+        React.createElement("button", {onClick:parseText,
+          style:{padding:"9px 20px",borderRadius:7,border:"none",background:"#60a5fa",color:"#07111e",
+                 fontFamily:"Oswald,sans-serif",fontWeight:700,cursor:"pointer"}}, "🔍 Parsear jugadores"),
+        rawText && React.createElement("button", {onClick:()=>{setRawText("");setParsed([]);},
+          style:{padding:"9px 14px",borderRadius:7,border:"1px solid #1a2d40",background:"transparent",
+                 color:"#5a7a8a",cursor:"pointer",fontFamily:"Oswald,sans-serif"}}, "Limpiar")
+      )
+    ),
+
+    // Parsed result
+    parsed.length > 0 && React.createElement("div", {className:"ap-card",style:{display:"flex",flexDirection:"column",gap:10}},
+      React.createElement("div", {style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}},
+        React.createElement("div", {className:"apc-t",style:{margin:0}}, parsed.length + " jugadores detectados — Revisá y corregí"),
+        React.createElement("button", {onClick:saveToJuego,
+          style:{padding:"9px 20px",borderRadius:7,border:"none",
+                 background:saved?"#22c55e":"#4ade80",color:"#07111e",
+                 fontFamily:"Oswald,sans-serif",fontWeight:700,cursor:"pointer",
+                 boxShadow:saved?"none":"0 0 12px rgba(74,222,128,.3)"}},
+          saved ? "✅ Guardado!" : "💾 Guardar plantilla de " + pais)
+      ),
+      React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:4}},
+        parsed.map((p,i) =>
+          React.createElement("div", {key:i, style:{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:"rgba(255,255,255,.02)",borderRadius:6,flexWrap:"wrap"}},
+            React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#6a7a8a",minWidth:22,textAlign:"right"}}, i+1),
+            React.createElement("span", {style:{background:POS_COLORS[p.posicion],color:"#fff",borderRadius:4,padding:"1px 6px",fontSize:".6rem",fontWeight:700,minWidth:28,textAlign:"center"}}, p.posicion),
+            React.createElement("input", {
+              value:p.nombre, onChange:e=>updatePlayer(i,"nombre",e.target.value),
+              style:{flex:1,minWidth:120,background:"transparent",border:"none",color:"#e2e8f0",
+                     fontWeight:600,fontSize:".85rem",outline:"none",padding:"2px 4px",
+                     borderBottom:"1px solid #1a2d40"}
+            }),
+            React.createElement("select", {
+              value:p.posicion, onChange:e=>updatePlayer(i,"posicion",e.target.value),
+              style:{background:"#0a1525",border:"1px solid #1a3a28",color:"#e2e8f0",borderRadius:5,
+                     padding:"3px 6px",fontSize:".72rem",outline:"none"}
+            }, ["GK","DEF","MID","FWD"].map(pos => React.createElement("option",{key:pos,value:pos},pos))),
+            React.createElement("span", {
+              style:{fontSize:".68rem",color:"#fbbf24",fontFamily:"Oswald,sans-serif",
+                     fontWeight:700,minWidth:44,textAlign:"right"}
+            }, p.valor ? (p.valor/1e6).toFixed(1)+"M" : ""),
+            React.createElement("select", {
+              value:p.tier, onChange:e=>updatePlayer(i,"tier",e.target.value),
+              style:{background:"#0a1525",border:"1px solid #1a3a28",color:"#e2e8f0",borderRadius:5,
+                     padding:"3px 6px",fontSize:".72rem",outline:"none"}
+            }, ["estrella","titular","suplente"].map(t => React.createElement("option",{key:t,value:t},t))),
+            React.createElement("button", {onClick:()=>removePlayer(i),
+              style:{background:"transparent",border:"none",color:"#ef4444",cursor:"pointer",fontSize:".9rem",padding:"2px 4px"}
+            }, "×")
+          )
+        )
+      ),
+      React.createElement("button", {onClick:saveToJuego,
+        style:{padding:"11px",borderRadius:7,border:"none",
+               background:saved?"#22c55e":"#4ade80",color:"#07111e",
+               fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:".95rem",cursor:"pointer",
+               letterSpacing:.3,boxShadow:saved?"none":"0 0 12px rgba(74,222,128,.3)"}},
+        saved ? "✅ Guardado!" : "💾 Guardar plantilla de " + pais + " (" + parsed.length + " jugadores)")
+    )
+  );
+}
+
+
 function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [tab,    setTab]    = useState("stats");
@@ -18406,11 +18686,12 @@ function AdminPage() {
   if (!authed) return React.createElement(AdminLogin, { onSuccess: () => setAuthed(true),} );
 
   const TABS = [
-    { id:"stats",   icon:"📊", label:"Estadísticas" },
-    { id:"users",   icon:"👥", label:"Usuarios" },
-    { id:"ads",     icon:"📢", label:"Publicidad" },
-    { id:"scoring", icon:"⚽", label:"Puntos" },
-    { id:"api",     icon:"🌐", label:"API Fútbol" },
+    { id:"stats",     icon:"📊", label:"Estadísticas" },
+    { id:"users",     icon:"👥", label:"Usuarios" },
+    { id:"ads",       icon:"📢", label:"Publicidad" },
+    { id:"scoring",   icon:"⚽", label:"Puntos" },
+    { id:"api",       icon:"🌐", label:"Fixture" },
+    { id:"plantillas",icon:"🗂", label:"Plantillas" },
   ];
 
   return (
@@ -18477,6 +18758,7 @@ function AdminPage() {
         , tab==="ads"     && React.createElement(AdManager, { toast: toast,})
         , tab==="scoring" && React.createElement(ScoreManager, { toast: toast,})
         , tab==="api"     && React.createElement(ApiPanel, { toast: toast,})
+        , tab==="plantillas" && React.createElement(PlantillasPanel, { toast: toast,})
       )
     )
   );
@@ -18487,256 +18769,302 @@ function ApiPanel({ toast }) {
   const FD_KEY = getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0");
 
   const PLAYERS = [
-    // ── ARGENTINA (Grupo J) ──
-    [1,"E. Martínez","Argentina","GK"],[2,"G. Rulli","Argentina","GK"],
-    [3,"N. Molina","Argentina","DEF"],[4,"G. Montiel","Argentina","DEF"],
-    [5,"C. Romero","Argentina","DEF"],[6,"L. Martínez","Argentina","DEF"],
-    [7,"N. Tagliafico","Argentina","DEF"],[8,"M. Acuña","Argentina","DEF"],
-    [9,"L. Messi","Argentina","MID"],[10,"R. De Paul","Argentina","MID"],
-    [11,"E. Fernández","Argentina","MID"],[12,"A. Mac Allister","Argentina","MID"],
-    [13,"G. Lo Celso","Argentina","MID"],[14,"L. Paredes","Argentina","MID"],
-    [15,"J. Álvarez","Argentina","FWD"],[16,"L. Lautaro","Argentina","FWD"],
-    [17,"P. Dybala","Argentina","FWD"],[18,"G. Simeone","Argentina","FWD"],
-    [19,"Á. Di María","Argentina","FWD"],[20,"N. González","Argentina","FWD"],
-    // ── BRASIL (Grupo C) ──
-    [21,"Alisson","Brasil","GK"],[22,"Ederson","Brasil","GK"],
-    [23,"Marquinhos","Brasil","DEF"],[24,"E. Militão","Brasil","DEF"],
-    [25,"G. Magalhães","Brasil","DEF"],[26,"Danilo","Brasil","DEF"],
-    [27,"A. Telles","Brasil","DEF"],
-    [28,"Casemiro","Brasil","MID"],[29,"Lucas Paquetá","Brasil","MID"],
-    [30,"Bruno Guimarães","Brasil","MID"],[31,"F. Andrade","Brasil","MID"],
-    [32,"Vinicius Jr","Brasil","FWD"],[33,"Rodrygo","Brasil","FWD"],
-    [34,"Raphinha","Brasil","FWD"],[35,"Endrick","Brasil","FWD"],
-    [36,"Gabriel Martinelli","Brasil","FWD"],
-    // ── FRANCIA (Grupo I) ──
-    [37,"M. Maignan","Francia","GK"],[38,"A. Lloris","Francia","GK"],
-    [39,"T. Hernández","Francia","DEF"],[40,"B. Pavard","Francia","DEF"],
-    [41,"D. Upamecano","Francia","DEF"],[42,"W. Saliba","Francia","DEF"],
-    [43,"J. Koundé","Francia","DEF"],
-    [44,"A. Tchouaméni","Francia","MID"],[45,"A. Rabiot","Francia","MID"],
-    [46,"E. Camavinga","Francia","MID"],[47,"A. Griezmann","Francia","MID"],
-    [48,"K. Mbappé","Francia","FWD"],[49,"O. Dembélé","Francia","FWD"],
-    [50,"M. Thuram","Francia","FWD"],[51,"R. Kolo Muani","Francia","FWD"],
-    // ── ESPAÑA (Grupo H) ──
-    [52,"Unai Simón","España","GK"],[53,"David Raya","España","GK"],
-    [54,"Carvajal","España","DEF"],[55,"A. Laporte","España","DEF"],
-    [56,"R. Le Normand","España","DEF"],[57,"M. Cucurella","España","DEF"],
-    [58,"Pedri","España","MID"],[59,"Gavi","España","MID"],
-    [60,"R. Rodri","España","MID"],[61,"F. Ruiz","España","MID"],
-    [62,"Yamal","España","FWD"],[63,"N. Williams","España","FWD"],
-    [64,"Morata","España","FWD"],[65,"A. Torres","España","FWD"],
-    // ── ALEMANIA (Grupo E) ──
-    [66,"M. ter Stegen","Alemania","GK"],[67,"O. Baumann","Alemania","GK"],
-    [68,"A. Rüdiger","Alemania","DEF"],[69,"J. Tah","Alemania","DEF"],
-    [70,"D. Raum","Alemania","DEF"],[71,"J. Kimmich","Alemania","DEF"],
-    [72,"T. Müller","Alemania","MID"],[73,"J. Wirtz","Alemania","MID"],
-    [74,"L. Goretzka","Alemania","MID"],[75,"K. Havertz","Alemania","FWD"],
-    [76,"T. Werner","Alemania","FWD"],[77,"N. Füllkrug","Alemania","FWD"],
-    // ── PORTUGAL (Grupo K) ──
-    [78,"Rui Patrício","Portugal","GK"],[79,"D. Costa","Portugal","GK"],
-    [80,"Rúben Dias","Portugal","DEF"],[81,"Pepe","Portugal","DEF"],
-    [82,"N. Mendes","Portugal","DEF"],[83,"Cancelo","Portugal","DEF"],
-    [84,"B. Fernandes","Portugal","MID"],[85,"W. Carvalho","Portugal","MID"],
-    [86,"J. Moutinho","Portugal","MID"],[87,"Cristiano Ronaldo","Portugal","FWD"],
-    [88,"R. Leão","Portugal","FWD"],[89,"G. Ramos","Portugal","FWD"],
-    // ── INGLATERRA (Grupo L) ──
-    [90,"J. Pickford","Inglaterra","GK"],[91,"A. Ramsdale","Inglaterra","GK"],
-    [92,"K. Walker","Inglaterra","DEF"],[93,"H. Maguire","Inglaterra","DEF"],
-    [94,"M. Guehi","Inglaterra","DEF"],[95,"L. Alexander-Arnold","Inglaterra","DEF"],
-    [96,"J. Bellingham","Inglaterra","MID"],[97,"D. Rice","Inglaterra","MID"],
-    [98,"P. Foden","Inglaterra","MID"],[99,"B. Saka","Inglaterra","FWD"],
-    [100,"H. Kane","Inglaterra","FWD"],[101,"M. Rashford","Inglaterra","FWD"],
-    [102,"O. Watkins","Inglaterra","FWD"],
-    // ── PAÍSES BAJOS (Grupo F) ──
-    [103,"B. Flekken","Países Bajos","GK"],
-    [104,"V. van Dijk","Países Bajos","DEF"],[105,"S. de Vrij","Países Bajos","DEF"],
-    [106,"D. Dumfries","Países Bajos","DEF"],[107,"N. Ake","Países Bajos","DEF"],
-    [108,"F. de Jong","Países Bajos","MID"],[109,"T. Reijnders","Países Bajos","MID"],
-    [110,"X. Simons","Países Bajos","MID"],
-    [111,"C. Gakpo","Países Bajos","FWD"],[112,"M. Depay","Países Bajos","FWD"],
-    [113,"D. Bergwijn","Países Bajos","FWD"],
-    // ── COLOMBIA (Grupo K) ──
-    [114,"D. Ospina","Colombia","GK"],[115,"C. Vargas","Colombia","GK"],
-    [116,"D. Sánchez","Colombia","DEF"],[117,"J. Mojica","Colombia","DEF"],
-    [118,"J. Rodríguez","Colombia","MID"],[119,"M. Castaño","Colombia","MID"],
-    [120,"L. Díaz","Colombia","FWD"],[121,"R. Borré","Colombia","FWD"],
-    // ── URUGUAY (Grupo H) ──
-    [122,"S. Rochet","Uruguay","GK"],
-    [123,"D. Godín","Uruguay","DEF"],[124,"R. Araujo","Uruguay","DEF"],
-    [125,"M. Olivera","Uruguay","DEF"],
-    [126,"F. Valverde","Uruguay","MID"],[127,"L. Bentancur","Uruguay","MID"],
-    [128,"D. Núñez","Uruguay","FWD"],[129,"L. Suárez","Uruguay","FWD"],
-    [130,"E. Cavani","Uruguay","FWD"],
-    // ── MÉXICO (Grupo A) ──
-    [131,"G. Ochoa","México","GK"],
-    [132,"C. Salcedo","México","DEF"],[133,"J. Sánchez","México","DEF"],
-    [134,"H. Herrera","México","MID"],[135,"A. Guardado","México","MID"],
-    [136,"H. Lozano","México","FWD"],[137,"R. Jiménez","México","FWD"],
-    // ── MARRUECOS (Grupo C) ──
-    [138,"Y. Bono","Marruecos","GK"],
-    [139,"A. Hakimi","Marruecos","DEF"],[140,"N. Mazraoui","Marruecos","DEF"],
-    [141,"R. Ounahi","Marruecos","MID"],[142,"S. Amrabat","Marruecos","MID"],
-    [143,"H. Ziyech","Marruecos","MID"],[144,"Y. En-Nesyri","Marruecos","FWD"],
-    // ── JAPÓN (Grupo F) ──
-    [145,"S. Gonda","Japón","GK"],
-    [146,"H. Sakai","Japón","DEF"],[147,"K. Itakura","Japón","DEF"],
-    [148,"W. Endo","Japón","MID"],[149,"T. Miyashiro","Japón","MID"],
-    [150,"K. Mitoma","Japón","FWD"],[151,"T. Ueda","Japón","FWD"],
-    // ── SENEGAL (Grupo I) ──
-    [152,"E. Mendy","Senegal","GK"],
-    [153,"K. Koulibaly","Senegal","DEF"],[154,"S. Sabaly","Senegal","DEF"],
-    [155,"I. Gueye","Senegal","MID"],[156,"P. Gueye","Senegal","MID"],
-    [157,"S. Mané","Senegal","FWD"],[158,"I. Sarr","Senegal","FWD"],
-    // ── BÉLGICA (Grupo G) ──
-    [159,"T. Courtois","Bélgica","GK"],
-    [160,"T. Alderweireld","Bélgica","DEF"],[161,"J. Vertonghen","Bélgica","DEF"],
-    [162,"K. De Bruyne","Bélgica","MID"],[163,"A. Witsel","Bélgica","MID"],
-    [164,"R. Lukaku","Bélgica","FWD"],[165,"L. Trossard","Bélgica","FWD"],
-    // ── CROACIA (Grupo L) ──
-    [166,"D. Livaković","Croacia","GK"],
-    [167,"D. Ćaleta-Car","Croacia","DEF"],[168,"J. Gvardiol","Croacia","DEF"],
-    [169,"L. Modrić","Croacia","MID"],[170,"M. Brozović","Croacia","MID"],
-    [171,"I. Perišić","Croacia","FWD"],[172,"A. Kramarić","Croacia","FWD"],
-    // ── NORUEGA (Grupo I) ──
-    [173,"Ø. Nyland","Noruega","GK"],
-    [174,"L. Skjelvik","Noruega","DEF"],[175,"A. Sørloth","Noruega","FWD"],
-    [176,"E. Haaland","Noruega","FWD"],[177,"M. Ødegaard","Noruega","MID"],
-    // ── ESTADOS UNIDOS (Grupo D) ──
-    [178,"M. Turner","EE.UU.","GK"],
-    [179,"S. Dest","EE.UU.","DEF"],[180,"W. Carter","EE.UU.","DEF"],
-    [181,"T. Adams","EE.UU.","MID"],[182,"W. McKennie","EE.UU.","MID"],
-    [183,"C. Pulisic","EE.UU.","FWD"],[184,"R. Reyna","EE.UU.","FWD"],
-    // ── ECUADOR (Grupo E) ──
-    [185,"A. Domínguez","Ecuador","GK"],
-    [186,"F. Hincapié","Ecuador","DEF"],[187,"P. Arboleda","Ecuador","DEF"],
-    [188,"C. Gruezo","Ecuador","MID"],[189,"M. Caicedo","Ecuador","MID"],
-    [190,"E. Valencia","Ecuador","FWD"],[191,"M. Estrada","Ecuador","FWD"],
-    // ── AUSTRIA (Grupo J) ──
-    [192,"P. Pentz","Austria","GK"],
-    [193,"D. Alaba","Austria","DEF"],[194,"S. Posch","Austria","DEF"],
-    [195,"K. Laimer","Austria","MID"],[196,"M. Sabitzer","Austria","MID"],
-    [197,"M. Arnautovic","Austria","FWD"],[198,"C. Gregoritsch","Austria","FWD"],
-    // ── ARGELIA (Grupo J) ──
-    [199,"R. M'Bolhi","Argelia","GK"],
-    [200,"A. Mandi","Argelia","DEF"],[201,"R. Bensebaini","Argelia","DEF"],
-    [202,"N. Bennacer","Argelia","MID"],[203,"S. Feghouli","Argelia","MID"],
-    [204,"I. Slimani","Argelia","FWD"],[205,"R. Mahrez","Argelia","FWD"],
-
-    // ── EE.UU. → fix name match (fixture usa "Estados Unidos") ──
-    // Already have EE.UU. — add alias entries as Estados Unidos
-    // ── SUDÁFRICA (Grupo A) ──
-    [206,"R. Williams","Sudáfrica","GK"],[207,"S. Modise","Sudáfrica","DEF"],
-    [208,"T. Lakay","Sudáfrica","DEF"],[209,"B. Mothiba","Sudáfrica","FWD"],
-    [210,"P. Grobler","Sudáfrica","MID"],[211,"L. Foster","Sudáfrica","FWD"],
-    // ── COREA DEL SUR (Grupo A) ──
-    [212,"S. Kim","Corea del Sur","GK"],[213,"K. Min-jae","Corea del Sur","DEF"],
-    [214,"Lee Kang-in","Corea del Sur","MID"],[215,"Son Heung-min","Corea del Sur","FWD"],
-    [216,"Hwang Hee-chan","Corea del Sur","FWD"],[217,"Cho Gue-sung","Corea del Sur","FWD"],
-    // ── REP. CHECA (Grupo A) ──
-    [218,"J. Staněk","Rep. Checa","GK"],[219,"T. Souček","Rep. Checa","MID"],
-    [220,"P. Schick","Rep. Checa","FWD"],[221,"A. Hlozek","Rep. Checa","FWD"],
-    [222,"V. Coufal","Rep. Checa","DEF"],[223,"M. Kuchta","Rep. Checa","FWD"],
-    // ── CANADÁ (Grupo B) ──
-    [224,"M. Crepeau","Canadá","GK"],[225,"A. Davies","Canadá","DEF"],
-    [226,"S. Larin","Canadá","FWD"],[227,"J. David","Canadá","FWD"],
-    [228,"T. Buchanan","Canadá","MID"],[229,"A. Hutchinson","Canadá","DEF"],
-    // ── BOSNIA-HERZEGOVINA (Grupo B) ──
-    [230,"I. Pirić","Bosnia-Herzegovina","GK"],[231,"E. Džeko","Bosnia-Herzegovina","FWD"],
-    [232,"M. Pjanić","Bosnia-Herzegovina","MID"],[233,"S. Kolasinac","Bosnia-Herzegovina","DEF"],
-    [234,"B. Tahirović","Bosnia-Herzegovina","MID"],
-    // ── QATAR (Grupo B) ──
-    [235,"S. Al Sheeb","Qatar","GK"],[236,"P. Correia","Qatar","DEF"],
-    [237,"H. Al-Haydos","Qatar","MID"],[238,"A. Afif","Qatar","FWD"],
-    [239,"M. Muntari","Qatar","FWD"],
-    // ── SUIZA (Grupo B) ──
-    [240,"Y. Sommer","Suiza","GK"],[241,"M. Akanji","Suiza","DEF"],
-    [242,"G. Xhaka","Suiza","MID"],[243,"X. Shaqiri","Suiza","MID"],
-    [244,"B. Embolo","Suiza","FWD"],[245,"R. Vargas","Suiza","FWD"],
-    // ── HAITÍ (Grupo C) ──
-    [246,"J. Moïse","Haití","GK"],[247,"K. Gedeon","Haití","MID"],
-    [248,"N. Pierrot","Haití","FWD"],[249,"S. Borgella","Haití","DEF"],
-    [250,"M. Nau","Haití","FWD"],
-    // ── ESCOCIA (Grupo C) ──
-    [251,"A. Gunn","Escocia","GK"],[252,"A. Robertson","Escocia","DEF"],
-    [253,"C. McGregor","Escocia","MID"],[254,"J. McGinn","Escocia","MID"],
-    [255,"L. Ferguson","Escocia","FWD"],[256,"K. Tierney","Escocia","DEF"],
-    // ── PARAGUAY (Grupo D) ──
-    [257,"A. Silva","Paraguay","GK"],[258,"G. Gómez","Paraguay","DEF"],
-    [259,"M. Villasanti","Paraguay","MID"],[260,"M. Alonso","Paraguay","FWD"],
-    [261,"R. Sanabria","Paraguay","FWD"],[262,"J. Enciso","Paraguay","FWD"],
-    // ── AUSTRALIA (Grupo D) ──
-    [263,"M. Ryan","Australia","GK"],[264,"H. Atkinson","Australia","DEF"],
-    [265,"A. Hrustic","Australia","MID"],[266,"M. Leckie","Australia","FWD"],
-    [267,"M. Goodwin","Australia","MID"],[268,"C. Ikonomidis","Australia","FWD"],
-    // ── TURQUÍA (Grupo D) ──
-    [269,"A. Bayindir","Turquía","GK"],[270,"S. Özcan","Turquía","MID"],
-    [271,"H. Çalhanoğlu","Turquía","MID"],[272,"K. Aktürkoğlu","Turquía","FWD"],
-    [273,"Y. Yıldız","Turquía","FWD"],[274,"M. Demiral","Turquía","DEF"],
-    // ── CURAZAO (Grupo E) ──
-    [275,"E. Espinal","Curazao","GK"],[276,"L. Häfner","Curazao","MID"],
-    [277,"M. Linssen","Curazao","FWD"],[278,"G. dos Santos","Curazao","MID"],
-    [279,"J. Flemming","Curazao","FWD"],
-    // ── COSTA DE MARFIL (Grupo E) ──
-    [280,"Y. Fofana","Costa de Marfil","GK"],[281,"S. Aurier","Costa de Marfil","DEF"],
-    [282,"F. Kessié","Costa de Marfil","MID"],[283,"N. Pépé","Costa de Marfil","FWD"],
-    [284,"S. Haller","Costa de Marfil","FWD"],[285,"J. Koné","Costa de Marfil","FWD"],
-    // ── SUECIA (Grupo F) ──
-    [286,"R. Olsen","Suecia","GK"],[287,"V. Lindelöf","Suecia","DEF"],
-    [288,"D. Kulusevski","Suecia","MID"],[289,"A. Isak","Suecia","FWD"],
-    [290,"Z. Ibrahimović","Suecia","FWD"],[291,"E. Forsberg","Suecia","MID"],
-    // ── TÚNEZ (Grupo F) ──
-    [292,"A. Dahmen","Túnez","GK"],[293,"M. Meriah","Túnez","DEF"],
-    [294,"H. Msakni","Túnez","MID"],[295,"Y. Msakni","Túnez","FWD"],
-    [296,"S. Sassi","Túnez","MID"],[297,"W. Khazri","Túnez","FWD"],
-    // ── IRÁN (Grupo G) ──
-    [298,"A. Beiranvand","Irán","GK"],[299,"M. Hosseini","Irán","DEF"],
-    [300,"S. Azmoun","Irán","FWD"],[301,"M. Taremi","Irán","FWD"],
-    [302,"A. Jahanbakhsh","Irán","FWD"],[303,"S. Ezatolahi","Irán","MID"],
-    // ── NUEVA ZELANDA (Grupo G) ──
-    [304,"O. Sail","Nueva Zelanda","GK"],[305,"W. McGarry","Nueva Zelanda","DEF"],
-    [306,"C. Wood","Nueva Zelanda","FWD"],[307,"M. Fisher","Nueva Zelanda","MID"],
-    [308,"T. Cacace","Nueva Zelanda","DEF"],
-    // ── EGIPTO (Grupo G) ──
-    [309,"M. El-Shennawy","Egipto","GK"],[310,"A. Hegazy","Egipto","DEF"],
-    [311,"M. Salah","Egipto","FWD"],[312,"T. Hamdi","Egipto","MID"],
-    [313,"O. Marmoush","Egipto","FWD"],[314,"R. Sobhi","Egipto","MID"],
-    // ── CABO VERDE (Grupo H) ──
-    [315,"V. Medina","Cabo Verde","GK"],[316,"F. Tavares","Cabo Verde","DEF"],
-    [317,"R. Gomes","Cabo Verde","MID"],[318,"G. Brito","Cabo Verde","FWD"],
-    [319,"Garry Rodrigues","Cabo Verde","FWD"],
-    // ── ARABIA SAUDITA (Grupo H) ──
-    [320,"M. Al-Owais","Arabia Saudita","GK"],[321,"A. Al-Amri","Arabia Saudita","DEF"],
-    [322,"S. Al-Dawsari","Arabia Saudita","MID"],[323,"F. Al-Buraikan","Arabia Saudita","FWD"],
-    [324,"H. Al-Bahri","Arabia Saudita","DEF"],[325,"T. Al-Ghannam","Arabia Saudita","FWD"],
-    // ── IRAK (Grupo I) ──
-    [326,"J. Nadhim","Irak","GK"],[327,"A. Ibrahim","Irak","DEF"],
-    [328,"A. Abbas","Irak","MID"],[329,"A. Al-Hamrani","Irak","FWD"],
-    [330,"A. Karrar","Irak","FWD"],
-    // ── JORDANIA (Grupo J) ──
-    [331,"Y. Shaban","Jordania","GK"],[332,"B. Bani","Jordania","DEF"],
-    [333,"Y. Al-Naimat","Jordania","MID"],[334,"M. Abu Zema","Jordania","FWD"],
-    [335,"O. Al-Rashdan","Jordania","FWD"],
-    // ── R.D. CONGO (Grupo K) ──
-    [336,"K. Kasembe","R.D. Congo","GK"],[337,"A. Mputu","R.D. Congo","MID"],
-    [338,"P. Boya","R.D. Congo","FWD"],[339,"Y. Bolasie","R.D. Congo","FWD"],
-    [340,"C. Mbemba","R.D. Congo","DEF"],
-    // ── UZBEKISTÁN (Grupo K) ──
-    [341,"I. Nesterov","Uzbekistán","GK"],[342,"J. Khamdamov","Uzbekistán","DEF"],
-    [343,"O. Zhamaletdinov","Uzbekistán","MID"],[344,"E. Shomurodov","Uzbekistán","FWD"],
-    [345,"A. Tursunov","Uzbekistán","MID"],
-    // ── GHANA (Grupo L) ──
-    [346,"L. Ati-Zigi","Ghana","GK"],[347,"A. Ayew","Ghana","MID"],
-    [348,"J. Ayew","Ghana","FWD"],[349,"M. Kudus","Ghana","MID"],
-    [350,"T. Partey","Ghana","MID"],[351,"I. Sulemana","Ghana","FWD"],
-    // ── PANAMÁ (Grupo L) ──
-    [352,"L. Mejía","Panamá","GK"],[353,"H. Turner","Panamá","DEF"],
-    [354,"R. Fajardo","Panamá","MID"],[355,"A. Murillo","Panamá","FWD"],
-    [356,"B. White","Panamá","FWD"],
-    // ── ESTADOS UNIDOS → fix para que matchee con fixture ──
-    [357,"M. Turner","Estados Unidos","GK"],[358,"S. Dest","Estados Unidos","DEF"],
-    [359,"T. Adams","Estados Unidos","MID"],[360,"W. McKennie","Estados Unidos","MID"],
-    [361,"C. Pulisic","Estados Unidos","FWD"],[362,"R. Reyna","Estados Unidos","FWD"],
-    [363,"J. Sargent","Estados Unidos","FWD"],
+    // ── BRASIL ──
+    [1,"Alisson Becker","Brasil","GK"],
+    [2,"Ederson","Brasil","GK"],
+    [3,"Bento","Brasil","GK"],
+    [4,"Marquinhos","Brasil","DEF"],
+    [5,"Gabriel Magalhães","Brasil","DEF"],
+    [6,"Gleison Bremer","Brasil","DEF"],
+    [7,"Thiago Silva","Brasil","DEF"],
+    [8,"Danilo","Brasil","DEF"],
+    [9,"Alex Sandro","Brasil","DEF"],
+    [10,"Carlos Augusto","Brasil","DEF"],
+    [11,"Murilo Dos Santos","Brasil","DEF"],
+    [12,"Wesley França","Brasil","DEF"],
+    [13,"Casemiro","Brasil","MID"],
+    [14,"Bruno Guimarães","Brasil","MID"],
+    [15,"Andrey Santos","Brasil","MID"],
+    [16,"Gerson","Brasil","MID"],
+    [17,"Joelinton de Lira","Brasil","MID"],
+    [18,"Lucas Paquetá","Brasil","MID"],
+    [19,"Vinícius Júnior","Brasil","FWD"],
+    [20,"Neymar","Brasil","FWD"],
+    [21,"Raphinha","Brasil","FWD"],
+    [22,"Endrick","Brasil","FWD"],
+    [23,"Gabriel Martinelli","Brasil","FWD"],
+    [24,"Matheus Cunha","Brasil","FWD"],
+    [25,"Igor Thiago","Brasil","FWD"],
+    [26,"Antony","Brasil","FWD"],
+    // ── FRANCIA ──
+    [27,"Mike Maignan","Francia","GK"],
+    [28,"Robin Risser","Francia","GK"],
+    [29,"Brice Samba","Francia","GK"],
+    [30,"Lucas Digne","Francia","DEF"],
+    [31,"Malo Gusto","Francia","DEF"],
+    [32,"Lucas Hernández","Francia","DEF"],
+    [33,"Theo Hernández","Francia","DEF"],
+    [34,"Ibrahima Konate","Francia","DEF"],
+    [35,"Jules Koundé","Francia","DEF"],
+    [36,"Maxence Lacroix","Francia","DEF"],
+    [37,"William Saliba","Francia","DEF"],
+    [38,"Dayot Upamecano","Francia","DEF"],
+    [39,"N'Golo Kanté","Francia","MID"],
+    [40,"Manu Kone","Francia","MID"],
+    [41,"Adrien Rabiot","Francia","MID"],
+    [42,"Aurelien Tchouameni","Francia","MID"],
+    [43,"Warren Zaire-Emery","Francia","MID"],
+    [44,"Maghnes Akliouche","Francia","FWD"],
+    [45,"Bradley Barcola","Francia","FWD"],
+    [46,"Rayan Cherki","Francia","FWD"],
+    [47,"Desiré Doué","Francia","FWD"],
+    [48,"Jean-Philippe Mateta","Francia","FWD"],
+    [49,"Kylian Mbappé","Francia","FWD"],
+    [50,"Michael Olise","Francia","FWD"],
+    [51,"Marcus Thuram","Francia","FWD"],
+    // ── COSTA DE MARFIL ──
+    [52,"Yahia Fofana","Costa de Marfil","GK"],
+    [53,"Mohamed Kone","Costa de Marfil","GK"],
+    [54,"Alban Lafont","Costa de Marfil","GK"],
+    [55,"Emmanuel Agbadou","Costa de Marfil","DEF"],
+    [56,"Clément Akpa","Costa de Marfil","DEF"],
+    [57,"Ousmane Diomande","Costa de Marfil","DEF"],
+    [58,"Guéla Doué","Costa de Marfil","DEF"],
+    [59,"Ghislain Konan","Costa de Marfil","DEF"],
+    [60,"Odilon Kossounou","Costa de Marfil","DEF"],
+    [61,"Evan N'Dicka","Costa de Marfil","DEF"],
+    [62,"Wilfried Singo","Costa de Marfil","DEF"],
+    [63,"Seko Fofana","Costa de Marfil","MID"],
+    [64,"Parfait Guiagon","Costa de Marfil","MID"],
+    [65,"Christ Inao Oulai","Costa de Marfil","MID"],
+    [66,"Franck Kessié","Costa de Marfil","MID"],
+    [67,"Ibrahim Sangaré","Costa de Marfil","MID"],
+    [68,"Jean Michaël Seri","Costa de Marfil","MID"],
+    [69,"Simón Adingra","Costa de Marfil","FWD"],
+    [70,"Ange-Yoan Bonny","Costa de Marfil","FWD"],
+    [71,"Amad Diallo","Costa de Marfil","FWD"],
+    [72,"Oumar Diakite","Costa de Marfil","FWD"],
+    [73,"Yan Diomande","Costa de Marfil","FWD"],
+    [74,"Evann Guessand","Costa de Marfil","FWD"],
+    [75,"Nicolas Pepe","Costa de Marfil","FWD"],
+    [76,"Bazoumana Toure","Costa de Marfil","FWD"],
+    [77,"Elye Wahi","Costa de Marfil","FWD"],
+    // ── JAPÓN ──
+    [78,"Zion Suzuki","Japón","GK"],
+    [79,"Keisuke Osako","Japón","GK"],
+    [80,"Tomoki Hayakawa","Japón","GK"],
+    [81,"Yuto Nagamoto","Japón","DEF"],
+    [82,"Shogo Taniguchi","Japón","DEF"],
+    [83,"Ko Itakura","Japón","DEF"],
+    [84,"Takehiro Tomiyasu","Japón","DEF"],
+    [85,"Ayumu Seko","Japón","DEF"],
+    [86,"Yukinari Sugawara","Japón","DEF"],
+    [87,"Hiroki Ito","Japón","DEF"],
+    [88,"Junnosuke Suzuki","Japón","DEF"],
+    [89,"Tsuyoshi Watanabe","Japón","DEF"],
+    [90,"Kaishu Sano","Japón","MID"],
+    [91,"Wataru Endo","Japón","MID"],
+    [92,"Ao Tanaka","Japón","MID"],
+    [93,"Daichi Kamada","Japón","MID"],
+    [94,"Junya Ito","Japón","MID"],
+    [95,"Kaito Nakamura","Japón","FWD"],
+    [96,"Daizen Maeda","Japón","FWD"],
+    [97,"Koki Ogawa","Japón","FWD"],
+    [98,"Takefusa Kubo","Japón","FWD"],
+    [99,"Iori Suzuki","Japón","FWD"],
+    [100,"Kento Shiogai","Japón","FWD"],
+    [101,"Keisuke Goto","Japón","FWD"],
+    [102,"Ritsu Doan","Japón","FWD"],
+    [103,"Kaoru Ueda","Japón","FWD"],
+    // ── SUECIA ──
+    [104,"Viktor Johansson","Suecia","GK"],
+    [105,"Kristoffer Nordfeldt","Suecia","GK"],
+    [106,"Jacob Widell Zetterström","Suecia","GK"],
+    [107,"Hjalmar Ekdal","Suecia","DEF"],
+    [108,"Gabriel Gudmundsson","Suecia","DEF"],
+    [109,"Isak Hien","Suecia","DEF"],
+    [110,"Emil Holm","Suecia","DEF"],
+    [111,"Gustaf Lagerbielke","Suecia","DEF"],
+    [112,"Victor Nilsson Lindelöf","Suecia","DEF"],
+    [113,"Eric Smith","Suecia","DEF"],
+    [114,"Carl Starfelt","Suecia","DEF"],
+    [115,"Elliot Stroud","Suecia","DEF"],
+    [116,"Daniel Svensson","Suecia","DEF"],
+    [117,"Yasin Ayari","Suecia","MID"],
+    [118,"Lucas Bergvall","Suecia","MID"],
+    [119,"Alexander Bernhardsson","Suecia","MID"],
+    [120,"Jesper Karlström","Suecia","MID"],
+    [121,"Ken Sema","Suecia","MID"],
+    [122,"Mattias Svanberg","Suecia","MID"],
+    [123,"Besfort Zeneli","Suecia","MID"],
+    [124,"Taha Ali","Suecia","FWD"],
+    [125,"Anthony Elanga","Suecia","FWD"],
+    [126,"Viktor Gyökeres","Suecia","FWD"],
+    [127,"Alexander Isak","Suecia","FWD"],
+    [128,"Gustaf Nilsson","Suecia","FWD"],
+    [129,"Benjamin Nygren","Suecia","FWD"],
+    // ── TÚNEZ ──
+    [130,"Aymen Dahmen","Túnez","GK"],
+    [131,"A. Chamakh","Túnez","GK"],
+    [132,"Sabri Ben Hassen","Túnez","GK"],
+    [133,"Van Valery","Túnez","DEF"],
+    [134,"Moutaz Neffati","Túnez","DEF"],
+    [135,"Dylan Bronn","Túnez","DEF"],
+    [136,"Montassar Talbi","Túnez","DEF"],
+    [137,"Omar Rekik","Túnez","DEF"],
+    [138,"Adem Arous","Túnez","DEF"],
+    [139,"Raed Chikhaoui","Túnez","DEF"],
+    [140,"Ali Abdi","Túnez","DEF"],
+    [141,"M.A Ben Hmida","Túnez","DEF"],
+    [142,"Ellyes Skhiri","Túnez","MID"],
+    [143,"M. Hadj Mahmoud","Túnez","MID"],
+    [144,"Rani Khedira","Túnez","MID"],
+    [145,"Anis Ben Slimane","Túnez","MID"],
+    [146,"Mortadha Ben Ouanes","Túnez","MID"],
+    [147,"Ismaël Gharbi","Túnez","MID"],
+    [148,"Hannibal Mejbri","Túnez","MID"],
+    [149,"Khalil Ayari","Túnez","FWD"],
+    [150,"Elias Achouri","Túnez","FWD"],
+    [151,"Elias Saad","Túnez","FWD"],
+    [152,"Firas Chaouat","Túnez","FWD"],
+    [153,"Hazem Mastouri","Túnez","FWD"],
+    [154,"Rayan Elloumi","Túnez","FWD"],
+    [155,"Sebastian Tounekti","Túnez","FWD"],
+    // ── COREA DEL SUR ──
+    [156,"Kim Seung-Gyu","Corea del Sur","GK"],
+    [157,"Song Bum Keun","Corea del Sur","GK"],
+    [158,"Jo Hyeon-Woo","Corea del Sur","GK"],
+    [159,"Kim Moon-Hwan","Corea del Sur","DEF"],
+    [160,"Kim Min-Jae","Corea del Sur","DEF"],
+    [161,"Kim Tae-Hwan","Corea del Sur","DEF"],
+    [162,"Park Jin-Seob","Corea del Sur","DEF"],
+    [163,"Seol Young-Woo","Corea del Sur","DEF"],
+    [164,"Jens Castrop","Corea del Sur","DEF"],
+    [165,"Lee Ki-Hyuk","Corea del Sur","DEF"],
+    [166,"Lee Tae-Seok","Corea del Sur","DEF"],
+    [167,"Lee Han-Beom","Corea del Sur","DEF"],
+    [168,"Cho Yumin","Corea del Sur","DEF"],
+    [169,"Kim Jin-Gyu","Corea del Sur","MID"],
+    [170,"Bae Jun-Ho","Corea del Sur","MID"],
+    [171,"Paik Seung-Ho","Corea del Sur","MID"],
+    [172,"Yang Hyun-Jun","Corea del Sur","MID"],
+    [173,"Eom Ji-Sung","Corea del Sur","MID"],
+    [174,"Lee Kang-In","Corea del Sur","MID"],
+    [175,"Lee Dong-Gyeong","Corea del Sur","MID"],
+    [176,"Lee Jjae-Sung","Corea del Sur","MID"],
+    [177,"Hwang In-Beom","Corea del Sur","MID"],
+    [178,"Hwang Hee-Chan","Corea del Sur","MID"],
+    [179,"Son Heung-Min","Corea del Sur","FWD"],
+    [180,"Oh Hyeon-Gyu","Corea del Sur","FWD"],
+    [181,"Cho Gue-Sung","Corea del Sur","FWD"],
+    // ── BOSNIA-HERZEGOVINA ──
+    [182,"Nikola Vasilj","Bosnia-Herzegovina","GK"],
+    [183,"Martin Zlomislic","Bosnia-Herzegovina","GK"],
+    [184,"Osman Hadzikic","Bosnia-Herzegovina","GK"],
+    [185,"Sead Kolasinac","Bosnia-Herzegovina","DEF"],
+    [186,"Amar Dedic","Bosnia-Herzegovina","DEF"],
+    [187,"Nihad Mujakic","Bosnia-Herzegovina","DEF"],
+    [188,"Nikola Katic","Bosnia-Herzegovina","DEF"],
+    [189,"Tarik Muharemovic","Bosnia-Herzegovina","DEF"],
+    [190,"Stjepan Radeljic","Bosnia-Herzegovina","DEF"],
+    [191,"Dennis Hadzikadunic","Bosnia-Herzegovina","DEF"],
+    [192,"Nidal Celik","Bosnia-Herzegovina","DEF"],
+    [193,"Amir Hadziahmetovic","Bosnia-Herzegovina","MID"],
+    [194,"Ivan Sunjic","Bosnia-Herzegovina","MID"],
+    [195,"Ivan Basic","Bosnia-Herzegovina","MID"],
+    [196,"Dzenis Burnic","Bosnia-Herzegovina","MID"],
+    [197,"Ermin Mahmic","Bosnia-Herzegovina","MID"],
+    [198,"Benjamin Tahirovic","Bosnia-Herzegovina","MID"],
+    [199,"Amar Memic","Bosnia-Herzegovina","MID"],
+    [200,"Armin Gigovic","Bosnia-Herzegovina","MID"],
+    [201,"Kerim Alajbegovic","Bosnia-Herzegovina","MID"],
+    [202,"Esmir Bajraktarevic","Bosnia-Herzegovina","MID"],
+    [203,"Ermedin Demirovic","Bosnia-Herzegovina","FWD"],
+    [204,"Jovo Lukic","Bosnia-Herzegovina","FWD"],
+    [205,"Samed Bazdar","Bosnia-Herzegovina","FWD"],
+    [206,"Haris Tabakovic","Bosnia-Herzegovina","FWD"],
+    [207,"Edin Dzeko","Bosnia-Herzegovina","FWD"],
+    // ── HAITÍ ──
+    [208,"Johnny Placide","Haití","GK"],
+    [209,"Alexandre Pierre","Haití","GK"],
+    [210,"Josué Duverger","Haití","GK"],
+    [211,"Carlens Arcus","Haití","DEF"],
+    [212,"Wilguens Paugain","Haití","DEF"],
+    [213,"Duke Lacroix","Haití","DEF"],
+    [214,"Martin Experience","Haití","DEF"],
+    [215,"JK Duverne","Haití","DEF"],
+    [216,"Ricardo Adé","Haití","DEF"],
+    [217,"Hannes Delcroix","Haití","DEF"],
+    [218,"Keeto Thermoncy","Haití","DEF"],
+    [219,"Leverton Pierre","Haití","MID"],
+    [220,"Carl-Fred Sainthe","Haití","MID"],
+    [221,"Jean-Jacques Danley","Haití","MID"],
+    [222,"Jeanricner Bellegarde","Haití","MID"],
+    [223,"Pierre Woodenski","Haití","MID"],
+    [224,"Dominique Simon","Haití","MID"],
+    [225,"Louicius Deedson","Haití","FWD"],
+    [226,"Ruben Providence","Haití","FWD"],
+    [227,"Josué Casimir","Haití","FWD"],
+    [228,"Derrick Etienne","Haití","FWD"],
+    [229,"Wilson Isidor","Haití","FWD"],
+    [230,"Duckens Nazon","Haití","FWD"],
+    [231,"Frantzdy Pierrot","Haití","FWD"],
+    [232,"Yassin Fortune","Haití","FWD"],
+    [233,"Lenny Joseph","Haití","FWD"],
+    // ── BÉLGICA ──
+    [234,"Thibaut Courtois","Bélgica","GK"],
+    [235,"Senne Lammens","Bélgica","GK"],
+    [236,"Mike Penders","Bélgica","GK"],
+    [237,"Zeno Debast","Bélgica","DEF"],
+    [238,"Arthur Theate","Bélgica","DEF"],
+    [239,"Koni de Winter","Bélgica","DEF"],
+    [240,"Brandon Mechele","Bélgica","DEF"],
+    [241,"Nathan Ngoy","Bélgica","DEF"],
+    [242,"Thomas Meunier","Bélgica","DEF"],
+    [243,"Timothy Castagne","Bélgica","DEF"],
+    [244,"Maxim de Cuyper","Bélgica","DEF"],
+    [245,"Joaquin Seys","Bélgica","DEF"],
+    [246,"Kevin de Bruyne","Bélgica","MID"],
+    [247,"Amadou Onana","Bélgica","MID"],
+    [248,"Youri Tielemans","Bélgica","MID"],
+    [249,"Hans Vanaken","Bélgica","MID"],
+    [250,"Nicolas Raskin","Bélgica","MID"],
+    [251,"Axel Witsel","Bélgica","MID"],
+    [252,"Jérémy Doku","Bélgica","FWD"],
+    [253,"Leandro Trossard","Bélgica","FWD"],
+    [254,"Alexis Saelemaekers","Bélgica","FWD"],
+    [255,"Dodi Lukebakio","Bélgica","FWD"],
+    [256,"Romelu Lukaku","Bélgica","FWD"],
+    [257,"Charles de Ketelaere","Bélgica","FWD"],
+    [258,"Matias Fernández-Pardo","Bélgica","FWD"],
+    [259,"Diego Moreira","Bélgica","FWD"],
+    // ── NUEVA ZELANDA ──
+    [260,"Max Crocombe","Nueva Zelanda","GK"],
+    [261,"Alex Paulsen","Nueva Zelanda","GK"],
+    [262,"Michael Woud","Nueva Zelanda","GK"],
+    [263,"Tyler Bindon","Nueva Zelanda","DEF"],
+    [264,"Michael Boxall","Nueva Zelanda","DEF"],
+    [265,"Liberato Cacace","Nueva Zelanda","DEF"],
+    [266,"Francis De Vries","Nueva Zelanda","DEF"],
+    [267,"Callan Elliot","Nueva Zelanda","DEF"],
+    [268,"Tim Payne","Nueva Zelanda","DEF"],
+    [269,"Nando Pijnaker","Nueva Zelanda","DEF"],
+    [270,"Tommy Smith","Nueva Zelanda","DEF"],
+    [271,"Finn Surman","Nueva Zelanda","DEF"],
+    [272,"Lachlan Bayliss","Nueva Zelanda","MID"],
+    [273,"Joe Bell","Nueva Zelanda","MID"],
+    [274,"Alex Rufer","Nueva Zelanda","MID"],
+    [275,"Marko Stamenić","Nueva Zelanda","MID"],
+    [276,"Ryan Thomas","Nueva Zelanda","MID"],
+    [277,"Kosta Barbarouses","Nueva Zelanda","FWD"],
+    [278,"Matt Garbett","Nueva Zelanda","FWD"],
+    [279,"Eli Just","Nueva Zelanda","FWD"],
+    [280,"Callum McCowatt","Nueva Zelanda","FWD"],
+    [281,"Ben Old","Nueva Zelanda","FWD"],
+    [282,"Jesse Randall","Nueva Zelanda","FWD"],
+    [283,"Sarpreet Singh","Nueva Zelanda","FWD"],
+    [284,"Ben Waine","Nueva Zelanda","FWD"],
+    [285,"Chris Wood","Nueva Zelanda","FWD"],
   ];
 
   const COMPETICIONES = [
@@ -18748,14 +19076,18 @@ function ApiPanel({ toast }) {
     {code:"SA",  label:"🇮🇹 Serie A",          season:2024, afLeague:135},
   ];
 
-  const SCORING_L = {win:5,draw:3,loss:1,goal:4,assist:2,cs_gk:4,cs_def:2,yellow:-1,red:-3,hattrick:4};
-  const calcPts = (s,pos) => Math.max(0,
-    (s.wins||0)*SCORING_L.win+(s.draws||0)*SCORING_L.draw+(s.losses||0)*SCORING_L.loss+
-    (s.goles||0)*SCORING_L.goal+(s.asist||0)*SCORING_L.assist+
-    Math.floor((s.goles||0)/3)*SCORING_L.hattrick+
-    (s.vallas||0)*(pos==="GK"?SCORING_L.cs_gk:SCORING_L.cs_def)+
-    (s.amarillas||0)*SCORING_L.yellow+(s.rojas||0)*SCORING_L.red
-  );
+  const SCORING_L = {win:5,draw:3,loss:1,goal:4,goal_gk:3,goal_def:2,goal_mid:1,own_goal:-2,assist:2,cs_gk:4,cs_def:2,yellow:-1,red:-3,hattrick:4};
+  const calcPts = (s,pos) => {
+    const gol_bonus = pos==="GK"?SCORING_L.goal_gk:pos==="DEF"?SCORING_L.goal_def:pos==="MID"?SCORING_L.goal_mid:0;
+    return Math.max(0,
+      (s.wins||0)*SCORING_L.win+(s.draws||0)*SCORING_L.draw+(s.losses||0)*SCORING_L.loss+
+      (s.goles||0)*(SCORING_L.goal+gol_bonus)+(s.asist||0)*SCORING_L.assist+
+      (s.autogoles||0)*SCORING_L.own_goal+
+      Math.floor((s.goles||0)/3)*SCORING_L.hattrick+
+      (s.vallas||0)*(pos==="GK"?SCORING_L.cs_gk:SCORING_L.cs_def)+
+      (s.amarillas||0)*SCORING_L.yellow+(s.rojas||0)*SCORING_L.red
+    );
+  };
 
   const getPS = () => getLS("gm_player_stats",{});
   const savePS = s => setLS("gm_player_stats",s);
@@ -18918,6 +19250,12 @@ function ApiPanel({ toast }) {
       Object.assign(ps[pid],tot);
     });
     savePS(ps);
+    // Save name-indexed stats for juego.html to read
+    const statsByName = {};
+    PLAYERS.forEach(([pid, nombre, pais]) => {
+      if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
+    });
+    setLS("gm_stats_by_name", statsByName);
     // Update user pts
     const users = DB.getUsers();
     users.forEach(u => {
@@ -18940,6 +19278,23 @@ function ApiPanel({ toast }) {
     savePS({}); savePublished({}); saveMatchStats({});
     setMatches([]); setLS("gm_matches_cache",[]);
     toast("🔄 Reiniciado","success");
+  };
+
+  const borrarSquads = () => {
+    if(!window.confirm("⚠️ Esto borra los equipos armados de TODOS los usuarios (sus fichajes, XI, suplentes y capitán). Los usuarios quedan registrados pero sin jugadores.\n\n¿Confirmar?")) return;
+    const users = DB.getUsers();
+    users.forEach(u => {
+      localStorage.removeItem("gm_squad_" + u.uid);
+      localStorage.removeItem("gm_xi_" + u.uid);
+      localStorage.removeItem("gm_subs_" + u.uid);
+      localStorage.removeItem("gm_cap_" + u.uid);
+      localStorage.removeItem("gm_fm_" + u.uid);
+    });
+    setLS("gm_stats_by_name", {});
+    savePS({});
+    savePublished({});
+    saveMatchStats({});
+    toast("🗑 Equipos de todos los usuarios borrados","success");
   };
 
   // ── Selector de jornadas ───────────────────────────────────────
@@ -18974,23 +19329,81 @@ function ApiPanel({ toast }) {
         React.createElement("span", {style:{fontWeight:600,fontSize:".83rem",color:hasAny?"#e2e8f0":"#8a9ab0"}}, nombre)
       ),
       React.createElement("div", {style:{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}},
-        statBtn(mid,pid,"goles",   "⚽ gol",    "#4ade80"),
-        statBtn(mid,pid,"asist",   "🅰 asist",  "#60a5fa"),
-        statBtn(mid,pid,"amarillas","🟨 AM",    "#fbbf24"),
-        statBtn(mid,pid,"rojas",   "🟥 RJ",    "#ef4444")
+        statBtn(mid,pid,"goles",     "⚽ gol",     "#4ade80"),
+        statBtn(mid,pid,"asist",     "🅰 asist",   "#60a5fa"),
+        statBtn(mid,pid,"autogoles", "🔴 AG",      "#f97316"),
+        statBtn(mid,pid,"amarillas", "🟨 AM",      "#fbbf24"),
+        statBtn(mid,pid,"rojas",     "🟥 RJ",      "#ef4444")
       )
     );
   };
 
   return React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:14}},
 
-    // Reiniciar
-    React.createElement("div", {style:{background:"rgba(239,68,68,.08)",border:"2px solid rgba(239,68,68,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+    // Publicar puntajes globales
+    React.createElement("div", {style:{background:"rgba(74,222,128,.08)",border:"2px solid rgba(74,222,128,.3)",borderRadius:10,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:2}},
       React.createElement("div", null,
-        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#ef4444",letterSpacing:1}}, "🔄 REINICIAR PUNTOS"),
-        React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borrá todo antes de que empiece el torneo.")
+        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:900,color:"#4ade80",letterSpacing:1,fontSize:"1rem"}}, "📡 PUBLICAR PUNTAJES AL JUEGO"),
+        React.createElement("div", {style:{fontSize:".75rem",color:"#4a7a5a",marginTop:3,lineHeight:1.5}},
+          "Actualiza tabla individual, prode y tabla comunitaria en tiempo real para todos los jugadores.")
       ),
-      React.createElement("button", {onClick:reiniciar, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #ef4444",background:"rgba(239,68,68,.15)",color:"#ef4444",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🔄 Reiniciar")
+      React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}},
+        React.createElement("button", {
+          onClick:() => {
+            // Build name-indexed stats
+            const ps = getLS("gm_player_stats", {});
+            const statsByName = {};
+            PLAYERS.forEach(([pid, nombre, pais]) => {
+              if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
+            });
+            setLS("gm_stats_by_name", statsByName);
+            // Recalculate user pts from their squads
+            const users = DB.getUsers();
+            let updated = 0;
+            users.forEach(u => {
+              if (!u.squad || !u.squad.length) return;
+              let pts = 0;
+              u.squad.forEach(nombre_pais => {
+                const s = statsByName[nombre_pais];
+                if (s) pts += s.puntos || 0;
+              });
+              u.pts = pts;
+              updated++;
+            });
+            setLS("gm_users", users);
+            const total = Object.keys(statsByName).length;
+            toast("✅ Puntajes publicados — " + total + " jugadores · " + updated + " usuarios actualizados","success");
+          },
+          style:{padding:"11px 24px",borderRadius:8,border:"none",background:"#4ade80",
+                 color:"#07111e",fontFamily:"Oswald,sans-serif",fontSize:"1rem",
+                 fontWeight:900,cursor:"pointer",letterSpacing:.5,boxShadow:"0 0 16px rgba(74,222,128,.3)"}
+        }, "📡 Publicar ahora"),
+        React.createElement("div", {style:{fontSize:".65rem",color:"#2a5a3a",textAlign:"right"}},
+          "Publicado: " + (()=>{
+            const ps = getLS("gm_player_stats",{});
+            const n = Object.keys(ps).length;
+            return n + " jugadores con stats";
+          })()
+        )
+      )
+    ),
+
+    // Reiniciar + Borrar squads
+    React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:8}},
+      React.createElement("div", {style:{background:"rgba(239,68,68,.08)",border:"2px solid rgba(239,68,68,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#ef4444",letterSpacing:1}}, "🔄 REINICIAR PUNTOS"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra puntos, partidos y stats. No toca los equipos armados.")
+        ),
+        React.createElement("button", {onClick:reiniciar, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #ef4444",background:"rgba(239,68,68,.15)",color:"#ef4444",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🔄 Reiniciar puntos")
+      ),
+      React.createElement("div", {style:{background:"rgba(239,68,68,.05)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#f87171",letterSpacing:1}}, "🗑 BORRAR EQUIPOS DE USUARIOS"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra todos los fichajes, XI y capitanes. Usá antes de recargar jugadores.")
+        ),
+        React.createElement("button", {onClick:borrarSquads, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #f87171",background:"rgba(248,113,113,.1)",color:"#f87171",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🗑 Borrar equipos")
+      )
     ),
 
     // Config key panel
@@ -19062,8 +19475,9 @@ function ApiPanel({ toast }) {
     ),
 
     // Selector jornada
-    matches.length>0 && !openMatch && React.createElement("div", {className:"ap-card",style:{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}},
-      React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontWeight:600,color:"#e2e8f0",fontSize:".85rem",flexShrink:0}}, "Jornada:"),
+    matches.length>0 && !openMatch && React.createElement("div", {className:"ap-card",style:{display:"flex",flexDirection:"column",gap:12}},
+      React.createElement("div", {style:{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}},
+        React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontWeight:600,color:"#e2e8f0",fontSize:".85rem",flexShrink:0}}, "Jornada:"),
       React.createElement("div", {style:{display:"flex",gap:5,flexWrap:"wrap"}},
         [...matchdays.map(f=>String(f)), compActual.code==="WC"?"elim":null].filter(Boolean).map(f =>
           React.createElement("button", {key:f, onClick:()=>{setFecha(f);setOpenMatch(null);},
@@ -19080,7 +19494,75 @@ function ApiPanel({ toast }) {
             f==="9" ? "🏆 Final" :
             f==="elim" ? "⚔️ Elim." : "J"+f)
         )
+      ),
+      // Publish-all row
+      React.createElement("div", {style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,paddingTop:8,borderTop:"1px solid rgba(255,255,255,.06)"}},
+        React.createElement("div", {style:{fontSize:".78rem",color:"#4a6a5a",lineHeight:1.6}},
+          (() => {
+            const total   = matchesByFecha.length;
+            const conRes  = matchesByFecha.filter(m => m.status==="FINISHED").length;
+            const publist = matchesByFecha.filter(m => !!published[m.id]).length;
+            if (total === 0) return "Sin partidos en esta jornada";
+            return conRes + "/" + total + " con resultado · " + publist + "/" + total + " publicados";
+          })()
+        ),
+        React.createElement("div", {style:{display:"flex",gap:8,flexWrap:"wrap"}},
+          // Guardar todos los resultados de la fecha (marca como FINISHED los que tengan score)
+          React.createElement("button", {
+            onClick: () => {
+              const sinResultado = matchesByFecha.filter(m => m.score_home===null || m.score_away===null);
+              if (sinResultado.length > 0) {
+                toast("⚠️ Faltan resultados en: " + sinResultado.map(m => m.home+" vs "+m.away).join(", "), "warn");
+                return;
+              }
+              const updated = matches.map(m => {
+                const inFecha = matchesByFecha.find(x => x.id===m.id);
+                if (inFecha && m.score_home!==null && m.score_away!==null && m.status!=="FINISHED") {
+                  return {...m, status:"FINISHED"};
+                }
+                return m;
+              });
+              setMatches(updated);
+              setLS("gm_matches_cache", updated);
+              toast("💾 Resultados de la jornada guardados", "success");
+            },
+            style:{padding:"8px 16px",borderRadius:7,border:"1px solid rgba(96,165,250,.4)",
+                   background:"rgba(96,165,250,.08)",color:"#60a5fa",
+                   fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".82rem",cursor:"pointer"}
+          }, "💾 Guardar resultados de la jornada"),
+          // Publicar todos los partidos de la fecha
+          React.createElement("button", {
+            onClick: () => {
+              // Verificar que todos tienen resultado
+              const sinResultado = matchesByFecha.filter(m => m.status!=="FINISHED" || m.score_home===null || m.score_away===null);
+              if (sinResultado.length > 0) {
+                toast("❌ Hay " + sinResultado.length + " partido(s) sin resultado: " + sinResultado.slice(0,3).map(m => m.home+" vs "+m.away).join(", ") + (sinResultado.length>3?"...":""), "error");
+                return;
+              }
+              // Publicar uno por uno
+              let count = 0;
+              matchesByFecha.forEach(m => {
+                if (!published[m.id]) {
+                  publishMatch(m);
+                  count++;
+                }
+              });
+              if (count === 0) {
+                toast("ℹ️ Todos los partidos de esta jornada ya estaban publicados", "info");
+              } else {
+                toast("✅ " + count + " partido(s) publicados — puntos actualizados", "success");
+              }
+            },
+            style:{padding:"8px 16px",borderRadius:7,border:"none",
+                   background: matchesByFecha.length > 0 && matchesByFecha.every(m => m.status==="FINISHED") ? "#4ade80" : "#1a3a28",
+                   color: matchesByFecha.length > 0 && matchesByFecha.every(m => m.status==="FINISHED") ? "#07111e" : "#3a5a4a",
+                   fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".82rem",
+                   cursor: matchesByFecha.every(m => m.status==="FINISHED") ? "pointer" : "not-allowed",
+                   boxShadow: matchesByFecha.every(m => m.status==="FINISHED") ? "0 0 12px rgba(74,222,128,.25)" : "none"}
+          }, "✅ Publicar puntos de la jornada")
+        )
       )
+    )
     ),
 
     // Lista de partidos
@@ -19098,8 +19580,8 @@ function ApiPanel({ toast }) {
             React.createElement("div", {style:{flex:1}},
               React.createElement("div", {style:{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}},
                 React.createElement("span", {style:{fontWeight:700,fontSize:".9rem"}}, m.home),
-                isFinished
-                  ? React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",fontWeight:900,color:"#4ade80",minWidth:44,textAlign:"center"}}, m.score_home, " – ", m.score_away)
+                m.score_home!==null && m.score_away!==null
+                  ? React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",fontWeight:900,color:isFinished?"#4ade80":"#fbbf24",minWidth:44,textAlign:"center",padding:"0 6px",background:isFinished?"rgba(74,222,128,.08)":"rgba(251,191,36,.08)",borderRadius:6}}, m.score_home, " – ", m.score_away)
                   : React.createElement("span", {style:{fontSize:".82rem",color:"#3a5a6a",minWidth:30,textAlign:"center"}}, "vs"),
                 React.createElement("span", {style:{fontWeight:700,fontSize:".9rem"}}, m.away)
               ),
