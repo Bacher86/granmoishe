@@ -17719,10 +17719,10 @@ const initMock = () => {
     { id:"L1", nombre:"Liga Macabi 2026", codigo:"MAC26", adminUid:"u1", miembros:["u1","u2","u4"], maxMiembros:20, creada:Date.now()-86400000 },
   ];
   const ads = [
-    { id:"ad1", tier:"login", nombre:"Banco Nacional", url:"https://example.com", img:"", active:true, seconds:10, views:234, clicks:12, createdAt:Date.now()-3600000 },
-    { id:"ad2", tier:"resto", nombre:"Supermercado Jumbo", url:"https://example.com", img:"", active:true, seconds:8, views:1203, clicks:88, createdAt:Date.now()-7200000 },
-    { id:"ad3", tier:"resto", nombre:"Pizzería Don Pepe", url:"https://example.com", img:"", active:true, seconds:8, views:567, clicks:29, createdAt:Date.now()-10800000 },
-    { id:"ad4", tier:"todo",  nombre:"Viajes Israel", url:"https://example.com", img:"", active:false, seconds:15, views:89, clicks:5, createdAt:Date.now()-14400000 },
+    { id:"ad1", tier:"elite",    nombre:"Banco Nacional", url:"https://example.com", img:"", active:true, seconds:10, views:234, clicks:12, createdAt:Date.now()-3600000 },
+    { id:"ad2", tier:"plata",    nombre:"Supermercado Jumbo", url:"https://example.com", img:"", active:true, seconds:8, views:1203, clicks:88, createdAt:Date.now()-7200000 },
+    { id:"ad3", tier:"bronce",   nombre:"Pizzería Don Pepe", url:"https://example.com", img:"", active:true, seconds:8, views:567, clicks:29, createdAt:Date.now()-10800000 },
+    { id:"ad4", tier:"oro",      nombre:"Viajes Israel", url:"https://example.com", img:"", active:false, seconds:15, views:89, clicks:5, createdAt:Date.now()-14400000 },
   ];
   setLS("gm_users", users);
   setLS("gm_leagues", leagues);
@@ -18028,31 +18028,35 @@ const PLAYERS_DB = RAW.map(([nombre, pais, posicion, tier]) => {
   const sofa  = +(5.5+Math.random()*3.5).toFixed(1);
   const who   = +(5.5+Math.random()*3.5).toFixed(1);
   const avgR  = +avgN(espn,sofa,who).toFixed(2);
-  // Todos los jugadores arrancan con 0 puntos — el admin los actualiza al publicar resultados
-  const goles = 0, asist = 0, vallas = 0;
-  const amar  = 0, rojas = 0;
-  const wins  = 0, draws = 0, losses = 0;
-  const puntos = 0;
-  const status = "ok";
-  const eliminated = false;
+  // Players start with 0 pts — admin publishes real stats
+  const goles=0,asist=0,vallas=0,amar=0,rojas=0,wins=0,draws=0,losses=0,puntos=0;
+  const status="ok", eliminated=false;
   return { id:_pid++, nombre, pais, posicion, tier, valor, puntos: Math.max(0,puntos),
            status, avgRating:avgR, espn, sofa, who, goles, asist, vallas,
            amarillas:amar, rojas, wins, draws, losses,
            eliminated, forma:Array.from({length:5},()=>rand(4,10)) };
 });
 // ── Stats reales del admin ──────────────────────────────────────
-(function() {
+function applyAdminStats() {
   try {
     const stats = JSON.parse(localStorage.getItem("gm_stats_by_name") || "{}");
-    if (!Object.keys(stats).length) return;
+    if (!Object.keys(stats).length) return false;
     PLAYERS_DB.forEach(p => {
       const s = stats[p.nombre + "|" + p.pais];
       if (s) { p.puntos=s.puntos||0; p.goles=s.goles||0; p.asist=s.asist||0;
                p.amarillas=s.amarillas||0; p.rojas=s.rojas||0;
                p.wins=s.wins||0; p.draws=s.draws||0; p.losses=s.losses||0; }
     });
-  } catch(e) {}
-})();
+    return true;
+  } catch(e) { return false; }
+}
+applyAdminStats();
+// Re-apply when admin publishes from another tab
+window.addEventListener("storage", function(e) {
+  if(e.key === "gm_stats_by_name" || e.key === "gm_player_stats") {
+    applyAdminStats();
+  }
+});
 const ALL_COUNTRIES = [...new Set(PLAYERS_DB.map(p=>p.pais))].sort();
 
 // ─── AUTH MOCK ───────────────────────────────────────────────────────────
@@ -18526,7 +18530,7 @@ function PlayerModal({ player, onClose, onAdd, onRemove, onSetCapitan, inSquad, 
 // ═══════════════════════════════════════════════════════════════════════════
 // MARKET VIEW
 // ═══════════════════════════════════════════════════════════════════════════
-function MarketView({ squad, xi, subs, addToSquad, removeFromSquad, setModal, budget, countryCounts, canAddFn, formation }) {
+function MarketView({ squad, xi, addToSquad, removeFromSquad, setModal, budget, countryCounts, canAddFn, subs }) {
   const [search,setSearch]=useState("");
   const [filterPos,setFilterPos]=useState("ALL");
   const [filterCountry,setFilterCountry]=useState("ALL");
@@ -18555,27 +18559,6 @@ function MarketView({ squad, xi, subs, addToSquad, removeFromSquad, setModal, bu
           , React.createElement('select', { className: "mkt-sel", value: sortBy, onChange: e=>setSortBy(e.target.value),}, React.createElement('option', { value: "puntos",}, "↓ Puntos" ), React.createElement('option', { value: "valor",}, "↓ Valor" ), React.createElement('option', { value: "rating",}, "↓ Rating" ), React.createElement('option', { value: "nombre",}, "A→Z"))
         )
         , React.createElement('div', { className: "mkt-meta",}, React.createElement('span', null, filtered.length, " de "  , PLAYERS_DB.length, " jugadores · 48 selecciones"    ), React.createElement('span', { style: {color:budget<10e6?"#ef4444":"#8a9ab0"},}, fmt(budget), " disponibles" ))
-        // Formation slot indicators
-        , React.createElement('div', { style: {display:"flex",gap:6,flexWrap:"wrap",marginTop:4},},
-          POS_ORDER.map(pos => {
-            const formSlots = FORMATIONS[formation] || FORMATIONS["4-3-3"];
-            const need = (formSlots[pos]||[]).length;
-            const have = xi.filter(p=>p.posicion===pos).length;
-            const inSubs = subs.filter(p=>p.posicion===pos).length;
-            const remaining = Math.max(0, need - have);
-            return React.createElement('div', { key: pos, style: {
-              display:"flex",alignItems:"center",gap:4,
-              padding:"3px 10px",borderRadius:12,
-              background:"rgba(255,255,255,.03)",
-              border:"1px solid "+(remaining>0?"rgba(74,222,128,.25)":"rgba(255,255,255,.06)"),
-              fontSize:".72rem",fontFamily:"Oswald,sans-serif",fontWeight:700
-            }},
-              React.createElement('span', { style: {color:POS_COLORS[pos]}}, pos),
-              React.createElement('span', { style: {color:remaining>0?"#4ade80":"#2a4a3a"}}, " "+have+"/"+need),
-              inSubs>0&&React.createElement('span', { style: {color:"#4a6a5a",fontWeight:400}}, " +"+inSubs+"sup")
-            );
-          })
-        )
       )
       , React.createElement('div', { className: "mkt-grid",}
         , filtered.slice(0,80).map(p=>{
@@ -18596,7 +18579,14 @@ function MarketView({ squad, xi, subs, addToSquad, removeFromSquad, setModal, bu
               , React.createElement('div', { className: "mc-foot", onClick: e=>e.stopPropagation(),}
                 , inSquad
                   ? React.createElement('button', { className: "mc-rm", onClick: ()=>removeFromSquad(p),}, "Quitar" )
-                  : React.createElement('button', { className: `mc-add${canBuy?"":" dis"}`, onClick: ()=>canBuy&&addToSquad(p),}, !canBuy&&(countryCounts[p.pais]||0)>=MAX_PER_COUNTRY?"Cupo pais":canBuy?"Fichar":"Sin presupuesto")
+                  : React.createElement('button', { className: `mc-add${canBuy?"":" dis"}`, onClick: ()=>canBuy&&addToSquad(p)},
+                      !canBuy?(
+                        squad.length>=MAX_SQUAD?"Plantilla llena":
+                        (countryCounts[p.pais]||0)>=MAX_PER_COUNTRY?"Cupo país":
+                        budget<(p.eliminated?p.valor/2:p.valor)?"Sin presupuesto":
+                        "Cupo posición"
+                      ):"Fichar"
+                    )
               )
             )
           );
@@ -18652,26 +18642,6 @@ function ScoringView({ xi, subs, capitan, setModal }) {
           )
         )
       )
-      , allPlayers.length>0&&React.createElement('div', { className: "sc-tbl-wrap",}, React.createElement('div', { className: "scp-t",}, "Detalle por Jugador"  )
-        , React.createElement('div', { style: {overflowX:"auto",marginTop:10},}
-          , React.createElement('table', { className: "ptable",}
-            , React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, "Jugador"), React.createElement('th', null, "Pos"), React.createElement('th', null, "Rol"), React.createElement('th', null, "ESPN"), React.createElement('th', null, "Sofa"), React.createElement('th', null, "Who"), React.createElement('th', null, "V"), React.createElement('th', null, "E"), React.createElement('th', null, "D"), React.createElement('th', null, "⚽"), React.createElement('th', null, "🅰"), React.createElement('th', null, "🧤"), React.createElement('th', null, "🟨"), React.createElement('th', null, "🟥"), React.createElement('th', null, "PTS")))
-            , React.createElement('tbody', null, [...allPlayers].sort((a,b)=>{const pa=a.id===capitan?Math.ceil(a.puntos*(1+SCORING.captain_bonus)):a.puntos;const pb=b.id===capitan?Math.ceil(b.puntos*(1+SCORING.captain_bonus)):b.puntos;return pb-pa;}).map(p=>{
-              const pts=p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos;
-              const inXI=!!xi.find(x=>x.id===p.id);
-              return React.createElement('tr', { key: p.id, onClick: ()=>setModal(p), style: {cursor:"pointer"},}
-                , React.createElement('td', null, React.createElement('span', { style: {marginRight:4},}, flag(p.pais)), p.nombre, p.id===capitan&&" 👑", p.eliminated&&" ❌")
-                , React.createElement('td', null, React.createElement('span', { style: {color:POS_COLORS[p.posicion],fontWeight:700,fontSize:".72rem"},}, p.posicion))
-                , React.createElement('td', { style: {fontSize:".72rem",color:inXI?"#4ade80":"#60a5fa"},}, inXI?"Titular":"Suplente")
-                , React.createElement('td', null, _optionalChain([p, 'access', _58 => _58.espn, 'optionalAccess', _59 => _59.toFixed, 'call', _60 => _60(1)])), React.createElement('td', null, _optionalChain([p, 'access', _61 => _61.sofa, 'optionalAccess', _62 => _62.toFixed, 'call', _63 => _63(1)])), React.createElement('td', null, _optionalChain([p, 'access', _64 => _64.who, 'optionalAccess', _65 => _65.toFixed, 'call', _66 => _66(1)]))
-                , React.createElement('td', null, p.wins), React.createElement('td', null, p.draws), React.createElement('td', null, p.losses)
-                , React.createElement('td', null, p.goles), React.createElement('td', null, p.asist), React.createElement('td', null, p.vallas)
-                , React.createElement('td', { style: {color:"#fbbf24"},}, p.amarillas), React.createElement('td', { style: {color:"#ef4444"},}, p.rojas)
-                , React.createElement('td', { style: {fontFamily:"Oswald,sans-serif",fontSize:"1rem",color:"#4ade80",fontWeight:700},}, pts)
-              );
-            }))
-          )
-        )
       )
     )
   );
@@ -18683,14 +18653,7 @@ function ScoringView({ xi, subs, capitan, setModal }) {
 function RankingView({ user }) {
   const [tab, setTab] = useState("usuarios");
 
-  // Estado reactivo: se actualiza cuando el admin publica resultados (via storage event o polling)
-  const [allUsers, setAllUsers] = useState(() => DB.getUsers().filter(u => !u.admin && u.pagado !== false));
-  useEffect(() => {
-    const reload = () => setAllUsers(DB.getUsers().filter(u => !u.admin && u.pagado !== false));
-    window.addEventListener("storage", e => { if(e.key==="gm_users") reload(); });
-    const iv = setInterval(reload, 5000);
-    return () => { window.removeEventListener("storage", reload); clearInterval(iv); };
-  }, []);
+  const allUsers = useMemo(() => DB.getUsers().filter(u => !u.admin && u.pagado !== false), []);
 
   // Sort users by pts, use prode pts as tiebreaker
   const userRanking = useMemo(() =>
@@ -19183,7 +19146,19 @@ function ProdeView({ user, toast }) {
   const [picks, setPicks] = useState(function() { return getLS(prodeKey, {}); });
   const [filter, setFilter] = useState("fecha-1");
 
-  useEffect(function() { setLS(prodeKey, picks); }, [picks]);
+  useEffect(function() {
+    setLS(prodeKey, picks);
+    // Recalculate and save ptsProd to gm_users so ranking reflects prode pts
+    const ptsProd = WC2026_FIXTURE.reduce(function(acc, m) {
+      return acc + (calcProdePoints(picks[m.id], m) || 0);
+    }, 0);
+    const users = getLS("gm_users", []);
+    const idx = users.findIndex(function(u) { return u.uid === user.uid; });
+    if(idx !== -1) {
+      users[idx].ptsProd = ptsProd;
+      setLS("gm_users", users);
+    }
+  }, [picks]);
 
   // Build phase/matchday filter options
   const PHASES = [
@@ -19568,6 +19543,239 @@ function FixtureView() {
 }
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// EQUIPO LIST VIEW
+// ═══════════════════════════════════════════════════════════════════════════
+function EquipoListView({ xi, subs, squad, capitan, formation, setXi, setSubs, setTab, toast, autoXI }) {
+  const [swapMode, setSwapMode] = useState(null); // { player, role } — the starter being swapped
+
+  // Get pts from last published fecha for a player
+  function getLastFechaPts(player) {
+    try {
+      const ps = JSON.parse(localStorage.getItem("gm_player_stats") || "{}");
+      const pid = player.id;
+      if (!ps[pid] || !ps[pid].fechas) return null;
+      const fechas = ps[pid].fechas;
+      const keys = Object.keys(fechas);
+      if (!keys.length) return null;
+      // Return pts of the most recent fecha
+      const last = keys[keys.length - 1];
+      return fechas[last].puntos || 0;
+    } catch(e) { return null; }
+  }
+
+  // Compatible subs for a starter (same position)
+  function compatibleSubs(starter) {
+    return subs.filter(s => s.posicion === starter.posicion);
+  }
+
+  function swapPlayers(starter, sub) {
+    // Swap: sub becomes starter, starter becomes sub
+    const newXI  = xi.map(p => p.id === starter.id ? sub : p);
+    const newSubs = subs.map(p => p.id === sub.id ? starter : p);
+    setXi(newXI);
+    setSubs(newSubs);
+    setSwapMode(null);
+    toast(starter.nombre.split(" ").pop() + " ↔ " + sub.nombre.split(" ").pop(), "success");
+  }
+
+  const totalPts = [...xi, ...subs].reduce((s, p) => s + (p.puntos || 0), 0);
+  const totalFecha = [...xi, ...subs].reduce((s, p) => {
+    const fp = getLastFechaPts(p);
+    return s + (fp !== null ? fp : 0);
+  }, 0);
+
+  const ROW_STYLE = {
+    display:"flex", alignItems:"center", gap:10,
+    padding:"10px 14px",
+    borderBottom:"1px solid rgba(255,255,255,.05)",
+    background:"rgba(255,255,255,.015)",
+  };
+  const POS_BADGE = pos => React.createElement('span', {
+    style:{
+      background:POS_COLORS[pos], color:"#fff",
+      borderRadius:4, padding:"1px 6px",
+      fontSize:".68rem", fontWeight:700,
+      minWidth:32, textAlign:"center",
+      fontFamily:"Oswald,sans-serif",
+    }
+  }, pos);
+
+  function PlayerRow({ player, role }) {
+    const isSwapTarget = swapMode && swapMode.player.id !== player.id;
+    const canSwapThis  = isSwapTarget && player.posicion === swapMode.player.posicion && role === "sub";
+    const isBeingSwapped = swapMode && swapMode.player.id === player.id;
+    const fechaPts = getLastFechaPts(player);
+
+    return React.createElement('div', {
+      style:{
+        ...ROW_STYLE,
+        background: isBeingSwapped ? "rgba(74,222,128,.08)"
+                  : canSwapThis    ? "rgba(96,165,250,.08)"
+                  : "rgba(255,255,255,.015)",
+        borderLeft: isBeingSwapped ? "3px solid #4ade80"
+                  : canSwapThis    ? "3px solid #60a5fa"
+                  : "3px solid transparent",
+      }
+    },
+      // Position badge
+      POS_BADGE(player.posicion),
+
+      // Name + country
+      React.createElement('div', { style:{flex:1, minWidth:0} },
+        React.createElement('div', { style:{
+          fontWeight:700, color:"#e2e8f0", fontSize:".9rem",
+          whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"
+        }},
+          flag(player.pais), " ",
+          player.nombre,
+          player.eliminated && React.createElement('span',{style:{color:"#ef4444",marginLeft:4,fontSize:".72rem"}},"❌")
+        ),
+        React.createElement('div', { style:{fontSize:".68rem", color:"#4a6a5a", marginTop:1} },
+          player.pais,
+          fechaPts !== null && React.createElement('span',{style:{color:"#4ade80",marginLeft:6}},
+            "+" + fechaPts + " pts esta fecha"
+          )
+        )
+      ),
+
+      // Total pts
+      React.createElement('div', { style:{
+        fontFamily:"Oswald,sans-serif", fontSize:"1.1rem",
+        fontWeight:900, color:"#4ade80", minWidth:36, textAlign:"right"
+      }},
+        player.puntos || 0
+      ),
+
+      // Action buttons
+      React.createElement('div', { style:{display:"flex", gap:5} },
+        // If a starter is being swapped and this is a compatible sub → show "Entrar"
+        canSwapThis
+          ? React.createElement('button', {
+              onClick: () => swapPlayers(swapMode.player, player),
+              style:{
+                padding:"4px 10px", borderRadius:6, border:"1px solid #60a5fa",
+                background:"rgba(96,165,250,.15)", color:"#60a5fa",
+                fontSize:".75rem", fontWeight:700, cursor:"pointer", fontFamily:"Oswald,sans-serif"
+              }
+            }, "Entrar ▶")
+          : role === "starter" && React.createElement(React.Fragment, null,
+              // Swap button — only show if there are compatible subs
+              compatibleSubs(player).length > 0 && React.createElement('button', {
+                onClick: () => isBeingSwapped ? setSwapMode(null) : setSwapMode({player, role}),
+                style:{
+                  padding:"4px 9px", borderRadius:6,
+                  border:"1px solid " + (isBeingSwapped ? "#4ade80" : "#1a3a28"),
+                  background: isBeingSwapped ? "rgba(74,222,128,.15)" : "rgba(255,255,255,.04)",
+                  color: isBeingSwapped ? "#4ade80" : "#5a7a8a",
+                  fontSize:".72rem", cursor:"pointer", fontFamily:"Oswald,sans-serif"
+                }
+              }, isBeingSwapped ? "✕ Cancelar" : "⇄ Cambio"),
+
+              // Transfer button
+              React.createElement('button', {
+                onClick: () => setTab("mercado"),
+                style:{
+                  padding:"4px 9px", borderRadius:6,
+                  border:"1px solid #1a2d40", background:"rgba(255,255,255,.03)",
+                  color:"#4a6a5a", fontSize:".72rem", cursor:"pointer",
+                  fontFamily:"Oswald,sans-serif"
+                }
+              }, "🛒 Transferir")
+            )
+      )
+    );
+  }
+
+  // Empty state
+  if (xi.length === 0 && subs.length === 0) {
+    return React.createElement('div', { style:{textAlign:"center",padding:"60px 20px"} },
+      React.createElement('div', {style:{fontSize:"3rem",marginBottom:12}}, "⚽"),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#4ade80",letterSpacing:1,marginBottom:8}}, "PLANTILLA VACÍA"),
+      React.createElement('div', {style:{fontSize:".85rem",color:"#4a6a5a",marginBottom:20}}, "Fichá jugadores en el Mercado para armar tu equipo"),
+      React.createElement('button', {
+        onClick:()=>setTab("mercado"),
+        style:{
+          padding:"11px 28px", borderRadius:8, border:"none",
+          background:"#4ade80", color:"#07111e",
+          fontFamily:"Oswald,sans-serif", fontWeight:900, fontSize:"1rem", cursor:"pointer"
+        }
+      }, "Ir al Mercado →")
+    );
+  }
+
+  return React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:0} },
+
+    // ── Titulares ──────────────────────────────────────────────────────────
+    React.createElement('div', { style:{
+      background:"#0d1b2a", border:"1px solid #1a2d40",
+      borderRadius:10, overflow:"hidden", marginBottom:10
+    }},
+      React.createElement('div', { style:{
+        padding:"10px 14px", background:"rgba(74,222,128,.06)",
+        borderBottom:"1px solid #1a2d40",
+        display:"flex", justifyContent:"space-between", alignItems:"center"
+      }},
+        React.createElement('span', {style:{
+          fontFamily:"Oswald,sans-serif", fontWeight:700,
+          color:"#4ade80", fontSize:".9rem", letterSpacing:1
+        }}, "⚽ TITULARES (" + xi.length + "/11)"),
+        swapMode && React.createElement('span', {style:{fontSize:".75rem",color:"#60a5fa"}},
+          "Elegí el suplente para " + swapMode.player.nombre.split(" ").pop()
+        )
+      ),
+      xi.length === 0
+        ? React.createElement('div',{style:{padding:"20px",textAlign:"center",color:"#2a4a3a",fontSize:".85rem"}},
+            "Sin titulares — ", React.createElement('button',{onClick:()=>setTab("mercado"),style:{color:"#4ade80",background:"none",border:"none",cursor:"pointer",fontWeight:700}},"ir al Mercado"))
+        : POS_ORDER.flatMap(pos => xi.filter(p=>p.posicion===pos)).map(p =>
+            React.createElement(PlayerRow, {key:p.id, player:p, role:"starter"})
+          )
+    ),
+
+    // ── Suplentes ──────────────────────────────────────────────────────────
+    React.createElement('div', { style:{
+      background:"#0d1b2a", border:"1px solid #1a2d40",
+      borderRadius:10, overflow:"hidden", marginBottom:10
+    }},
+      React.createElement('div', { style:{
+        padding:"10px 14px", background:"rgba(96,165,250,.05)",
+        borderBottom:"1px solid #1a2d40"
+      }},
+        React.createElement('span', {style:{
+          fontFamily:"Oswald,sans-serif", fontWeight:700,
+          color:"#60a5fa", fontSize:".9rem", letterSpacing:1
+        }}, "🪑 SUPLENTES (" + subs.length + "/4)")
+      ),
+      subs.length === 0
+        ? React.createElement('div',{style:{padding:"16px",textAlign:"center",color:"#2a4a3a",fontSize:".85rem"}}, "Sin suplentes")
+        : POS_ORDER.flatMap(pos => subs.filter(p=>p.posicion===pos)).map(p =>
+            React.createElement(PlayerRow, {key:p.id, player:p, role:"sub"})
+          )
+    ),
+
+    // ── Totales ────────────────────────────────────────────────────────────
+    React.createElement('div', { style:{
+      background:"linear-gradient(135deg,rgba(74,222,128,.1),rgba(74,222,128,.04))",
+      border:"1px solid rgba(74,222,128,.2)", borderRadius:10,
+      padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center"
+    }},
+      React.createElement('div', null,
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#e2e8f0",letterSpacing:.5}},
+          "PUNTOS TOTALES"
+        ),
+        totalFecha > 0 && React.createElement('div', {style:{fontSize:".72rem",color:"#4a6a5a",marginTop:2}},
+          "+" + totalFecha + " en la última fecha publicada"
+        )
+      ),
+      React.createElement('div', { style:{
+        fontFamily:"Oswald,sans-serif", fontSize:"2.5rem",
+        fontWeight:900, color:"#4ade80", lineHeight:1
+      }}, totalPts)
+    )
+  );
+}
+
+
 function GranMoishe() {
   const [user,setUser]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
@@ -19601,12 +19809,13 @@ function GranMoishe() {
     setSubs(getLS(subsKey,[]));
     setFormation(getLS(fmKey,"4-3-3"));
     setCapitan(getLS(capKey,null));
-    // show login ad
-    const loginAds=ads.filter(a=>a.active&&(a.tier==="login"||a.tier==="todo"));
+    // show login ad - load fresh ads first, then filter
+    const freshAds = DB.getAds();
+    setAds(freshAds);
+    const loginAds = freshAds.filter(a=>a.active&&(a.tier==="login"||a.tier==="todo"));
     if(loginAds.length>0){
       setTimeout(()=>setFullAd(loginAds[Math.floor(Math.random()*loginAds.length)]),800);
     }
-    setAds(DB.getAds());
   },[_optionalChain([user, 'optionalAccess', _72 => _72.uid])]);
 
   useEffect(()=>{ if(user){setLS(squadKey,squad);} },[squad]);
@@ -19615,38 +19824,24 @@ function GranMoishe() {
   useEffect(()=>{ if(user){setLS(fmKey,formation);} },[formation]);
   useEffect(()=>{ if(user){setLS(capKey,capitan);} },[capitan]);
 
-  // Cuando el admin publica resultados, actualizar puntos de jugadores en el squad
+  // Refresh squad/xi/subs player puntos when admin publishes results
   useEffect(()=>{
     if(!user) return;
-    const refreshSquadPts = () => {
-      try {
-        const stats = JSON.parse(localStorage.getItem("gm_stats_by_name")||"{}");
-        if(!Object.keys(stats).length) return;
-        // Update PLAYERS_DB puntos in memory
-        PLAYERS_DB.forEach(p => {
-          const s = stats[p.nombre+"|"+p.pais];
-          if(s){ p.puntos=s.puntos||0; p.goles=s.goles||0; p.asist=s.asist||0;
-                 p.amarillas=s.amarillas||0; p.rojas=s.rojas||0;
-                 p.wins=s.wins||0; p.draws=s.draws||0; p.losses=s.losses||0; }
-        });
-        // Refresh squad/xi/subs player objects with updated puntos
-        const update = arr => arr.map(p => {
-          const live = PLAYERS_DB.find(x=>x.id===p.id);
-          return live ? {...p, puntos:live.puntos, goles:live.goles, asist:live.asist,
-                         amarillas:live.amarillas, wins:live.wins, draws:live.draws, losses:live.losses} : p;
-        });
-        setSquad(prev => { const n=update(prev); setLS(squadKey,n); return n; });
-        setXi(prev => update(prev));
-        setSubs(prev => update(prev));
-        // Also refresh user session pts from gm_users
-        const fresh = DB.getUser(_cu&&_cu.uid);
-        if(fresh) notifyAuth({..._cu, pts:fresh.pts});
-      } catch(e){}
+    const refreshPts = ()=>{
+      applyAdminStats();
+      const updateArr = arr => arr.map(p=>{
+        const live = PLAYERS_DB.find(x=>x.id===p.id);
+        return live ? {...p, puntos:live.puntos, goles:live.goles, asist:live.asist,
+                       amarillas:live.amarillas, wins:live.wins, draws:live.draws, losses:live.losses} : p;
+      });
+      setSquad(prev=>{ const n=updateArr(prev); setLS(squadKey,n); return n; });
+      setXi(prev=>updateArr(prev));
+      setSubs(prev=>updateArr(prev));
     };
-    const onStorage = e => { if(e.key==="gm_stats_by_name"||e.key==="gm_users") refreshSquadPts(); };
+    const onStorage = e => { if(e.key==="gm_stats_by_name"||e.key==="gm_users") refreshPts(); };
     window.addEventListener("storage", onStorage);
-    const iv = setInterval(refreshSquadPts, 8000);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(iv); };
+    const iv = setInterval(refreshPts, 10000);
+    return ()=>{ window.removeEventListener("storage", onStorage); clearInterval(iv); };
   },[user]);
 
   const trackAction=useCallback(()=>{
@@ -19661,12 +19856,23 @@ function GranMoishe() {
   const budget=useMemo(()=>BUDGET-squad.reduce((s,p)=>s+p.valor,0),[squad]);
   const countryCounts=useMemo(()=>{const m={};squad.forEach(p=>{m[p.pais]=(m[p.pais]||0)+1;});return m;},[squad]);
 
-  const canAddFn=useCallback((player)=>
-    !squad.find(p=>p.id===player.id)&&
-    squad.length<MAX_SQUAD&&
-    budget>=(player.eliminated?player.valor/2:player.valor)&&
-    (countryCounts[player.pais]||0)<MAX_PER_COUNTRY
-  ,[squad,budget,countryCounts]);
+  const canAddFn=useCallback((player)=>{
+    if(squad.find(p=>p.id===player.id)) return false;
+    if(squad.length>=MAX_SQUAD) return false;
+    if(budget<(player.eliminated?player.valor/2:player.valor)) return false;
+    if((countryCounts[player.pais]||0)>=MAX_PER_COUNTRY) return false;
+    // Per-position fixed caps: GK=2, others = formation slots + 1 (for 1 bench per pos)
+    const fm = FORMATIONS[formation]||FORMATIONS["4-3-3"];
+    const MAX_POS = {
+      GK:  2,
+      DEF: (fm.DEF||[]).length + 1,
+      MID: (fm.MID||[]).length + 1,
+      FWD: (fm.FWD||[]).length + 1,
+    };
+    const currentForPos = squad.filter(p=>p.posicion===player.posicion).length;
+    if(currentForPos >= (MAX_POS[player.posicion]||99)) return false;
+    return true;
+  },[squad,formation,budget,countryCounts]);
 
   const addToSquad=useCallback((player)=>{
     if(squad.find(p=>p.id===player.id)) return toast("Ya está en tu plantilla","warn");
@@ -19675,26 +19881,21 @@ function GranMoishe() {
     if(budget<cost) return toast("Presupuesto insuficiente 💸","error");
     if((countryCounts[player.pais]||0)>=MAX_PER_COUNTRY) return toast(`Máx. ${MAX_PER_COUNTRY} de ${player.pais}`,"warn");
     if(player.status!=="ok") return toast("Jugador no disponible","error");
-
     // Auto-assign to XI or subs based on formation slots
-    const formSlots = FORMATIONS[formation] || FORMATIONS["4-3-3"];
-    const needsPerPos = { GK: formSlots.GK.length, DEF: formSlots.DEF.length, MID: formSlots.MID.length, FWD: formSlots.FWD.length };
+    const fm = FORMATIONS[formation]||FORMATIONS["4-3-3"];
+    const needsPerPos = { GK:fm.GK.length, DEF:fm.DEF.length, MID:fm.MID.length, FWD:fm.FWD.length };
     const pos = player.posicion;
-    const currentXI = [...xi]; // snapshot (will be updated via state setter)
-    const xiForPos = currentXI.filter(p=>p.posicion===pos).length;
-    const needsMore = xiForPos < (needsPerPos[pos]||0);
-
+    const xiForPos = xi.filter(p=>p.posicion===pos).length;
+    const hasXISlot = xiForPos < (needsPerPos[pos]||0) && xi.length < MAX_XI;
+    const hasBenchSlot = subs.length < MAX_SUBS;
     setSquad(s=>[...s,player]);
-    if(needsMore && currentXI.length < MAX_XI) {
-      // Slot available in XI for this position
+    if(hasXISlot){
       setXi(x=>[...x,player]);
-      toast(`${flag(player.pais)} ${player.nombre} fichado → Titular ⚽`,"success");
-    } else if(subs.length < MAX_SUBS) {
-      // XI full for this pos or formation full — go to bench
+      toast(`${flag(player.pais)} ${player.nombre} → Titular ⚽`,"success");
+    } else if(hasBenchSlot){
       setSubs(s=>[...s,player]);
-      toast(`${flag(player.pais)} ${player.nombre} fichado → Suplente 🪑`,"info");
+      toast(`${flag(player.pais)} ${player.nombre} → Suplente 🪑`,"info");
     } else {
-      // Both XI and subs full (shouldn't happen since MAX_SQUAD=15)
       toast(`${flag(player.pais)} ${player.nombre} fichado ✅`,"success");
     }
     trackAction();
@@ -19726,13 +19927,15 @@ function GranMoishe() {
   },[xi,subs,squad,toast,trackAction]);
 
   const autoXI=useCallback(()=>{
+    const fm = FORMATIONS[formation]||FORMATIONS["4-3-3"];
+    const needs = { GK:fm.GK.length, DEF:fm.DEF.length, MID:fm.MID.length, FWD:fm.FWD.length };
     const sorted=[...squad].sort((a,b)=>b.puntos-a.puntos);
-    const newXI=[],newSubs=[],needs={GK:1,DEF:4,MID:4,FWD:2};
+    const newXI=[],newSubs=[];
     for(const pos of POS_ORDER){ let c=0; for(const p of sorted){ if(p.posicion===pos&&c<needs[pos]&&!newXI.find(x=>x.id===p.id)){ newXI.push(p);c++; } } }
     for(const p of sorted){ if(!newXI.find(x=>x.id===p.id)&&newSubs.length<MAX_SUBS) newSubs.push(p); }
     setXi(newXI.slice(0,MAX_XI)); setSubs(newSubs.slice(0,MAX_SUBS));
-    toast("XI automático configurado ⚡","success"); trackAction();
-  },[squad,toast,trackAction]);
+    toast("Equipo organizado ⚡","success"); trackAction();
+  },[squad,formation,toast,trackAction]);
 
   const clearAll=useCallback(()=>{setSquad([]);setXi([]);setSubs([]);setCapitan(null);toast("Plantilla reiniciada","info");},[toast]);
 
@@ -19783,7 +19986,6 @@ function GranMoishe() {
   // ── MAIN APP ──
   const TABS=[
     {id:"equipo",icon:"🏟",label:"Equipo"},
-    {id:"cancha",icon:"⚽",label:"Cancha"},
     {id:"mercado",icon:"🛒",label:"Mercado"},
     {id:"puntos",icon:"📊",label:"Puntos"},
     {id:"ranking",icon:"📈",label:"Ranking"},
@@ -19793,7 +19995,7 @@ function GranMoishe() {
   ];
 
   const bench=squad.filter(p=>!xi.find(x=>x.id===p.id)&&!subs.find(s=>s.id===p.id));
-  const showSidebar=tab!=="cancha";
+  const showSidebar=true;
 
   return (
     React.createElement('div', { className: "app",}
@@ -19818,7 +20020,7 @@ function GranMoishe() {
       , React.createElement('header', { className: "hdr",}
         , React.createElement('div', { className: "hdr-l",}
           , React.createElement('a', { href: "index.html", style: {textDecoration:'none'},}, React.createElement('div', { className: "hdr-logo",}, "✡"))
-          , React.createElement('div', null, React.createElement('div', { className: "hdr-title",}, "GRAN " , React.createElement('span', { className: "hdr-yr",}, "MOISHE")), React.createElement('div', { className: "hdr-sub",}, user.equipo ? user.equipo : "EL DT DEL MUNDIAL 2026"))
+          , React.createElement('div', null, React.createElement('div', { className: "hdr-title",}, "GRAN " , React.createElement('span', { className: "hdr-yr",}, "MOISHE")), React.createElement('div', { className: "hdr-sub",}, "EL DT DEL MUNDIAL 2026"    ))
         )
         , React.createElement('div', { className: "hdr-r",}
           , React.createElement('div', { className: "hdr-stats",}
@@ -19870,46 +20072,15 @@ function GranMoishe() {
       , React.createElement('div', { className: "app-layout",}
         , React.createElement('main', { className: "main",}
           /* ── EQUIPO ── */
-          , tab==="equipo"&&React.createElement('div', { className: "team-view",}
-            // Team pts banner
-            , React.createElement('div', { style: {background:"linear-gradient(135deg,rgba(74,222,128,.12),rgba(74,222,128,.04))",border:"1px solid rgba(74,222,128,.25)",borderRadius:12,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2},}
-              , React.createElement('div', null
-                , React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:"1.05rem",fontWeight:900,color:"#e2e8f0",letterSpacing:.5},}, user.equipo||"Mi Equipo")
-                , React.createElement('div', { style: {fontSize:".72rem",color:"#4a6a5a",marginTop:2},}, user.nombre+" "+user.apellido+" · "+user.comunidad)
-              )
-              , React.createElement('div', { style: {textAlign:"right"},}
-                , React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:"2.2rem",fontWeight:900,color:"#4ade80",lineHeight:1},}, [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0))
-                , React.createElement('div', { style: {fontSize:".65rem",color:"#3a5a4a",letterSpacing:1},}, "PUNTOS")
-              )
-            )
-            , React.createElement('div', { className: "transfer-widget closed" ,}
-              , React.createElement('div', { className: "tw-icon",}, "🔴")
-              , React.createElement('div', null, React.createElement('div', { className: "tw-title",}, "Mercado de Pases"  ), React.createElement('div', { className: "tw-status",}, "CERRADO — Fase de Grupos activa"     ), React.createElement('div', { className: "tw-note",}, "Reemplazos por eliminación: ilimitados. Cambios normales: pausados."      ))
-            )
-            , React.createElement('div', { className: "tt",}
-              , React.createElement('div', { className: "tt-l",}, React.createElement('label', { className: "tt-lbl",}, "Formación")
-                , React.createElement('select', { className: "tt-sel", value: formation, onChange: e=>{setFormation(e.target.value);trackAction();},}
-                  , FORMATIONS_LIST.map(f=>React.createElement('option', { key: f, value: f,}, f))
-                )
-              )
-              , React.createElement('div', { className: "tt-badges",}, POS_ORDER.map(pos=>{const n=[...xi,...subs].filter(p=>p.posicion===pos).length;return React.createElement('div', { key: pos, className: "tt-badge", style: {borderColor:POS_COLORS[pos]},}, React.createElement('span', { style: {color:POS_COLORS[pos]},}, pos), React.createElement('span', null, n));}))
-              , React.createElement('div', { className: "tt-acts",}
-                , squad.length>0&&React.createElement('button', { className: "tt-btn auto" , onClick: autoXI, title:"Reorganizá automáticamente el equipo con la formación elegida",}, "⚡ Reordenar" )
-                , squad.length>0&&React.createElement('button', { className: "tt-btn clear" , onClick: clearAll,}, "🗑")
-              )
-            )
-            , xi.length===0&&React.createElement('div', { className: "empty-pitch",}, React.createElement('div', { className: "ep-i",}, "⚽"), React.createElement('div', { className: "ep-t",}, "Plantilla vacía" ), React.createElement('div', { className: "ep-s",}, "Fichá jugadores en el Mercado — se arman solos en el equipo según tu formación"), React.createElement('button', { className: "btn-go", onClick: ()=>setTab("mercado"),}, "Ir al Mercado →"   ))
-            , xi.length>0&&React.createElement('div', { className: "sq-sec",}, React.createElement('div', { className: "sq-sec-title",}, "⚽ XI Titular ("   , xi.length, "/11)"), React.createElement('div', { className: "sq-grid",}, xi.map(p=>React.createElement('div', { key: p.id, className: `sq-card starter${p.id===capitan?" cap-player":""}`, onClick: ()=>setModal(p),}, React.createElement('span', { className: "sqf",}, flag(p.pais)), React.createElement('span', { className: "sqpos", style: {background:POS_COLORS[p.posicion]},}, p.posicion), React.createElement('span', { className: "sqname",}, p.nombre, p.id===capitan&&" 👑"), React.createElement('span', { className: "sqpts",}, p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos, "p"), p.eliminated&&React.createElement('span', { style: {fontSize:".65rem",color:"#ef4444"},}, "❌"), React.createElement('button', { className: "sqrm", onClick: e=>{e.stopPropagation();toggleXI(p);},}, "−")))))
-            , subs.length>0&&React.createElement('div', { className: "sq-sec",}, React.createElement('div', { className: "sq-sec-title",}, "🪑 Suplentes ("  , subs.length, "/4)"), React.createElement('div', { className: "sq-grid",}, subs.map(p=>React.createElement('div', { key: p.id, className: `sq-card bench${p.id===capitan?" cap-player":""}${p.status!=="ok"?" unavail":""}`, onClick: ()=>setModal(p),}, React.createElement('span', { className: "sqf",}, flag(p.pais)), React.createElement('span', { className: "sqpos", style: {background:POS_COLORS[p.posicion]},}, p.posicion), React.createElement('span', { className: "sqname",}, p.nombre, p.id===capitan&&" 👑"), React.createElement('span', { className: "sqpts",}, p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos, "p"), p.eliminated&&React.createElement('span', { style: {fontSize:".65rem",color:"#ef4444"},}, "❌"), React.createElement('button', { className: "sqadd", onClick: e=>{e.stopPropagation();toggleXI(p);},}, "▶")))))
-            , bench.length>0&&React.createElement('div', { className: "sq-sec",}, React.createElement('div', { className: "sq-sec-title",}, "📋 Sin asignar ("   , bench.length, ")"), React.createElement('div', { className: "sq-grid",}, bench.map(p=>React.createElement('div', { key: p.id, className: `sq-card${p.status!=="ok"?" unavail":""}`, onClick: ()=>setModal(p),}, React.createElement('span', { className: "sqf",}, flag(p.pais)), React.createElement('span', { className: "sqpos", style: {background:POS_COLORS[p.posicion]},}, p.posicion), React.createElement('span', { className: "sqname",}, p.nombre), React.createElement('span', { className: "sqpts",}, p.puntos, "p"), React.createElement('button', { className: "sqadd", onClick: e=>{e.stopPropagation();toggleXI(p);},}, "+")))))
-            , !capitan&&squad.length>0&&React.createElement('div', { style: {padding:"10px 14px",background:"rgba(255,215,0,.08)",border:"1px solid rgba(255,215,0,.2)",borderRadius:8,fontSize:".82rem",color:"#fbbf24"},}, "👑 No elegiste capitán. Abrí la ficha de un jugador para designarlo."           )
-          )
-
-          /* ── CANCHA ── */
-          , tab==="cancha"&&React.createElement(PitchView, { xi: xi, subs: subs, formation: formation, capitan: capitan, ads: ads, onPlayerClick: p=>setModal(p),})
+          , tab==="equipo"&&React.createElement(EquipoListView, {
+              xi:xi, subs:subs, squad:squad, capitan:capitan,
+              formation:formation,
+              setXi:setXi, setSubs:setSubs,
+              setTab:setTab, toast:toast, autoXI:autoXI,
+            })
 
           /* ── MERCADO ── */
-          , tab==="mercado"&&React.createElement(MarketView, { squad: squad, xi: xi, subs: subs, addToSquad: addToSquad, removeFromSquad: removeFromSquad, setModal: setModal, budget: budget, countryCounts: countryCounts, canAddFn: canAddFn, formation: formation,})
+          , tab==="mercado"&&React.createElement(MarketView, { squad: squad, xi: xi, subs: subs, addToSquad: addToSquad, removeFromSquad: removeFromSquad, setModal: setModal, budget: budget, countryCounts: countryCounts, canAddFn: canAddFn,})
 
           /* ── PUNTOS ── */
           , tab==="puntos"&&React.createElement(ScoringView, { xi: xi, subs: subs, capitan: capitan, setModal: setModal,})
