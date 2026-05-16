@@ -1,17 +1,17 @@
-// Gran Moishe 2026 — Service Worker
-const CACHE_NAME = 'gran-moishe-v1';
+const CACHE_NAME = 'gran-moishe-v2';
 const ASSETS = [
   './',
   './index.html',
   './juego.html',
   './admin.html',
   './manifest.json',
+  './manifest-admin.json',
   './almagro.jpg',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(()=>{}))
   );
   self.skipWaiting();
 });
@@ -27,13 +27,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  // Network first for API calls, cache first for assets
-  if (e.request.url.includes('api.football-data.org') || 
+  if (e.request.url.includes('api.football-data.org') ||
       e.request.url.includes('api-sports.io') ||
+      e.request.url.includes('allorigins.win') ||
+      e.request.url.includes('corsproxy.io') ||
       e.request.url.includes('fonts.googleapis.com')) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
   e.respondWith(
