@@ -45,18 +45,18 @@
     .btn-gold { background: linear-gradient(135deg, var(--dorado), var(--dorado-clr)); color: var(--oscuro); }
 
     /* AD STRIP */
-    .ad-strip { position: fixed; top: 64px; left: 0; right: 0; z-index: 90; background: rgba(27,58,107,.85); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(74,124,201,.15); padding: 6px 24px; display: flex; align-items: center; justify-content: center; gap: 16px; min-height: 40px; }
-    .ad-strip-label { font-size: .58rem; letter-spacing: 2px; color: var(--celeste); text-transform: uppercase; opacity: .7; flex-shrink: 0; }
+    .ad-strip { position: fixed; top: 64px; left: 0; right: 0; z-index: 90; background: rgba(27,58,107,.95); backdrop-filter: blur(8px); border-bottom: 2px solid rgba(74,124,201,.3); padding: 12px 24px; display: flex; align-items: center; justify-content: center; gap: 16px; min-height: 64px; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .ad-strip-label { font-size: .7rem; letter-spacing: 2px; color: var(--celeste); text-transform: uppercase; opacity: .7; flex-shrink: 0; }
     .ad-strip-slide { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .ad-tier-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .ad-strip-name { font-weight: 700; font-size: .88rem; }
-    .ad-strip-cta  { font-size: .72rem; color: var(--celeste); }
+    .ad-tier-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .ad-strip-name { font-weight: 700; font-size: 1.1rem; }
+    .ad-strip-cta  { font-size: .85rem; color: var(--celeste); }
     .ad-strip-dots { display: flex; gap: 5px; }
     .ad-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.15); border: none; cursor: pointer; transition: .2s; }
     .ad-dot.active { background: var(--celeste); }
 
     /* HERO */
-    .hero { min-height: 100vh; padding-top: 104px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 20% 50%, rgba(27,58,107,.5) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(42,82,152,.3) 0%, transparent 50%), var(--fondo); }
+    .hero { min-height: 100vh; padding-top: 134px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 20% 50%, rgba(27,58,107,.5) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(42,82,152,.3) 0%, transparent 50%), var(--fondo); }
 
     .hero-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: .035; }
     .hero-bg::before { content: ''; position: absolute; font-size: 60vw; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--celeste); }
@@ -459,6 +459,7 @@
 
 <script>
 const getLS = (k,d) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;} };
+const setLS = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
 const setLS2 = (k,v) => localStorage.setItem(k, JSON.stringify(v));
 
 // ── Full Screen Ad ─────────────────────────────────────────────
@@ -516,7 +517,6 @@ function showFullAd(onDone) {
     if (rem <= 0) { clearInterval(_adTimer); ov.remove(); onDone&&onDone(); }
   }, 1000);
 }
-const setLS = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
 const PAISES = ["Argentina","Uruguay","Brasil","Chile","Bolivia","Paraguay","Perú","Colombia","México","Estados Unidos","Israel","España","Francia","Alemania","Otro"];
 const PROVS_AR = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
 const ADMIN_EMAIL = 'jajapepe423@gmail.com';
