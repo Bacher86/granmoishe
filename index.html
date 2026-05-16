@@ -204,6 +204,7 @@
       .nav { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
       .hero-content { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
   </style>
 </head>
 <body>
@@ -389,7 +390,7 @@
 <div class="overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-logo"><img src="almagro.jpg" alt="Olami Almagro" style="width:56px;height:56px;object-fit:cover;border-radius:12px;display:block;margin:0 auto;" onerror="this.outerHTML='✡'"/></div>
+    <div class="modal-logo"><img src="almagro.jpg" alt="Olami Almagro" style="width:56px;height:56px;object-fit:cover;border-radius:12px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
     <div class="modal-title" id="modalTitle">Ingresar</div>
     <div class="modal-price" id="modalPrice" style="display:none;">
     Precio por cuenta: <strong style="color:var(--celeste)">$6.000</strong> · Máx. 5 cuentas por DNI
@@ -404,7 +405,7 @@
 <!-- PAYMENT MODAL -->
 <div class="pay-modal" id="payModal" style="display:none;">
   <div class="pay-box">
-    <div class="pay-star"><img src="almagro.jpg" alt="Olami Almagro" style="width:64px;height:64px;object-fit:cover;border-radius:14px;display:block;margin:0 auto;" onerror="this.outerHTML='✡'"/></div>
+    <div class="pay-star"><img src="almagro.jpg" alt="Olami Almagro" style="width:64px;height:64px;object-fit:cover;border-radius:14px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
     <div class="pay-title">¡Registro exitoso!</div>
     <div class="pay-sub" style="font-size:.92rem;color:#a0b0c0;line-height:1.8;">
       ¡Bienvenido/a al Gran Moishe 2026! 🎉<br><br>
@@ -466,7 +467,15 @@ let _adTimer = null;
 function showFullAd(onDone) {
   const ads = getLS('gm_ads', []);
   const elite = ads.filter(a => a.active && (a.tier === 'login' || a.tier === 'todo'));
-  if (!elite.length) { onDone && onDone(); return; }
+  // Si no hay ads, mostrar splash de Gran Moishe por 3 segundos
+  if (!elite.length) {
+    const splash = document.createElement('div');
+    splash.style.cssText = 'position:fixed;inset:0;background:rgba(7,17,30,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
+    splash.innerHTML = '<img src="almagro.jpg" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgba(74,124,201,.6);box-shadow:0 0 40px rgba(74,124,201,.4);" onerror="this.style.display='none'"/><div style="font-family:Oswald,sans-serif;font-size:2.2rem;font-weight:900;color:#e2e8f0;letter-spacing:2px;">GRAN MOISHE</div><div style="font-size:.85rem;color:#4a6a5a;letter-spacing:1px;">EL DT DEL MUNDIAL 2026</div><div style="width:120px;height:3px;background:linear-gradient(90deg,transparent,#4ade80,transparent);border-radius:2px;animation:pulse 1s infinite;"></div>';
+    document.body.appendChild(splash);
+    setTimeout(function(){ splash.remove(); onDone && onDone(); }, 2500);
+    return;
+  }
   const ad = elite[Math.floor(Math.random() * elite.length)];
   const allAds = getLS('gm_ads', []);
   const ai = allAds.findIndex(a => a.id === ad.id);
@@ -560,7 +569,7 @@ loadAds();
 let authMode = 'login';
 function openModal(m) {
   if(m==='contacto'){document.getElementById('contactOverlay').style.display='flex';return;}
-  authMode = m||'login'; renderForm();
+  authMode = m||'login'; renderForm(); renderFormLogo();
   document.getElementById('authOverlay').style.display='flex';
   document.getElementById('authErr').style.display='none';
 }
@@ -635,6 +644,14 @@ function renderForm() {
   `;
 }
 
+function renderFormLogo() {
+  // Make sure logo is visible and using correct URL
+  const logo = document.querySelector('.modal-logo img');
+  if (logo) {
+    logo.src = 'almagro.jpg';
+    logo.onerror = function() { this.src='https://bacher86.github.io/granmoishe/almagro.jpg'; this.onerror=null; };
+  }
+}
 function onPaisChange(){
   const p=document.getElementById('f_pais')?.value, pr=document.getElementById('f_provincia');
   if(!pr) return;
