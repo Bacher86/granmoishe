@@ -18077,6 +18077,7 @@ const Auth = {
     const users = getLS("gm_users",[]);
     const user = users.find(u=>u.email===email);
     if (!user) return { error:"Email no encontrado" };
+    if (user.password && user.password !== password) return { error:"Contraseña incorrecta" };
     notifyAuth(user); return { ok:true, user };
   },
   signOut: async () => notifyAuth(null),
@@ -19119,6 +19120,27 @@ const WC2026_FIXTURE = [
 {id:104,matchday:null, date:"2026-07-18T21:00:00Z", home:"3er Puesto",    away:"3er Puesto",     group:null, round:"3er Puesto",    venue:"Hard Rock Stadium, Miami"},
 {id:105,matchday:null, date:"2026-07-19T19:00:00Z", home:"Final Local",   away:"Final Visit.",   group:null, round:"Final",         venue:"MetLife Stadium, Nueva York"},
 ];
+
+// Cargar scores publicados por admin en WC2026_FIXTURE (necesario para el prode)
+(function() {
+  function applyScores() {
+    try {
+      var cache = JSON.parse(localStorage.getItem("gm_matches_cache") || "[]");
+      var map = {};
+      cache.forEach(function(m) {
+        if (m.score_home !== null && m.score_home !== undefined)
+          map[m.id] = { sh: m.score_home, sa: m.score_away };
+      });
+      WC2026_FIXTURE.forEach(function(m) {
+        if (map[m.id]) { m.score_home = map[m.id].sh; m.score_away = map[m.id].sa; }
+      });
+    } catch(e) {}
+  }
+  applyScores();
+  window.addEventListener("storage", function(e) {
+    if (e.key === "gm_matches_cache" || e.key === "gm_published_matches") applyScores();
+  });
+})();
 
 
 function canProde(match) {
