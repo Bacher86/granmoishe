@@ -124,11 +124,14 @@
     .sponsors-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px 0; }
     .sponsors-label { font-size: .6rem; letter-spacing: 3px; color: var(--azul-claro); text-transform: uppercase; font-weight: 600; opacity: .7; }
     .sponsors-dots { display: flex; gap: 5px; }
+    .sponsors-track-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
+    @media(max-width:640px) { .sponsors-track-3 { grid-template-columns: 1fr; } }
+    @media(min-width:641px) and (max-width:900px) { .sponsors-track-3 { grid-template-columns: repeat(2,1fr); } }
     .sp-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; cursor: pointer; transition: .3s; padding: 0; }
     .sp-dot.active { background: var(--celeste); }
     .sponsors-track-wrap { overflow: hidden; }
     .sponsors-track { display: flex; transition: transform .5s cubic-bezier(.4,0,.2,1); }
-    .sponsor-slide { min-width: 100%; padding: 18px 28px 22px; display: flex; align-items: center; gap: 18px; cursor: pointer; }
+    .sponsor-slide { padding: 22px 24px 26px; display: flex; align-items: center; gap: 16px; cursor: pointer; border-right: 1px solid rgba(74,124,201,.08); min-height: 110px; }
     .sp-tier-bar { width: 4px; height: 48px; border-radius: 3px; flex-shrink: 0; }
     .sp-info { flex: 1; }
     .sp-name { font-family: 'Assistant', sans-serif; font-size: 1.15rem; font-weight: 800; color: var(--blanco); margin-bottom: 3px; }
@@ -255,7 +258,7 @@
     <div class="features">
       <div class="feat"><div class="feat-icon">🌍</div><div class="feat-title">200+ Jugadores</div><div class="feat-desc">De las 48 selecciones del Mundial</div></div>
       <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">Puntos en vivo</div><div class="feat-desc">Sistema triple de puntuación</div></div>
-      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">+$5.500.000 en premios</div><div class="feat-desc">Por fecha y campeón final</div></div>
+      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">+$8.500.000 en premios</div><div class="feat-desc">Fechas + campeón final</div></div>
       <div class="feat"><div class="feat-icon">⚙️</div><div class="feat-title">Tu formación</div><div class="feat-desc">Elegí táctica y armá el XI ideal</div></div>
     </div>
   </div>
@@ -275,7 +278,7 @@
     </div>
   </div>
   <div class="sponsors-track-wrap">
-    <div class="sponsors-track" id="spTrack"></div>
+    <div class="sponsors-track-3" id="spTrack"></div>
   </div>
 </div>
 
@@ -286,7 +289,7 @@
     <div class="step" data-n="01"><div class="step-icon">📝</div><div class="step-title">Registrate</div><div class="step-desc">Creá tu cuenta, recibís tu ID único y enviás el comprobante de pago para activarla.</div></div>
     <div class="step" data-n="02"><div class="step-icon">🛒</div><div class="step-title">Armá tu equipo</div><div class="step-desc">Elegí 15 jugadores de 48 selecciones. Definí tu capitán y formación táctica.</div></div>
     <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido y escalá en el ranking de la comunidad.</div></div>
-    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios por cada fecha y $4.000.000 para el campeón final de la comunidad.</div></div>
+    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios por cada fecha (hasta cuartos de final) y $4.000.000 para el campeón final de la comunidad.</div></div>
   </div>
 </div>
 
@@ -294,9 +297,30 @@
   <div class="sec-label">Sistema de puntos</div>
   <div class="sec-title">¿Cómo se <span>puntúa</span>?</div>
   <div class="scoring-grid">
-    <div class="score-card"><div class="sc-title">⚽ Ataque</div><div class="sc-row"><span>Gol</span><span class="green">+5 pts</span></div><div class="sc-row"><span>Asistencia</span><span class="green">+3 pts</span></div><div class="sc-row"><span>Penalti convertido</span><span class="green">+4 pts</span></div><div class="sc-row"><span>Penalti fallado</span><span class="red">-2 pts</span></div></div>
-    <div class="score-card"><div class="sc-title">🛡 Defensa</div><div class="sc-row"><span>Valla invicta GK</span><span class="green">+6 pts</span></div><div class="sc-row"><span>Valla invicta DEF</span><span class="green">+4 pts</span></div><div class="sc-row"><span>Gol en contra</span><span class="red">-2 pts</span></div><div class="sc-row"><span>Tarjeta amarilla</span><span class="red">-1 pt</span></div></div>
-    <div class="score-card"><div class="sc-title">🏅 Bonus</div><div class="sc-row"><span>Capitán</span><span class="blue">×1.5</span></div><div class="sc-row"><span>Jugador del partido</span><span class="blue">+3 pts</span></div><div class="sc-row"><span>Hat-trick</span><span class="blue">+5 pts</span></div><div class="sc-row"><span>Clasificación equipo</span><span class="green">+2 pts</span></div></div>
+    <div class="score-card">
+      <div class="sc-title">⚽ Goles por posición</div>
+      <div class="sc-row"><span>Gol de Delantero</span><span class="green">+4 pts</span></div>
+      <div class="sc-row"><span>Gol de Mediocampista</span><span class="green">+5 pts</span></div>
+      <div class="sc-row"><span>Gol de Defensor</span><span class="green">+6 pts</span></div>
+      <div class="sc-row"><span>Gol de Arquero</span><span class="green">+7 pts</span></div>
+      <div class="sc-row"><span>Autogol / Gol en contra</span><span class="red">-2 pts</span></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-title">🏃 Equipo y partido</div>
+      <div class="sc-row"><span>Equipo ganó</span><span class="green">+5 pts</span></div>
+      <div class="sc-row"><span>Empate</span><span class="green">+3 pts</span></div>
+      <div class="sc-row"><span>Derrota</span><span class="green">+1 pt</span></div>
+      <div class="sc-row"><span>Asistencia</span><span class="green">+2 pts</span></div>
+      <div class="sc-row"><span>Hat-trick (bonus)</span><span class="blue">+4 pts extra</span></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-title">🛡 Vallas y tarjetas</div>
+      <div class="sc-row"><span>Valla invicta (GK)</span><span class="green">+4 pts</span></div>
+      <div class="sc-row"><span>Valla invicta (DEF)</span><span class="green">+2 pts</span></div>
+      <div class="sc-row"><span>Tarjeta amarilla</span><span class="red">-1 pt</span></div>
+      <div class="sc-row"><span>Tarjeta roja</span><span class="red">-3 pts</span></div>
+      <div class="sc-row"><span>Capitán (bonus)</span><span class="blue">+25% de sus pts ↑</span></div>
+    </div>
   </div>
 </div>
 
@@ -351,7 +375,8 @@
 
   <!-- Premios por fecha -->
   <div style="margin-bottom:16px;">
-    <div style="font-size:.68rem;letter-spacing:4px;color:var(--azul-claro);text-transform:uppercase;font-weight:700;margin-bottom:20px;text-align:center;">Premios por fecha · 3 fechas de grupos</div>
+    <div style="font-size:.68rem;letter-spacing:4px;color:var(--azul-claro);text-transform:uppercase;font-weight:700;margin-bottom:8px;text-align:center;">Premios por fecha</div>
+    <div style="font-size:.8rem;color:var(--gris);text-align:center;margin-bottom:20px;">Fecha 1, 2 y 3 de grupos · 16avos · Octavos · Cuartos de final</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
 
       <!-- 1er puesto -->
@@ -379,6 +404,16 @@
       </div>
 
     </div>
+
+    <!-- Fechas incluidas -->
+    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+      <span style="background:rgba(74,124,201,.1);border:1px solid rgba(74,124,201,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--celeste);font-weight:600;">Fecha 1 de grupos</span>
+      <span style="background:rgba(74,124,201,.1);border:1px solid rgba(74,124,201,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--celeste);font-weight:600;">Fecha 2 de grupos</span>
+      <span style="background:rgba(74,124,201,.1);border:1px solid rgba(74,124,201,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--celeste);font-weight:600;">Fecha 3 de grupos</span>
+      <span style="background:rgba(74,124,201,.1);border:1px solid rgba(74,124,201,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--celeste);font-weight:600;">16avos de final</span>
+      <span style="background:rgba(74,124,201,.1);border:1px solid rgba(74,124,201,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--celeste);font-weight:600;">Octavos de final</span>
+      <span style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:20px;padding:5px 14px;font-size:.72rem;color:#4ade80;font-weight:700;">⚽ Cuartos de final</span>
+    </div>
   </div>
 
   <!-- Total en premios -->
@@ -387,12 +422,14 @@
       <span style="font-size:1.4rem;">💰</span>
       <div>
         <div style="font-size:.72rem;color:var(--gris);letter-spacing:1px;text-transform:uppercase;">Total en premios</div>
-        <div style="font-family:'Assistant',sans-serif;font-size:1.5rem;font-weight:900;color:var(--celeste);">+$5.500.000</div>
+        <div style="font-family:'Assistant',sans-serif;font-size:1.5rem;font-weight:900;color:var(--celeste);">+$8.500.000</div>
       </div>
     </div>
-    <div style="font-size:.8rem;color:var(--gris);line-height:1.6;max-width:400px;">
-      3 fechas × ($300k + $150k + $50k) = $1.500.000 en premios de fecha<br>
-      + $4.000.000 al campeón final de la comunidad
+    <div style="font-size:.8rem;color:var(--gris);line-height:1.6;max-width:420px;">
+      6 fechas × ($300k + $150k + $50k) = $3.000.000 en premios de fecha<br>
+      (Grupos F1·F2·F3 + 16avos + Octavos + Cuartos)<br>
+      + $4.000.000 al campeón final de la comunidad<br>
+      <span style="color:rgba(74,222,128,.7);font-size:.72rem;">* Semis y Final no tienen premio individual de fecha</span>
     </div>
   </div>
 </div>
@@ -494,6 +531,51 @@
 
 <script>
 const getLS = (k,d) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;} };
+const setLS2 = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+// ── Full Screen Ad ─────────────────────────────────────────────
+let _adTimer = null;
+function showFullAd(onDone) {
+  const ads = getLS('gm_ads', []);
+  const elite = ads.filter(a => a.active && (a.tier === 'login' || a.tier === 'todo'));
+  if (!elite.length) { onDone && onDone(); return; }
+  const ad = elite[Math.floor(Math.random() * elite.length)];
+  const allAds = getLS('gm_ads', []);
+  const ai = allAds.findIndex(a => a.id === ad.id);
+  if (ai >= 0) { allAds[ai].views = (allAds[ai].views||0)+1; localStorage.setItem('gm_ads', JSON.stringify(allAds)); }
+  const secs = ad.seconds || 10;
+  const skipAfter = secs - 2;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML = `<div id="_fac" style="max-width:440px;width:100%;text-align:center;cursor:pointer;padding:28px;background:#0d1b2a;border:1px solid rgba(251,191,36,.35);border-radius:16px;">
+    ${ad.img?`<img src="${ad.img}" style="width:100%;border-radius:10px;margin-bottom:14px;max-height:240px;object-fit:contain;">`:''}
+    <div style="font-size:.65rem;letter-spacing:2px;color:#fbbf24;font-family:Oswald,sans-serif;font-weight:700;margin-bottom:6px;">⭐ PUBLICIDAD</div>
+    <div style="font-family:Oswald,sans-serif;font-size:1.5rem;font-weight:900;color:#e2e8f0;margin-bottom:4px;">${ad.nombre}</div>
+    ${ad.descripcion?`<div style="font-size:.82rem;color:#8a9ab0;margin-bottom:8px;">${ad.descripcion}</div>`:''}
+    <div style="font-size:.75rem;color:#4a6a5a;margin-top:8px;">Tocá para más información</div>
+  </div>
+  <div style="margin-top:18px;display:flex;align-items:center;gap:14px;">
+    <span id="_fat" style="font-family:Oswald,sans-serif;font-size:1.3rem;font-weight:700;color:#e2e8f0;">${secs}s</span>
+    <span id="_fsk" style="display:none;padding:8px 20px;background:#4ade80;color:#07111e;border-radius:8px;font-family:Oswald,sans-serif;font-weight:700;cursor:pointer;font-size:.88rem;">Continuar →</span>
+    <span id="_fwt" style="font-size:.75rem;color:#4a6a5a;">Podés continuar en <span id="_fcd">${skipAfter}</span>s</span>
+  </div>`;
+  document.body.appendChild(ov);
+  let rem = secs;
+  document.getElementById('_fac').onclick = () => {
+    if (ad.url) { const a2=getLS('gm_ads',[]); const i2=a2.findIndex(x=>x.id===ad.id); if(i2>=0){a2[i2].clicks=(a2[i2].clicks||0)+1;localStorage.setItem('gm_ads',JSON.stringify(a2));} window.open(ad.url,'_blank'); }
+  };
+  document.getElementById('_fsk').onclick = () => { clearInterval(_adTimer); ov.remove(); onDone&&onDone(); };
+  _adTimer = setInterval(() => {
+    rem--;
+    const te=document.getElementById('_fat'); if(te) te.textContent=rem+'s';
+    const cd=document.getElementById('_fcd'); if(cd) cd.textContent=Math.max(0,rem-Math.max(0,secs-skipAfter))+'s';
+    if (rem <= secs-skipAfter) {
+      const sk=document.getElementById('_fsk'); if(sk) sk.style.display='inline-block';
+      const wt=document.getElementById('_fwt'); if(wt) wt.style.display='none';
+    }
+    if (rem <= 0) { clearInterval(_adTimer); ov.remove(); onDone&&onDone(); }
+  }, 1000);
+}
 const setLS = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
 const PAISES = ["Argentina","Uruguay","Brasil","Chile","Bolivia","Paraguay","Perú","Colombia","México","Estados Unidos","Israel","España","Francia","Alemania","Otro"];
 const PROVS_AR = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
@@ -515,14 +597,19 @@ if (!getLS('gm_init', false)) {
 const session = getLS('gm_session', null);
 if (session) {
   const na = document.getElementById('navActions');
-  if (na) na.innerHTML = `<a href="juego.html" class="btn btn-primary" style="text-decoration:none;">⚽ Ir al juego</a>`;
+  if (na) na.innerHTML = `
+    <a href="https://www.instagram.com/olami_almagro?igsh=MWptbTMxOWZkemNmbA==" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;font-family:'Assistant',sans-serif;white-space:nowrap;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Instagram
+    </a>
+    <a href="juego.html" class="btn btn-primary" style="text-decoration:none;">⚽ Ir al juego</a>`;
 }
 
 // Ads
 const TIER_COLORS = {elite:'#a855f7',diamante:'#60a5fa',oro:'#fbbf24',plata:'#94a3b8',bronce:'#c8793a'};
 let adIdx=0, adTimer=null, adsData=[];
 function loadAds() {
-  adsData = getLS('gm_ads',[]).filter(a=>a.activo);
+  adsData = getLS('gm_ads',[]).filter(a=>a.active && (a.tier==='resto' || a.tier==='todo'));
   if (!adsData.length) return;
   document.getElementById('adStrip').style.display='flex';
   renderAd(); renderDots();
@@ -662,7 +749,8 @@ async function submitAuth(){
     const u=getLS('gm_users',[]).find(u=>u.email===email&&u.password===pw);
     if(!u){showErr('Email o contraseña incorrectos');btn.disabled=false;return;}
     setLS('gm_session',u);
-    window.location.href='juego.html';
+    closeModal();
+    showFullAd(() => { window.location.href='juego.html'; });
     return;
   }
 
@@ -704,7 +792,10 @@ async function submitAuth(){
   closeModal();
   document.getElementById('payId').textContent=sharedPlayerId;
   document.getElementById('paySubject').textContent=`Comprobante Gran Moishe · ${sharedPlayerId}`;
-  document.getElementById('payModal').style.display='flex';
+  // Show elite ad before pay modal
+  showFullAd(() => {
+    document.getElementById('payModal').style.display='flex';
+  });
   btn.disabled=false;
 }
 
@@ -745,49 +836,83 @@ const DEFAULT_SPONSORS = [
 
 let spIdx = 0, spTimer = null, spList = [];
 
+const PER_PAGE = 3;
+
 function initSponsors() {
-  const saved = getLS('gm_ads', []).filter(a => a.activo !== false);
+  const saved = getLS('gm_ads', []).filter(a => a.active && (a.tier === 'resto' || a.tier === 'todo'));
   spList = saved.length ? saved : DEFAULT_SPONSORS;
+  spIdx = 0;
   renderSponsors();
   startSpTimer();
+}
+
+function getPage() {
+  // Return indices for current page of 3
+  const start = spIdx * PER_PAGE;
+  return [0,1,2].map(i => spList[(start + i) % spList.length]);
+}
+
+function totalPages() {
+  return Math.max(1, Math.ceil(spList.length / PER_PAGE));
 }
 
 function renderSponsors() {
   const track = document.getElementById('spTrack');
   const dots  = document.getElementById('spDots');
-  if(!track || !dots) return;
+  if(!track) return;
 
-  track.innerHTML = spList.map((sp, i) => {
-    const col = TIER_COLORS_SP[sp.tier] || '#60a5fa';
-    return `<div class="sponsor-slide" onclick="spClick(${i})">
-      <div class="sp-tier-bar" style="background:${col};box-shadow:0 0 10px ${col}55;"></div>
-      <div class="sp-info">
-        <div class="sp-name">${sp.nombre}</div>
-        <div class="sp-desc">${sp.descripcion||sp.desc||''}</div>
+  const page = getPage();
+  track.innerHTML = page.map((sp, i) => {
+    if(!sp) return '<div class="sponsor-slide"></div>';
+    const col = TIER_COLORS_SP[sp.tier] || '#4ade80';
+    const img = sp.img ? `<img src="${sp.img}" alt="${sp.nombre}" style="width:64px;height:64px;object-fit:contain;background:#000;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:48px;height:48px;border-radius:8px;background:${col}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">📢</div>`;
+    return `<div class="sponsor-slide" onclick="spClickDirect('${sp.url||''}','${sp.id||''}')">
+      ${img}
+      <div class="sp-info" style="flex:1;min-width:0;">
+        <div class="sp-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sp.nombre}</div>
+        <div class="sp-desc" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${sp.descripcion||''}</div>
       </div>
-      <button class="sp-cta" style="color:${col};border-color:${col}44;" onclick="event.stopPropagation();spClick(${i})">Ver más →</button>
     </div>`;
   }).join('');
 
-  dots.innerHTML = spList.map((_,i) =>
-    `<button class="sp-dot${i===spIdx?' active':''}" onclick="goSp(${i})"></button>`
-  ).join('');
-
-  track.style.transform = `translateX(-${spIdx * 100}%)`;
+  if(dots) {
+    const pages = totalPages();
+    dots.innerHTML = pages > 1 ? Array.from({length:pages},(_,i) =>
+      `<button class="sp-dot${i===spIdx?' active':''}" onclick="goSp(${i})"></button>`
+    ).join('') : '';
+  }
 }
 
 function goSp(i) {
-  spIdx = i;
+  spIdx = i % totalPages();
   renderSponsors();
   clearInterval(spTimer);
   startSpTimer();
 }
-function spNext() { goSp((spIdx + 1) % spList.length); }
-function spPrev() { goSp((spIdx - 1 + spList.length) % spList.length); }
-function startSpTimer() { spTimer = setInterval(spNext, 4000); }
-function spClick(i) { const sp = spList[i]; if(sp?.url) window.open(sp.url,'_blank'); }
+function spNext() { goSp((spIdx + 1) % totalPages()); }
+function spPrev() { goSp((spIdx - 1 + totalPages()) % totalPages()); }
+function startSpTimer() { spTimer = setInterval(spNext, 5000); }
+function spClickDirect(url, id) {
+  if(id) {
+    const ads = getLS('gm_ads',[]);
+    const i = ads.findIndex(a=>a.id===id);
+    if(i>=0){ads[i].clicks=(ads[i].clicks||0)+1;localStorage.setItem('gm_ads',JSON.stringify(ads));}
+  }
+  if(url) window.open(url,'_blank');
+}
 
 initSponsors();
+// Track views for visible sponsor ads
+setTimeout(() => {
+  if(!spList.length) return;
+  const ads = getLS('gm_ads',[]);
+  getPage().forEach(sp => {
+    if(!sp || !sp.id) return;
+    const i = ads.findIndex(a => a.id===sp.id);
+    if(i>=0){ ads[i].views=(ads[i].views||0)+1; }
+  });
+  localStorage.setItem('gm_ads', JSON.stringify(ads));
+}, 2000);
 
 </script>
 <script>
