@@ -248,19 +248,19 @@ function ConfirmDialog({msg, onOk, onCancel}) {
 function AdManager({ toast }) {
   const [ads,    setAds]   = useState(()=>DB.getAds());
   const [editId, setEdit]  = useState(null);
-  const [form,   setForm]  = useState({ tier:"resto",nombre:"",url:"",img:"",seconds:8,active:true });
+  const [form,   setForm]  = useState({ tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true });
   const save = u => { setAds(u); DB.saveAds(u); };
 
   const submit = () => {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
     else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Creada ✅","success"); }
-    setForm({ tier:"resto",nombre:"",url:"",img:"",seconds:8,active:true });
+    setForm({ tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true });
   };
   const edit   = a=>{ setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active}); window.scrollTo({top:0,behavior:"smooth"}); };
   const toggle = id=>save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id=>{ if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","info"); };
-  const cancel = ()=>{ setEdit(null); setForm({tier:"resto",nombre:"",url:"",img:"",seconds:8,active:true}); };
+  const cancel = ()=>{ setEdit(null); setForm({tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true}); };
 
   const tv=ads.reduce((s,a)=>s+(a.views||0),0), tc=ads.reduce((s,a)=>s+(a.clicks||0),0), tr=ads.reduce((s,a)=>s+(AD_TIERS[a.tier]?.price||0),0);
 
@@ -17871,19 +17871,8 @@ function BarChart({ data, color="#4ade80", title }) {
 
 // ── STATS ───────────────────────────────────────────────────────────────────
 function StatsPanel() {
-  const [users, setUsers] = useState(()=>DB.getUsers());
-  const [ads,   setAds]   = useState(()=>DB.getAds());
-
-  React.useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "gm_users") setUsers(DB.getUsers());
-      if (e.key === "gm_ads")   setAds(DB.getAds());
-    };
-    window.addEventListener("storage", onStorage);
-    const interval = setInterval(() => { setUsers(DB.getUsers()); setAds(DB.getAds()); }, 5000);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval); };
-  }, []);
-
+  const users = DB.getUsers();
+  const ads   = DB.getAds();
   const paid    = users.filter(u=>u.pagado).length;
   const blocked = users.filter(u=>u.bloqueado).length;
 
@@ -17992,15 +17981,6 @@ function UsersPanel() {
   const allComunidades = [...new Set(users.map(u=>u.comunidad).filter(Boolean))].sort();
 
   const refresh = () => setUsers(DB.getUsers());
-
-  // Auto-refresh: escucha cambios de localStorage desde otras pestañas (index/juego)
-  React.useEffect(() => {
-    const onStorage = (e) => { if (e.key === "gm_users") refresh(); };
-    window.addEventListener("storage", onStorage);
-    // También polling cada 5s por si está en la misma pestaña
-    const interval = setInterval(refresh, 5000);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval); };
-  }, []);
 
   const togglePago = (uid) => {
     const all = DB.getUsers();
@@ -18161,9 +18141,8 @@ function UsersPanel() {
           React.createElement('option', {value:"pts"}, "↓ Puntos")
         )
       ),
-      React.createElement('div', {style:{marginTop:8,fontSize:".75rem",color:"#4a6a7a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}},
-        React.createElement('span', null, filtered.length+" de "+users.length+" usuarios · "+users.filter(u=>u.pagado).length+" pagados · "+bloqueados+" bloqueados"),
-        React.createElement('button', {onClick:refresh, style:{padding:"3px 10px",borderRadius:6,border:"1px solid #2a3a4a",background:"rgba(74,222,128,.08)",color:"#4ade80",cursor:"pointer",fontSize:".72rem",fontFamily:"Oswald,sans-serif",fontWeight:700}}, "🔄 Actualizar")
+      React.createElement('div', {style:{marginTop:8,fontSize:".75rem",color:"#4a6a7a"}},
+        filtered.length+" de "+users.length+" usuarios · "+users.filter(u=>u.pagado).length+" pagados · "+bloqueados+" bloqueados"
       )
     ),
 
@@ -18274,12 +18253,8 @@ function AdManager({ toast }) {
       React.createElement("div", {className:"ps-form"},
         React.createElement("div", {className:"ps-row2"},
           fld("Tier", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value}))},
-            [
-              {v:"login", l:"Pantalla de inicio (login/registro)"},
-              {v:"todo",  l:"Todo (inicio + resto de espacios)"},
-              {v:"resto", l:"El resto (sidebar, carrusel, cancha)"},
-            ].map(t =>
-              React.createElement("option", {key:t.v, value:t.v}, t.l)
+            ["elite","diamante","oro","plata","bronce"].map(t =>
+              React.createElement("option", {key:t, value:t}, t.charAt(0).toUpperCase()+t.slice(1))
             )
           )),
           fld("Segundos visibles", inp("seconds","8","number"))
@@ -19281,17 +19256,26 @@ function ApiPanel({ toast }) {
       if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
     });
     setLS("gm_stats_by_name", statsByName);
-    // Update user pts
+    // Update user pts — squad stored in gm_squad_{uid} as [{id, nombre, pais, ...}]
     const users = DB.getUsers();
     users.forEach(u => {
-      if(!u.squad) return;
-      let pts=0;
-      u.squad.forEach(pid => {
-        if(ps[pid]) pts+=ps[pid].puntos;
+      // Read squad from separate key (how juego.html stores it)
+      const squad = JSON.parse(localStorage.getItem("gm_squad_" + u.uid) || "[]");
+      if(!squad.length) return;
+      let pts = 0;
+      squad.forEach(player => {
+        // player.id is numeric id; match against ps by pid
+        if(ps[player.id]) {
+          pts += ps[player.id].puntos;
+        } else {
+          // fallback: match by nombre|pais key via statsByName
+          const key = player.nombre + "|" + player.pais;
+          if(statsByName[key]) pts += statsByName[key].puntos;
+        }
       });
-      u.pts=pts;
+      u.pts = pts;
     });
-    setLS("gm_users",users);
+    setLS("gm_users", users);
     const pub = {...getPublished(),[match.id]:{ts:Date.now()}};
     savePublished(pub);
     setOpenMatch(null);
@@ -19382,15 +19366,20 @@ function ApiPanel({ toast }) {
               if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
             });
             setLS("gm_stats_by_name", statsByName);
-            // Recalculate user pts from their squads
+            // Recalculate user pts — squad stored in gm_squad_{uid}
             const users = DB.getUsers();
             let updated = 0;
             users.forEach(u => {
-              if (!u.squad || !u.squad.length) return;
+              const squad = JSON.parse(localStorage.getItem("gm_squad_" + u.uid) || "[]");
+              if (!squad.length) return;
               let pts = 0;
-              u.squad.forEach(nombre_pais => {
-                const s = statsByName[nombre_pais];
-                if (s) pts += s.puntos || 0;
+              squad.forEach(player => {
+                if (ps[player.id]) {
+                  pts += ps[player.id].puntos || 0;
+                } else {
+                  const key = player.nombre + "|" + player.pais;
+                  if (statsByName[key]) pts += statsByName[key].puntos || 0;
+                }
               });
               u.pts = pts;
               updated++;
