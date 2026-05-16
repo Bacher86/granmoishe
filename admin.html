@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Gran Moishe Admin">
   <meta name="theme-color" content="#07111e">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest-admin.json">
   <link rel="apple-touch-icon" href="almagro.jpg">
   <title>Gran Moishe — Panel Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -468,6 +468,27 @@ export default function AdminPage() {
       <nav className="nav">
         {TABS.map(t=>(
           <button key={t.id} className={`ntab${tab===t.id?" active":""}</style>
+
+<script>
+  // PWA Install prompt
+  let _deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'flex';
+  });
+  window.addEventListener('appinstalled', () => {
+    _deferredPrompt = null;
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'none';
+  });
+  function installPWA() {
+    if (!_deferredPrompt) return;
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(() => { _deferredPrompt = null; });
+  }
+</script>
 </head>
 <body>
   <div id="root"></div>
@@ -18412,6 +18433,14 @@ function AdminPage() {
           )
           , React.createElement('a', { href: GAME_URL, style: { padding:"7px 12px",background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",color:"#4ade80",borderRadius:7,fontSize:".78rem",fontWeight:600,textDecoration:"none",fontFamily:"Oswald,sans-serif" },}, "⚽ Juego" )
           , React.createElement('a', { href: INDEX_URL, style: { padding:"7px 12px",background:"rgba(255,255,255,.04)",border:"1px solid #1a2d40",color:"#8a9ab0",borderRadius:7,fontSize:".78rem",fontWeight:600,textDecoration:"none",fontFamily:"Oswald,sans-serif" },}, "🏠 Inicio" )
+          , React.createElement('button', {
+            id:"pwa-install-btn",
+            onClick:()=>window.installPWA&&window.installPWA(),
+            style:{display:"none",alignItems:"center",gap:5,padding:"7px 12px",
+                   background:"rgba(74,222,128,.12)",border:"1px solid rgba(74,222,128,.4)",
+                   color:"#4ade80",borderRadius:7,fontSize:".78rem",fontWeight:600,
+                   cursor:"pointer",fontFamily:"Oswald,sans-serif"}
+          }, "📲 Instalar app")
           , React.createElement('button', { className: "btn-logout", onClick: logout,}, "⏏ Salir" )
         )
       )
@@ -18458,26 +18487,256 @@ function ApiPanel({ toast }) {
   const FD_KEY = getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0");
 
   const PLAYERS = [
-    [1,"E. Martínez","Argentina","GK"],[2,"N. Molina","Argentina","DEF"],[3,"C. Romero","Argentina","DEF"],
-    [4,"L. Martínez D","Argentina","DEF"],[5,"N. Tagliafico","Argentina","DEF"],[6,"L. Messi","Argentina","MID"],
-    [7,"R. De Paul","Argentina","MID"],[8,"E. Fernández","Argentina","MID"],[9,"A. Mac Allister","Argentina","MID"],
-    [10,"J. Álvarez","Argentina","FWD"],[11,"L. Lautaro","Argentina","FWD"],[12,"P. Dybala","Argentina","FWD"],
-    [13,"G. Simeone","Argentina","FWD"],[14,"Á. Di María","Argentina","FWD"],
-    [15,"Alisson","Brasil","GK"],[16,"Marquinhos","Brasil","DEF"],[17,"G. Magalhães","Brasil","DEF"],
-    [18,"Lucas Paquetá","Brasil","MID"],[19,"Bruno Guimarães","Brasil","MID"],[20,"Vinicius Jr","Brasil","FWD"],
-    [21,"Rodrygo","Brasil","FWD"],[22,"Raphinha","Brasil","FWD"],[23,"Endrick","Brasil","FWD"],
-    [24,"M. Maignan","Francia","GK"],[25,"Theo Hernández","Francia","DEF"],[26,"D. Upamecano","Francia","DEF"],
-    [27,"K. Mbappé","Francia","FWD"],[28,"A. Griezmann","Francia","MID"],[29,"A. Tchouaméni","Francia","MID"],
-    [30,"O. Dembélé","Francia","FWD"],
-    [31,"Unai Simón","España","GK"],[32,"Carvajal","España","DEF"],[33,"Pedri","España","MID"],[34,"Gavi","España","MID"],
-    [35,"T. Courtois","Bélgica","GK"],[36,"B. Fernandes","Portugal","MID"],[37,"R. Leão","Portugal","FWD"],
-    [38,"Rúben Dias","Portugal","DEF"],[39,"L. Díaz","Colombia","FWD"],[40,"J. Rodríguez","Colombia","MID"],
-    [41,"D. Núñez","Uruguay","FWD"],[42,"C. Pulisic","EE.UU.","FWD"],
-    [43,"K. Mitoma","Japón","FWD"],[44,"H. Ziyech","Marruecos","MID"],[45,"S. Mané","Senegal","FWD"],
-    [46,"L. Modrić","Croacia","MID"],[47,"J. Bellingham","Inglaterra","MID"],[48,"B. Saka","Inglaterra","FWD"],
-    [49,"P. Foden","Inglaterra","MID"],[50,"H. Kane","Inglaterra","FWD"],
-    [51,"J. Wirtz","Alemania","MID"],[52,"K. Havertz","Alemania","FWD"],[53,"C. Rüdiger","Alemania","DEF"],
-    [54,"V. van Dijk","Países Bajos","DEF"],[55,"X. Simons","Países Bajos","MID"],[56,"M. Depay","Países Bajos","FWD"],
+    // ── ARGENTINA (Grupo J) ──
+    [1,"E. Martínez","Argentina","GK"],[2,"G. Rulli","Argentina","GK"],
+    [3,"N. Molina","Argentina","DEF"],[4,"G. Montiel","Argentina","DEF"],
+    [5,"C. Romero","Argentina","DEF"],[6,"L. Martínez","Argentina","DEF"],
+    [7,"N. Tagliafico","Argentina","DEF"],[8,"M. Acuña","Argentina","DEF"],
+    [9,"L. Messi","Argentina","MID"],[10,"R. De Paul","Argentina","MID"],
+    [11,"E. Fernández","Argentina","MID"],[12,"A. Mac Allister","Argentina","MID"],
+    [13,"G. Lo Celso","Argentina","MID"],[14,"L. Paredes","Argentina","MID"],
+    [15,"J. Álvarez","Argentina","FWD"],[16,"L. Lautaro","Argentina","FWD"],
+    [17,"P. Dybala","Argentina","FWD"],[18,"G. Simeone","Argentina","FWD"],
+    [19,"Á. Di María","Argentina","FWD"],[20,"N. González","Argentina","FWD"],
+    // ── BRASIL (Grupo C) ──
+    [21,"Alisson","Brasil","GK"],[22,"Ederson","Brasil","GK"],
+    [23,"Marquinhos","Brasil","DEF"],[24,"E. Militão","Brasil","DEF"],
+    [25,"G. Magalhães","Brasil","DEF"],[26,"Danilo","Brasil","DEF"],
+    [27,"A. Telles","Brasil","DEF"],
+    [28,"Casemiro","Brasil","MID"],[29,"Lucas Paquetá","Brasil","MID"],
+    [30,"Bruno Guimarães","Brasil","MID"],[31,"F. Andrade","Brasil","MID"],
+    [32,"Vinicius Jr","Brasil","FWD"],[33,"Rodrygo","Brasil","FWD"],
+    [34,"Raphinha","Brasil","FWD"],[35,"Endrick","Brasil","FWD"],
+    [36,"Gabriel Martinelli","Brasil","FWD"],
+    // ── FRANCIA (Grupo I) ──
+    [37,"M. Maignan","Francia","GK"],[38,"A. Lloris","Francia","GK"],
+    [39,"T. Hernández","Francia","DEF"],[40,"B. Pavard","Francia","DEF"],
+    [41,"D. Upamecano","Francia","DEF"],[42,"W. Saliba","Francia","DEF"],
+    [43,"J. Koundé","Francia","DEF"],
+    [44,"A. Tchouaméni","Francia","MID"],[45,"A. Rabiot","Francia","MID"],
+    [46,"E. Camavinga","Francia","MID"],[47,"A. Griezmann","Francia","MID"],
+    [48,"K. Mbappé","Francia","FWD"],[49,"O. Dembélé","Francia","FWD"],
+    [50,"M. Thuram","Francia","FWD"],[51,"R. Kolo Muani","Francia","FWD"],
+    // ── ESPAÑA (Grupo H) ──
+    [52,"Unai Simón","España","GK"],[53,"David Raya","España","GK"],
+    [54,"Carvajal","España","DEF"],[55,"A. Laporte","España","DEF"],
+    [56,"R. Le Normand","España","DEF"],[57,"M. Cucurella","España","DEF"],
+    [58,"Pedri","España","MID"],[59,"Gavi","España","MID"],
+    [60,"R. Rodri","España","MID"],[61,"F. Ruiz","España","MID"],
+    [62,"Yamal","España","FWD"],[63,"N. Williams","España","FWD"],
+    [64,"Morata","España","FWD"],[65,"A. Torres","España","FWD"],
+    // ── ALEMANIA (Grupo E) ──
+    [66,"M. ter Stegen","Alemania","GK"],[67,"O. Baumann","Alemania","GK"],
+    [68,"A. Rüdiger","Alemania","DEF"],[69,"J. Tah","Alemania","DEF"],
+    [70,"D. Raum","Alemania","DEF"],[71,"J. Kimmich","Alemania","DEF"],
+    [72,"T. Müller","Alemania","MID"],[73,"J. Wirtz","Alemania","MID"],
+    [74,"L. Goretzka","Alemania","MID"],[75,"K. Havertz","Alemania","FWD"],
+    [76,"T. Werner","Alemania","FWD"],[77,"N. Füllkrug","Alemania","FWD"],
+    // ── PORTUGAL (Grupo K) ──
+    [78,"Rui Patrício","Portugal","GK"],[79,"D. Costa","Portugal","GK"],
+    [80,"Rúben Dias","Portugal","DEF"],[81,"Pepe","Portugal","DEF"],
+    [82,"N. Mendes","Portugal","DEF"],[83,"Cancelo","Portugal","DEF"],
+    [84,"B. Fernandes","Portugal","MID"],[85,"W. Carvalho","Portugal","MID"],
+    [86,"J. Moutinho","Portugal","MID"],[87,"Cristiano Ronaldo","Portugal","FWD"],
+    [88,"R. Leão","Portugal","FWD"],[89,"G. Ramos","Portugal","FWD"],
+    // ── INGLATERRA (Grupo L) ──
+    [90,"J. Pickford","Inglaterra","GK"],[91,"A. Ramsdale","Inglaterra","GK"],
+    [92,"K. Walker","Inglaterra","DEF"],[93,"H. Maguire","Inglaterra","DEF"],
+    [94,"M. Guehi","Inglaterra","DEF"],[95,"L. Alexander-Arnold","Inglaterra","DEF"],
+    [96,"J. Bellingham","Inglaterra","MID"],[97,"D. Rice","Inglaterra","MID"],
+    [98,"P. Foden","Inglaterra","MID"],[99,"B. Saka","Inglaterra","FWD"],
+    [100,"H. Kane","Inglaterra","FWD"],[101,"M. Rashford","Inglaterra","FWD"],
+    [102,"O. Watkins","Inglaterra","FWD"],
+    // ── PAÍSES BAJOS (Grupo F) ──
+    [103,"B. Flekken","Países Bajos","GK"],
+    [104,"V. van Dijk","Países Bajos","DEF"],[105,"S. de Vrij","Países Bajos","DEF"],
+    [106,"D. Dumfries","Países Bajos","DEF"],[107,"N. Ake","Países Bajos","DEF"],
+    [108,"F. de Jong","Países Bajos","MID"],[109,"T. Reijnders","Países Bajos","MID"],
+    [110,"X. Simons","Países Bajos","MID"],
+    [111,"C. Gakpo","Países Bajos","FWD"],[112,"M. Depay","Países Bajos","FWD"],
+    [113,"D. Bergwijn","Países Bajos","FWD"],
+    // ── COLOMBIA (Grupo K) ──
+    [114,"D. Ospina","Colombia","GK"],[115,"C. Vargas","Colombia","GK"],
+    [116,"D. Sánchez","Colombia","DEF"],[117,"J. Mojica","Colombia","DEF"],
+    [118,"J. Rodríguez","Colombia","MID"],[119,"M. Castaño","Colombia","MID"],
+    [120,"L. Díaz","Colombia","FWD"],[121,"R. Borré","Colombia","FWD"],
+    // ── URUGUAY (Grupo H) ──
+    [122,"S. Rochet","Uruguay","GK"],
+    [123,"D. Godín","Uruguay","DEF"],[124,"R. Araujo","Uruguay","DEF"],
+    [125,"M. Olivera","Uruguay","DEF"],
+    [126,"F. Valverde","Uruguay","MID"],[127,"L. Bentancur","Uruguay","MID"],
+    [128,"D. Núñez","Uruguay","FWD"],[129,"L. Suárez","Uruguay","FWD"],
+    [130,"E. Cavani","Uruguay","FWD"],
+    // ── MÉXICO (Grupo A) ──
+    [131,"G. Ochoa","México","GK"],
+    [132,"C. Salcedo","México","DEF"],[133,"J. Sánchez","México","DEF"],
+    [134,"H. Herrera","México","MID"],[135,"A. Guardado","México","MID"],
+    [136,"H. Lozano","México","FWD"],[137,"R. Jiménez","México","FWD"],
+    // ── MARRUECOS (Grupo C) ──
+    [138,"Y. Bono","Marruecos","GK"],
+    [139,"A. Hakimi","Marruecos","DEF"],[140,"N. Mazraoui","Marruecos","DEF"],
+    [141,"R. Ounahi","Marruecos","MID"],[142,"S. Amrabat","Marruecos","MID"],
+    [143,"H. Ziyech","Marruecos","MID"],[144,"Y. En-Nesyri","Marruecos","FWD"],
+    // ── JAPÓN (Grupo F) ──
+    [145,"S. Gonda","Japón","GK"],
+    [146,"H. Sakai","Japón","DEF"],[147,"K. Itakura","Japón","DEF"],
+    [148,"W. Endo","Japón","MID"],[149,"T. Miyashiro","Japón","MID"],
+    [150,"K. Mitoma","Japón","FWD"],[151,"T. Ueda","Japón","FWD"],
+    // ── SENEGAL (Grupo I) ──
+    [152,"E. Mendy","Senegal","GK"],
+    [153,"K. Koulibaly","Senegal","DEF"],[154,"S. Sabaly","Senegal","DEF"],
+    [155,"I. Gueye","Senegal","MID"],[156,"P. Gueye","Senegal","MID"],
+    [157,"S. Mané","Senegal","FWD"],[158,"I. Sarr","Senegal","FWD"],
+    // ── BÉLGICA (Grupo G) ──
+    [159,"T. Courtois","Bélgica","GK"],
+    [160,"T. Alderweireld","Bélgica","DEF"],[161,"J. Vertonghen","Bélgica","DEF"],
+    [162,"K. De Bruyne","Bélgica","MID"],[163,"A. Witsel","Bélgica","MID"],
+    [164,"R. Lukaku","Bélgica","FWD"],[165,"L. Trossard","Bélgica","FWD"],
+    // ── CROACIA (Grupo L) ──
+    [166,"D. Livaković","Croacia","GK"],
+    [167,"D. Ćaleta-Car","Croacia","DEF"],[168,"J. Gvardiol","Croacia","DEF"],
+    [169,"L. Modrić","Croacia","MID"],[170,"M. Brozović","Croacia","MID"],
+    [171,"I. Perišić","Croacia","FWD"],[172,"A. Kramarić","Croacia","FWD"],
+    // ── NORUEGA (Grupo I) ──
+    [173,"Ø. Nyland","Noruega","GK"],
+    [174,"L. Skjelvik","Noruega","DEF"],[175,"A. Sørloth","Noruega","FWD"],
+    [176,"E. Haaland","Noruega","FWD"],[177,"M. Ødegaard","Noruega","MID"],
+    // ── ESTADOS UNIDOS (Grupo D) ──
+    [178,"M. Turner","EE.UU.","GK"],
+    [179,"S. Dest","EE.UU.","DEF"],[180,"W. Carter","EE.UU.","DEF"],
+    [181,"T. Adams","EE.UU.","MID"],[182,"W. McKennie","EE.UU.","MID"],
+    [183,"C. Pulisic","EE.UU.","FWD"],[184,"R. Reyna","EE.UU.","FWD"],
+    // ── ECUADOR (Grupo E) ──
+    [185,"A. Domínguez","Ecuador","GK"],
+    [186,"F. Hincapié","Ecuador","DEF"],[187,"P. Arboleda","Ecuador","DEF"],
+    [188,"C. Gruezo","Ecuador","MID"],[189,"M. Caicedo","Ecuador","MID"],
+    [190,"E. Valencia","Ecuador","FWD"],[191,"M. Estrada","Ecuador","FWD"],
+    // ── AUSTRIA (Grupo J) ──
+    [192,"P. Pentz","Austria","GK"],
+    [193,"D. Alaba","Austria","DEF"],[194,"S. Posch","Austria","DEF"],
+    [195,"K. Laimer","Austria","MID"],[196,"M. Sabitzer","Austria","MID"],
+    [197,"M. Arnautovic","Austria","FWD"],[198,"C. Gregoritsch","Austria","FWD"],
+    // ── ARGELIA (Grupo J) ──
+    [199,"R. M'Bolhi","Argelia","GK"],
+    [200,"A. Mandi","Argelia","DEF"],[201,"R. Bensebaini","Argelia","DEF"],
+    [202,"N. Bennacer","Argelia","MID"],[203,"S. Feghouli","Argelia","MID"],
+    [204,"I. Slimani","Argelia","FWD"],[205,"R. Mahrez","Argelia","FWD"],
+
+    // ── EE.UU. → fix name match (fixture usa "Estados Unidos") ──
+    // Already have EE.UU. — add alias entries as Estados Unidos
+    // ── SUDÁFRICA (Grupo A) ──
+    [206,"R. Williams","Sudáfrica","GK"],[207,"S. Modise","Sudáfrica","DEF"],
+    [208,"T. Lakay","Sudáfrica","DEF"],[209,"B. Mothiba","Sudáfrica","FWD"],
+    [210,"P. Grobler","Sudáfrica","MID"],[211,"L. Foster","Sudáfrica","FWD"],
+    // ── COREA DEL SUR (Grupo A) ──
+    [212,"S. Kim","Corea del Sur","GK"],[213,"K. Min-jae","Corea del Sur","DEF"],
+    [214,"Lee Kang-in","Corea del Sur","MID"],[215,"Son Heung-min","Corea del Sur","FWD"],
+    [216,"Hwang Hee-chan","Corea del Sur","FWD"],[217,"Cho Gue-sung","Corea del Sur","FWD"],
+    // ── REP. CHECA (Grupo A) ──
+    [218,"J. Staněk","Rep. Checa","GK"],[219,"T. Souček","Rep. Checa","MID"],
+    [220,"P. Schick","Rep. Checa","FWD"],[221,"A. Hlozek","Rep. Checa","FWD"],
+    [222,"V. Coufal","Rep. Checa","DEF"],[223,"M. Kuchta","Rep. Checa","FWD"],
+    // ── CANADÁ (Grupo B) ──
+    [224,"M. Crepeau","Canadá","GK"],[225,"A. Davies","Canadá","DEF"],
+    [226,"S. Larin","Canadá","FWD"],[227,"J. David","Canadá","FWD"],
+    [228,"T. Buchanan","Canadá","MID"],[229,"A. Hutchinson","Canadá","DEF"],
+    // ── BOSNIA-HERZEGOVINA (Grupo B) ──
+    [230,"I. Pirić","Bosnia-Herzegovina","GK"],[231,"E. Džeko","Bosnia-Herzegovina","FWD"],
+    [232,"M. Pjanić","Bosnia-Herzegovina","MID"],[233,"S. Kolasinac","Bosnia-Herzegovina","DEF"],
+    [234,"B. Tahirović","Bosnia-Herzegovina","MID"],
+    // ── QATAR (Grupo B) ──
+    [235,"S. Al Sheeb","Qatar","GK"],[236,"P. Correia","Qatar","DEF"],
+    [237,"H. Al-Haydos","Qatar","MID"],[238,"A. Afif","Qatar","FWD"],
+    [239,"M. Muntari","Qatar","FWD"],
+    // ── SUIZA (Grupo B) ──
+    [240,"Y. Sommer","Suiza","GK"],[241,"M. Akanji","Suiza","DEF"],
+    [242,"G. Xhaka","Suiza","MID"],[243,"X. Shaqiri","Suiza","MID"],
+    [244,"B. Embolo","Suiza","FWD"],[245,"R. Vargas","Suiza","FWD"],
+    // ── HAITÍ (Grupo C) ──
+    [246,"J. Moïse","Haití","GK"],[247,"K. Gedeon","Haití","MID"],
+    [248,"N. Pierrot","Haití","FWD"],[249,"S. Borgella","Haití","DEF"],
+    [250,"M. Nau","Haití","FWD"],
+    // ── ESCOCIA (Grupo C) ──
+    [251,"A. Gunn","Escocia","GK"],[252,"A. Robertson","Escocia","DEF"],
+    [253,"C. McGregor","Escocia","MID"],[254,"J. McGinn","Escocia","MID"],
+    [255,"L. Ferguson","Escocia","FWD"],[256,"K. Tierney","Escocia","DEF"],
+    // ── PARAGUAY (Grupo D) ──
+    [257,"A. Silva","Paraguay","GK"],[258,"G. Gómez","Paraguay","DEF"],
+    [259,"M. Villasanti","Paraguay","MID"],[260,"M. Alonso","Paraguay","FWD"],
+    [261,"R. Sanabria","Paraguay","FWD"],[262,"J. Enciso","Paraguay","FWD"],
+    // ── AUSTRALIA (Grupo D) ──
+    [263,"M. Ryan","Australia","GK"],[264,"H. Atkinson","Australia","DEF"],
+    [265,"A. Hrustic","Australia","MID"],[266,"M. Leckie","Australia","FWD"],
+    [267,"M. Goodwin","Australia","MID"],[268,"C. Ikonomidis","Australia","FWD"],
+    // ── TURQUÍA (Grupo D) ──
+    [269,"A. Bayindir","Turquía","GK"],[270,"S. Özcan","Turquía","MID"],
+    [271,"H. Çalhanoğlu","Turquía","MID"],[272,"K. Aktürkoğlu","Turquía","FWD"],
+    [273,"Y. Yıldız","Turquía","FWD"],[274,"M. Demiral","Turquía","DEF"],
+    // ── CURAZAO (Grupo E) ──
+    [275,"E. Espinal","Curazao","GK"],[276,"L. Häfner","Curazao","MID"],
+    [277,"M. Linssen","Curazao","FWD"],[278,"G. dos Santos","Curazao","MID"],
+    [279,"J. Flemming","Curazao","FWD"],
+    // ── COSTA DE MARFIL (Grupo E) ──
+    [280,"Y. Fofana","Costa de Marfil","GK"],[281,"S. Aurier","Costa de Marfil","DEF"],
+    [282,"F. Kessié","Costa de Marfil","MID"],[283,"N. Pépé","Costa de Marfil","FWD"],
+    [284,"S. Haller","Costa de Marfil","FWD"],[285,"J. Koné","Costa de Marfil","FWD"],
+    // ── SUECIA (Grupo F) ──
+    [286,"R. Olsen","Suecia","GK"],[287,"V. Lindelöf","Suecia","DEF"],
+    [288,"D. Kulusevski","Suecia","MID"],[289,"A. Isak","Suecia","FWD"],
+    [290,"Z. Ibrahimović","Suecia","FWD"],[291,"E. Forsberg","Suecia","MID"],
+    // ── TÚNEZ (Grupo F) ──
+    [292,"A. Dahmen","Túnez","GK"],[293,"M. Meriah","Túnez","DEF"],
+    [294,"H. Msakni","Túnez","MID"],[295,"Y. Msakni","Túnez","FWD"],
+    [296,"S. Sassi","Túnez","MID"],[297,"W. Khazri","Túnez","FWD"],
+    // ── IRÁN (Grupo G) ──
+    [298,"A. Beiranvand","Irán","GK"],[299,"M. Hosseini","Irán","DEF"],
+    [300,"S. Azmoun","Irán","FWD"],[301,"M. Taremi","Irán","FWD"],
+    [302,"A. Jahanbakhsh","Irán","FWD"],[303,"S. Ezatolahi","Irán","MID"],
+    // ── NUEVA ZELANDA (Grupo G) ──
+    [304,"O. Sail","Nueva Zelanda","GK"],[305,"W. McGarry","Nueva Zelanda","DEF"],
+    [306,"C. Wood","Nueva Zelanda","FWD"],[307,"M. Fisher","Nueva Zelanda","MID"],
+    [308,"T. Cacace","Nueva Zelanda","DEF"],
+    // ── EGIPTO (Grupo G) ──
+    [309,"M. El-Shennawy","Egipto","GK"],[310,"A. Hegazy","Egipto","DEF"],
+    [311,"M. Salah","Egipto","FWD"],[312,"T. Hamdi","Egipto","MID"],
+    [313,"O. Marmoush","Egipto","FWD"],[314,"R. Sobhi","Egipto","MID"],
+    // ── CABO VERDE (Grupo H) ──
+    [315,"V. Medina","Cabo Verde","GK"],[316,"F. Tavares","Cabo Verde","DEF"],
+    [317,"R. Gomes","Cabo Verde","MID"],[318,"G. Brito","Cabo Verde","FWD"],
+    [319,"Garry Rodrigues","Cabo Verde","FWD"],
+    // ── ARABIA SAUDITA (Grupo H) ──
+    [320,"M. Al-Owais","Arabia Saudita","GK"],[321,"A. Al-Amri","Arabia Saudita","DEF"],
+    [322,"S. Al-Dawsari","Arabia Saudita","MID"],[323,"F. Al-Buraikan","Arabia Saudita","FWD"],
+    [324,"H. Al-Bahri","Arabia Saudita","DEF"],[325,"T. Al-Ghannam","Arabia Saudita","FWD"],
+    // ── IRAK (Grupo I) ──
+    [326,"J. Nadhim","Irak","GK"],[327,"A. Ibrahim","Irak","DEF"],
+    [328,"A. Abbas","Irak","MID"],[329,"A. Al-Hamrani","Irak","FWD"],
+    [330,"A. Karrar","Irak","FWD"],
+    // ── JORDANIA (Grupo J) ──
+    [331,"Y. Shaban","Jordania","GK"],[332,"B. Bani","Jordania","DEF"],
+    [333,"Y. Al-Naimat","Jordania","MID"],[334,"M. Abu Zema","Jordania","FWD"],
+    [335,"O. Al-Rashdan","Jordania","FWD"],
+    // ── R.D. CONGO (Grupo K) ──
+    [336,"K. Kasembe","R.D. Congo","GK"],[337,"A. Mputu","R.D. Congo","MID"],
+    [338,"P. Boya","R.D. Congo","FWD"],[339,"Y. Bolasie","R.D. Congo","FWD"],
+    [340,"C. Mbemba","R.D. Congo","DEF"],
+    // ── UZBEKISTÁN (Grupo K) ──
+    [341,"I. Nesterov","Uzbekistán","GK"],[342,"J. Khamdamov","Uzbekistán","DEF"],
+    [343,"O. Zhamaletdinov","Uzbekistán","MID"],[344,"E. Shomurodov","Uzbekistán","FWD"],
+    [345,"A. Tursunov","Uzbekistán","MID"],
+    // ── GHANA (Grupo L) ──
+    [346,"L. Ati-Zigi","Ghana","GK"],[347,"A. Ayew","Ghana","MID"],
+    [348,"J. Ayew","Ghana","FWD"],[349,"M. Kudus","Ghana","MID"],
+    [350,"T. Partey","Ghana","MID"],[351,"I. Sulemana","Ghana","FWD"],
+    // ── PANAMÁ (Grupo L) ──
+    [352,"L. Mejía","Panamá","GK"],[353,"H. Turner","Panamá","DEF"],
+    [354,"R. Fajardo","Panamá","MID"],[355,"A. Murillo","Panamá","FWD"],
+    [356,"B. White","Panamá","FWD"],
+    // ── ESTADOS UNIDOS → fix para que matchee con fixture ──
+    [357,"M. Turner","Estados Unidos","GK"],[358,"S. Dest","Estados Unidos","DEF"],
+    [359,"T. Adams","Estados Unidos","MID"],[360,"W. McKennie","Estados Unidos","MID"],
+    [361,"C. Pulisic","Estados Unidos","FWD"],[362,"R. Reyna","Estados Unidos","FWD"],
+    [363,"J. Sargent","Estados Unidos","FWD"],
   ];
 
   const COMPETICIONES = [
@@ -18504,6 +18763,8 @@ function ApiPanel({ toast }) {
   const saveMatchStats = s => { setMatchStats(s); setLS("gm_match_stats",s); };
   const getPublished   = () => getLS("gm_published_matches",{});
   const savePublished  = p => { setPublished(p); setLS("gm_published_matches",p); };
+
+  const WC2026_FIXTURE = [{"id":1,"home":"México","away":"Sudáfrica","date":"2026-06-11T19:00:00Z","matchday":1,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":2,"home":"Corea del Sur","away":"Rep. Checa","date":"2026-06-12T02:00:00Z","matchday":1,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":3,"home":"Rep. Checa","away":"Sudáfrica","date":"2026-06-18T16:00:00Z","matchday":2,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":4,"home":"México","away":"Corea del Sur","date":"2026-06-19T01:00:00Z","matchday":2,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":5,"home":"Rep. Checa","away":"México","date":"2026-06-25T01:00:00Z","matchday":3,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":6,"home":"Sudáfrica","away":"Corea del Sur","date":"2026-06-25T01:00:00Z","matchday":3,"group":"Grupo A","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":7,"home":"Canadá","away":"Bosnia-Herzegovina","date":"2026-06-12T19:00:00Z","matchday":1,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":8,"home":"Qatar","away":"Suiza","date":"2026-06-13T19:00:00Z","matchday":1,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":9,"home":"Suiza","away":"Bosnia-Herzegovina","date":"2026-06-18T19:00:00Z","matchday":2,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":10,"home":"Canadá","away":"Qatar","date":"2026-06-18T22:00:00Z","matchday":2,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":11,"home":"Suiza","away":"Canadá","date":"2026-06-24T19:00:00Z","matchday":3,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":12,"home":"Bosnia-Herzegovina","away":"Qatar","date":"2026-06-24T19:00:00Z","matchday":3,"group":"Grupo B","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":13,"home":"Brasil","away":"Marruecos","date":"2026-06-13T22:00:00Z","matchday":1,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":14,"home":"Haití","away":"Escocia","date":"2026-06-14T01:00:00Z","matchday":1,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":15,"home":"Escocia","away":"Marruecos","date":"2026-06-19T22:00:00Z","matchday":2,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":16,"home":"Brasil","away":"Haití","date":"2026-06-20T01:00:00Z","matchday":2,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":17,"home":"Escocia","away":"Brasil","date":"2026-06-24T22:00:00Z","matchday":3,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":18,"home":"Marruecos","away":"Haití","date":"2026-06-26T22:00:00Z","matchday":3,"group":"Grupo C","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":19,"home":"Estados Unidos","away":"Paraguay","date":"2026-06-13T01:00:00Z","matchday":1,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":20,"home":"Australia","away":"Rumania","date":"2026-06-13T04:00:00Z","matchday":1,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":21,"home":"Rumania","away":"Paraguay","date":"2026-06-19T04:00:00Z","matchday":2,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":22,"home":"Estados Unidos","away":"Australia","date":"2026-06-19T19:00:00Z","matchday":2,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":23,"home":"Rumania","away":"Estados Unidos","date":"2026-06-27T02:00:00Z","matchday":3,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":24,"home":"Paraguay","away":"Australia","date":"2026-06-26T02:00:00Z","matchday":3,"group":"Grupo D","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":25,"home":"Alemania","away":"Curazao","date":"2026-06-14T17:00:00Z","matchday":1,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":26,"home":"Costa de Marfil","away":"Ecuador","date":"2026-06-14T23:00:00Z","matchday":1,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":27,"home":"Alemania","away":"Costa de Marfil","date":"2026-06-20T20:00:00Z","matchday":2,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":28,"home":"Curazao","away":"Ecuador","date":"2026-06-21T00:00:00Z","matchday":2,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":29,"home":"Ecuador","away":"Alemania","date":"2026-06-25T20:00:00Z","matchday":3,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":30,"home":"Curazao","away":"Costa de Marfil","date":"2026-06-25T20:00:00Z","matchday":3,"group":"Grupo E","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":31,"home":"Países Bajos","away":"Japón","date":"2026-06-14T20:00:00Z","matchday":1,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":32,"home":"Turquía","away":"Túnez","date":"2026-06-15T02:00:00Z","matchday":1,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":33,"home":"Países Bajos","away":"Turquía","date":"2026-06-20T17:00:00Z","matchday":2,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":34,"home":"Túnez","away":"Japón","date":"2026-06-20T04:00:00Z","matchday":2,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":35,"home":"Japón","away":"Turquía","date":"2026-06-25T23:00:00Z","matchday":3,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":36,"home":"Túnez","away":"Países Bajos","date":"2026-06-25T23:00:00Z","matchday":3,"group":"Grupo F","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":37,"home":"Irán","away":"Nueva Zelanda","date":"2026-06-16T01:00:00Z","matchday":1,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":38,"home":"Bélgica","away":"Egipto","date":"2026-06-15T19:00:00Z","matchday":1,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":39,"home":"Bélgica","away":"Irán","date":"2026-06-21T19:00:00Z","matchday":2,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":40,"home":"Nueva Zelanda","away":"Egipto","date":"2026-06-22T01:00:00Z","matchday":2,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":41,"home":"Egipto","away":"Irán","date":"2026-06-27T03:00:00Z","matchday":3,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":42,"home":"Nueva Zelanda","away":"Bélgica","date":"2026-06-27T03:00:00Z","matchday":3,"group":"Grupo G","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":43,"home":"España","away":"Cabo Verde","date":"2026-06-15T16:00:00Z","matchday":1,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":44,"home":"Arabia Saudita","away":"Uruguay","date":"2026-06-15T22:00:00Z","matchday":1,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":45,"home":"España","away":"Arabia Saudita","date":"2026-06-21T16:00:00Z","matchday":2,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":46,"home":"Uruguay","away":"Cabo Verde","date":"2026-06-21T22:00:00Z","matchday":2,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":47,"home":"Cabo Verde","away":"Arabia Saudita","date":"2026-06-27T00:00:00Z","matchday":3,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":48,"home":"Uruguay","away":"España","date":"2026-06-27T00:00:00Z","matchday":3,"group":"Grupo H","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":49,"home":"Francia","away":"Senegal","date":"2026-06-16T19:00:00Z","matchday":1,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":50,"home":"Eslovenia","away":"Noruega","date":"2026-06-16T22:00:00Z","matchday":1,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":51,"home":"Francia","away":"Eslovenia","date":"2026-06-22T21:00:00Z","matchday":2,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":52,"home":"Noruega","away":"Senegal","date":"2026-06-23T00:00:00Z","matchday":2,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":53,"home":"Noruega","away":"Francia","date":"2026-06-26T19:00:00Z","matchday":3,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":54,"home":"Senegal","away":"Eslovenia","date":"2026-06-26T19:00:00Z","matchday":3,"group":"Grupo I","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":55,"home":"Argentina","away":"Argelia","date":"2026-06-17T01:00:00Z","matchday":1,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":56,"home":"Jordania","away":"Austria","date":"2026-06-17T04:00:00Z","matchday":1,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":57,"home":"Argentina","away":"Jordania","date":"2026-06-23T01:00:00Z","matchday":2,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":58,"home":"Argelia","away":"Austria","date":"2026-06-22T04:00:00Z","matchday":2,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":59,"home":"Austria","away":"Argentina","date":"2026-06-27T23:00:00Z","matchday":3,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":60,"home":"Argelia","away":"Jordania","date":"2026-06-27T23:00:00Z","matchday":3,"group":"Grupo J","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":61,"home":"Colombia","away":"Portugal","date":"2026-06-17T23:00:00Z","matchday":1,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":62,"home":"R.D. Congo","away":"Uzbekistán","date":"2026-06-17T23:00:00Z","matchday":1,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":63,"home":"Colombia","away":"R.D. Congo","date":"2026-06-23T23:00:00Z","matchday":2,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":64,"home":"Uzbekistán","away":"Portugal","date":"2026-06-23T19:00:00Z","matchday":2,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":65,"home":"Portugal","away":"Colombia","date":"2026-06-27T23:00:00Z","matchday":3,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":66,"home":"Uzbekistán","away":"R.D. Congo","date":"2026-06-27T23:00:00Z","matchday":3,"group":"Grupo K","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":67,"home":"Croacia","away":"Ghana","date":"2026-06-17T20:00:00Z","matchday":1,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":68,"home":"Panamá","away":"Inglaterra","date":"2026-06-18T02:00:00Z","matchday":1,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":69,"home":"Croacia","away":"Panamá","date":"2026-06-23T16:00:00Z","matchday":2,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":70,"home":"Ghana","away":"Inglaterra","date":"2026-06-24T02:00:00Z","matchday":2,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":71,"home":"Ghana","away":"Croacia","date":"2026-06-27T19:00:00Z","matchday":3,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":72,"home":"Inglaterra","away":"Panamá","date":"2026-06-27T19:00:00Z","matchday":3,"group":"Grupo L","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"GROUP_STAGE"},{"id":200,"home":"Clasificado 2°A","away":"Clasificado 2°B","date":"2026-06-28T19:00:00Z","matchday":4,"group":"16avos P73","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":201,"home":"Clasificado 1°C","away":"Clasificado 3°DEF","date":"2026-06-29T00:00:00Z","matchday":4,"group":"16avos P74","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":202,"home":"Clasificado 1°E","away":"Clasificado 2°F","date":"2026-06-29T18:00:00Z","matchday":4,"group":"16avos P75","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":203,"home":"Clasificado 1°E","away":"Clasificado M3°","date":"2026-06-30T01:00:00Z","matchday":4,"group":"16avos P76","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":204,"home":"Clasificado 2°E","away":"Clasificado 2°I","date":"2026-06-30T18:00:00Z","matchday":4,"group":"16avos P77","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":205,"home":"Clasificado 1°I","away":"Clasificado M3°","date":"2026-07-01T01:00:00Z","matchday":4,"group":"16avos P78","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":206,"home":"Clasificado 1°A","away":"Clasificado M3°","date":"2026-07-02T01:00:00Z","matchday":4,"group":"16avos P79","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":207,"home":"Clasificado 1°L","away":"Clasificado M3°","date":"2026-07-01T16:00:00Z","matchday":4,"group":"16avos P80","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":208,"home":"Clasificado 1°G","away":"Clasificado 3°AEHI","date":"2026-07-01T22:00:00Z","matchday":4,"group":"16avos P81","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":209,"home":"Clasificado 1°D","away":"Clasificado 3°BEFIJ","date":"2026-07-02T03:00:00Z","matchday":4,"group":"16avos P82","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":210,"home":"Clasificado 2°K","away":"Clasificado 2°L","date":"2026-07-02T17:00:00Z","matchday":4,"group":"16avos P83","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":211,"home":"Clasificado 1°H","away":"Clasificado 2°J","date":"2026-07-02T21:00:00Z","matchday":4,"group":"16avos P84","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":212,"home":"Clasificado 1°B","away":"Clasificado 3°EFGIJ","date":"2026-07-03T02:00:00Z","matchday":4,"group":"16avos P85","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":213,"home":"Clasificado 2°D","away":"Clasificado 2°G","date":"2026-07-03T18:00:00Z","matchday":4,"group":"16avos P86","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":214,"home":"Clasificado 1°J","away":"Clasificado 2°H","date":"2026-07-03T22:00:00Z","matchday":4,"group":"16avos P87","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":215,"home":"Clasificado 1°K","away":"Clasificado 3°DEIJL","date":"2026-07-04T02:30:00Z","matchday":4,"group":"16avos P88","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R32"},{"id":216,"home":"Clasificado G73/74","away":"Clasificado G75/76","date":"2026-07-04T18:00:00Z","matchday":5,"group":"Octavos P89","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":217,"home":"Clasificado G77/78","away":"Clasificado G79/80","date":"2026-07-04T22:00:00Z","matchday":5,"group":"Octavos P90","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":218,"home":"Clasificado G81/82","away":"Clasificado G83/84","date":"2026-07-05T17:00:00Z","matchday":5,"group":"Octavos P91","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":219,"home":"Clasificado G85/86","away":"Clasificado G87/88","date":"2026-07-05T21:00:00Z","matchday":5,"group":"Octavos P92","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":220,"home":"Clasificado G89/90","away":"Clasificado G91/92","date":"2026-07-06T17:00:00Z","matchday":5,"group":"Octavos P93","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":221,"home":"Clasificado G89/90","away":"Clasificado G91/92","date":"2026-07-06T21:00:00Z","matchday":5,"group":"Octavos P94","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":222,"home":"Clasificado G93/94","away":"Clasificado G95/96","date":"2026-07-07T17:00:00Z","matchday":5,"group":"Octavos P95","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":223,"home":"Clasificado G93/94","away":"Clasificado G95/96","date":"2026-07-07T21:00:00Z","matchday":5,"group":"Octavos P96","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"R16"},{"id":224,"home":"Clasificado G89/90 ganador","away":"Clasificado G91/92 ganador","date":"2026-07-09T21:00:00Z","matchday":6,"group":"Cuartos P97 — Boston","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"QF"},{"id":225,"home":"Clasificado G93/94 ganador","away":"Clasificado G95/96 ganador","date":"2026-07-10T01:00:00Z","matchday":6,"group":"Cuartos P98 — Los Ángeles","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"QF"},{"id":226,"home":"Clasificado G97 perdedor","away":"Clasificado G98 perdedor","date":"2026-07-10T21:00:00Z","matchday":6,"group":"Cuartos P99 — Miami","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"QF"},{"id":227,"home":"Clasificado G99 perdedor","away":"Clasificado G100 perdedor","date":"2026-07-11T01:00:00Z","matchday":6,"group":"Cuartos P100 — Kansas City","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"QF"},{"id":228,"home":"Clasificado G97 ganador","away":"Clasificado G98 ganador","date":"2026-07-14T22:00:00Z","matchday":7,"group":"Semifinal 1 — Dallas","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"SF"},{"id":229,"home":"Clasificado G99 ganador","away":"Clasificado G100 ganador","date":"2026-07-15T22:00:00Z","matchday":7,"group":"Semifinal 2 — Atlanta","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"SF"},{"id":230,"home":"Clasificado SF1 perdedor","away":"Clasificado SF2 perdedor","date":"2026-07-18T18:00:00Z","matchday":8,"group":"3er Puesto — Miami","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"3RD"},{"id":231,"home":"Clasificado SF1 ganador","away":"Clasificado SF2 ganador","date":"2026-07-19T22:00:00Z","matchday":9,"group":"FINAL — Nueva York/NJ","score_home":null,"score_away":null,"status":"SCHEDULED","_comp":"WC","stage":"FINAL"}]
 
   const [competicion,setCompeticion] = useState(()=>getLS("gm_competicion","WC"));
   const [fecha,      setFecha]       = useState("1");
@@ -18608,18 +18869,19 @@ function ApiPanel({ toast }) {
   };
 
   const getTeamPais = name => {
-    const n = name.toLowerCase();
-    const map = {"argentina":"argentina","brazil":"brasil","brasil":"brasil","france":"francia","spain":"españa","germany":"alemania","portugal":"portugal","england":"inglaterra","netherlands":"países bajos","croatia":"croacia","morocco":"marruecos","japan":"japón","colombia":"colombia","uruguay":"uruguay","senegal":"senegal","united states":"ee.uu."};
-    for(const [k,v] of Object.entries(map)) { if(n.includes(k)) return v; }
+    // Direct match first (fixture country names already match PLAYERS)
     return name;
   };
 
+  const normName = s => (s||"").toLowerCase()
+    .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i").replace(/ó/g,"o").replace(/ú/g,"u")
+    .replace(/ü/g,"u").replace(/ñ/g,"n").replace(/ç/g,"c").trim();
+
   const getMatchPlayers = (match) => {
     if(!match) return {home:[],away:[]};
-    const hp = getTeamPais(match.home), ap = getTeamPais(match.away);
-    const norm = s => s.toLowerCase().replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u");
-    const home = PLAYERS.filter(([,n,p]) => norm(p)===norm(hp));
-    const away = PLAYERS.filter(([,n,p]) => norm(p)===norm(ap));
+    const hp = match.home, ap = match.away;
+    const home = PLAYERS.filter(([,n,p]) => normName(p)===normName(hp));
+    const away = PLAYERS.filter(([,n,p]) => normName(p)===normName(ap));
     return {home,away};
   };
 
@@ -18780,9 +19042,20 @@ function ApiPanel({ toast }) {
         )
       ),
       React.createElement("div", {style:{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}},
+        React.createElement("button", {
+          onClick:()=>{
+            setMatches(WC2026_FIXTURE);
+            setLS("gm_matches_cache",WC2026_FIXTURE);
+            setLS("gm_competicion","WC");
+            setCompeticion("WC");
+            setFecha("1");
+            toast("✅ Fixture del Mundial 2026 cargado — 72 partidos","success");
+          },
+          style:{padding:"9px 18px",borderRadius:7,background:"linear-gradient(135deg,#1B3A6B,#2A5298)",color:"#fff",border:"2px solid #4A7CC9",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}
+        }, "🌍 Cargar Fixture WC 2026 (104 partidos)"),
         React.createElement("button", {onClick:fetchMatches, disabled:loading,
           style:{padding:"9px 18px",borderRadius:7,background:"#4ade80",color:"#07111e",border:"none",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:loading?"not-allowed":"pointer",opacity:loading?0.6:1}},
-          loading ? "⏳ Cargando..." : "📥 Cargar partidos — " + compActual.label),
+          loading ? "⏳ Cargando..." : "📥 API — " + compActual.label),
         matches.length>0 && React.createElement("span", {style:{fontSize:".75rem",color:"#4a6a5a"}},
           matches.length + " partidos · " + matches.filter(m=>m.status==="FINISHED").length + " finalizados")
       )
@@ -18799,6 +19072,12 @@ function ApiPanel({ toast }) {
                    background:fecha===f?"rgba(74,222,128,.15)":"transparent",
                    color:fecha===f?"#4ade80":"#5a7a8a",
                    fontFamily:"Oswald,sans-serif",fontSize:".8rem",fontWeight:700,cursor:"pointer"}},
+            f==="4" ? "16avos" :
+            f==="5" ? "Octavos" :
+            f==="6" ? "Cuartos" :
+            f==="7" ? "Semis" :
+            f==="8" ? "3° Puesto" :
+            f==="9" ? "🏆 Final" :
             f==="elim" ? "⚔️ Elim." : "J"+f)
         )
       )
@@ -18831,10 +19110,36 @@ function ApiPanel({ toast }) {
                 hasStats && !isPub && React.createElement("span", {style:{color:"#fbbf24"}}, "📝 Con datos sin publicar")
               )
             ),
-            isFinished && React.createElement("div", {style:{display:"flex",gap:6,alignItems:"center"}},
-              React.createElement("button", {onClick:()=>setOpenMatch(m.id),
-                style:{padding:"5px 14px",borderRadius:6,border:"1px solid "+(isPub?"#1a2d40":"#1a3a28"),background:isPub?"transparent":"rgba(74,222,128,.08)",color:isPub?"#5a7a8a":"#4ade80",fontFamily:"Oswald,sans-serif",fontSize:".78rem",fontWeight:700,cursor:"pointer"}},
-                isPub ? "Ver/Editar" : "✏️ Cargar stats")
+            React.createElement("div", {style:{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}},
+              // Botón asignar equipos (fase eliminatoria)
+              (m.home.includes("Clasificado")||m.away.includes("Clasificado")||m.home.startsWith("G")||m.away.startsWith("G")) &&
+                React.createElement("button", {
+                  onClick:()=>{
+                    const nh = prompt("Local:", m.home);
+                    if(nh===null) return;
+                    const na = prompt("Visitante:", m.away);
+                    if(na===null) return;
+                    const updated = matches.map(x => x.id===m.id ? {...x,home:nh.trim()||m.home,away:na.trim()||m.away} : x);
+                    setMatches(updated); setLS("gm_matches_cache",updated);
+                    toast("✅ Equipos actualizados","success");
+                  },
+                  title:"Asignar clasificados",
+                  style:{padding:"5px 10px",borderRadius:6,border:"1px solid rgba(251,191,36,.3)",background:"transparent",color:"#fbbf24",fontFamily:"Oswald,sans-serif",fontSize:".78rem",cursor:"pointer"}
+                }, "🏳 Equipos"),
+              // Botón cargar resultado (siempre visible)
+              !isPub && React.createElement("button", {
+                onClick:()=>setOpenMatch(m.id),
+                style:{padding:"5px 14px",borderRadius:6,
+                  border:"1px solid "+(isFinished?"#1a3a28":"rgba(96,165,250,.3)"),
+                  background:isFinished?"rgba(74,222,128,.08)":"rgba(96,165,250,.08)",
+                  color:isFinished?"#4ade80":"#60a5fa",
+                  fontFamily:"Oswald,sans-serif",fontSize:".78rem",fontWeight:700,cursor:"pointer"}},
+                isFinished ? "✏️ Stats" : "⚽ Resultado"),
+              // Ver publicado
+              isPub && React.createElement("button", {
+                onClick:()=>setOpenMatch(m.id),
+                style:{padding:"5px 14px",borderRadius:6,border:"1px solid #1a2d40",background:"transparent",color:"#5a7a8a",fontFamily:"Oswald,sans-serif",fontSize:".78rem",cursor:"pointer"}},
+                "Ver/Editar")
             )
           )
         );
@@ -18843,22 +19148,65 @@ function ApiPanel({ toast }) {
 
     // Panel de carga de stats de un partido
     openMatch && currentMatch && React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:10}},
-      React.createElement("div", {style:{background:"rgba(74,222,128,.06)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
-        React.createElement("div", null,
-          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",fontWeight:900,color:"#fff"}},
-            currentMatch.home, " ", React.createElement("span",{style:{color:"#4ade80"}}, currentMatch.score_home," – ",currentMatch.score_away), " ", currentMatch.away),
-          React.createElement("div", {style:{fontSize:".72rem",color:"#4a6a5a",marginTop:3}},
-            new Date(currentMatch.date).toLocaleString("es-AR",{weekday:"long",day:"2-digit",month:"long",hour:"2-digit",minute:"2-digit"}))
+
+      // ── RESULTADO ──────────────────────────────────────────────
+      React.createElement("div", {className:"ap-card",style:{display:"flex",flexDirection:"column",gap:12}},
+        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:".75rem",fontWeight:700,letterSpacing:1.5,color:"#4a6a5a"}}, "⚽ RESULTADO"),
+        React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
+          React.createElement("span", {style:{fontWeight:700,fontSize:"1rem",flex:1,textAlign:"right"}}, currentMatch.home),
+          React.createElement("input", {
+            type:"number", min:0, max:20,
+            value: currentMatch.score_home??'',
+            placeholder:"0",
+            onChange: e => {
+              const v = e.target.value==='' ? null : parseInt(e.target.value);
+              const updated = matches.map(x => x.id===currentMatch.id ? {...x, score_home:v} : x);
+              setMatches(updated); setLS("gm_matches_cache", updated);
+            },
+            style:{width:56,textAlign:"center",fontFamily:"Oswald,sans-serif",fontSize:"1.6rem",fontWeight:900,
+                   background:"#0a1525",border:"2px solid #2a4a38",color:"#4ade80",borderRadius:8,padding:"4px"}
+          }),
+          React.createElement("span", {style:{color:"#3a5a4a",fontFamily:"Oswald,sans-serif",fontSize:"1.4rem"}},"–"),
+          React.createElement("input", {
+            type:"number", min:0, max:20,
+            value: currentMatch.score_away??'',
+            placeholder:"0",
+            onChange: e => {
+              const v = e.target.value==='' ? null : parseInt(e.target.value);
+              const updated = matches.map(x => x.id===currentMatch.id ? {...x, score_away:v} : x);
+              setMatches(updated); setLS("gm_matches_cache", updated);
+            },
+            style:{width:56,textAlign:"center",fontFamily:"Oswald,sans-serif",fontSize:"1.6rem",fontWeight:900,
+                   background:"#0a1525",border:"2px solid #2a4a38",color:"#4ade80",borderRadius:8,padding:"4px"}
+          }),
+          React.createElement("span", {style:{fontWeight:700,fontSize:"1rem",flex:1}}, currentMatch.away)
         ),
-        React.createElement("div", {style:{display:"flex",gap:8,flexWrap:"wrap"}},
-          React.createElement("button", {onClick:()=>publishMatch(currentMatch),
-            style:{padding:"8px 18px",borderRadius:6,border:"none",background:"#4ade80",color:"#07111e",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "✅ PUBLICAR PUNTOS"),
+        React.createElement("div", {style:{display:"flex",gap:8,justifyContent:"flex-end",flexWrap:"wrap"}},
+          currentMatch.score_home!==null && currentMatch.score_away!==null &&
+            React.createElement("button", {
+              onClick:()=>{
+                const updated = matches.map(x => x.id===currentMatch.id ? {...x,status:"FINISHED"} : x);
+                setMatches(updated); setLS("gm_matches_cache", updated);
+                toast("✅ Resultado guardado. Ahora cargá las stats y publicá.","success");
+              },
+              style:{padding:"8px 18px",borderRadius:7,border:"none",background:"#22c55e",color:"#07111e",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}
+            }, "💾 Guardar resultado"),
+          React.createElement("button", {
+            onClick:()=>publishMatch(currentMatch),
+            disabled: currentMatch.score_home===null||currentMatch.score_away===null,
+            style:{padding:"8px 18px",borderRadius:7,border:"none",
+                   background:currentMatch.score_home!==null?"#4ade80":"#1a2d40",
+                   color:currentMatch.score_home!==null?"#07111e":"#3a5a4a",
+                   fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,
+                   cursor:currentMatch.score_home!==null?"pointer":"not-allowed"}},
+            "✅ PUBLICAR PUNTOS"),
           React.createElement("button", {onClick:()=>setOpenMatch(null),
-            style:{padding:"8px 12px",borderRadius:6,border:"1px solid #1a2d40",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontSize:".82rem"}}, "← Volver")
+            style:{padding:"8px 12px",borderRadius:7,border:"1px solid #1a2d40",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontSize:".82rem"}}, "← Volver")
         )
       ),
+
       React.createElement("div", {style:{fontSize:".75rem",color:"#4a6a5a",padding:"6px 10px",background:"rgba(255,255,255,.02)",borderRadius:6,lineHeight:1.7}},
-        "Sumá las acciones de cada jugador y apretá PUBLICAR PUNTOS. Vallas y V/E/D se calculan solos del marcador."
+        "1) Cargá el resultado arriba · 2) Sumá acciones de los jugadores · 3) PUBLICAR PUNTOS"
       ),
       React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
         React.createElement("div", {className:"ap-card",style:{padding:10}},
