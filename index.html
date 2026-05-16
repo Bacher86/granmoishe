@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="almagro.jpg">
   <title>Gran Moishe 2026 — Fantasy Fútbol · Olami Almagro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=Assistant:wght@400;600;700;800&family=Oswald:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -470,7 +470,11 @@ function showFullAd(onDone) {
   if (!elite.length) {
     const splash = document.createElement('div');
     splash.style.cssText = 'position:fixed;inset:0;background:rgba(7,17,30,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
-    splash.innerHTML = '<img src="almagro.jpg" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgba(74,124,201,.6);box-shadow:0 0 40px rgba(74,124,201,.4);" onerror="this.style.display='none'"/><div style="font-family:Oswald,sans-serif;font-size:2.2rem;font-weight:900;color:#e2e8f0;letter-spacing:2px;">GRAN MOISHE</div><div style="font-size:.85rem;color:#4a6a5a;letter-spacing:1px;">EL DT DEL MUNDIAL 2026</div><div style="width:120px;height:3px;background:linear-gradient(90deg,transparent,#4ade80,transparent);border-radius:2px;animation:pulse 1s infinite;"></div>';
+    var _si=new Image();_si.src='almagro.jpg';_si.onerror=function(){this.src='https://bacher86.github.io/granmoishe/almagro.jpg';};
+    _si.style.cssText='width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgba(74,124,201,.6);';
+    var _st=document.createElement('div');_st.style.cssText='font-family:Oswald,sans-serif;font-size:2rem;font-weight:900;color:#e2e8f0;letter-spacing:2px;';_st.textContent='GRAN MOISHE';
+    var _ss=document.createElement('div');_ss.style.cssText='font-size:.8rem;color:#5a7a6a;';_ss.textContent='El DT del Mundial 2026';
+    splash.appendChild(_si);splash.appendChild(_st);splash.appendChild(_ss);
     document.body.appendChild(splash);
     setTimeout(function(){ splash.remove(); onDone && onDone(); }, 2500);
     return;
