@@ -557,13 +557,11 @@ function showFullAd(onDone) {
     if (ad.img) {
       var adImg = document.createElement('img');
       adImg.src = ad.img;
-      adImg.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:contain;';
+      adImg.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:contain;display:block;';
+      adImg.onerror = function(){ this.style.display='none'; };
       adBox.appendChild(adImg);
     }
-    var adLabel = document.createElement('div');
-    adLabel.style.cssText = 'font-size:.65rem;letter-spacing:2px;color:#fbbf24;font-weight:700;margin-bottom:6px;';
-    adLabel.textContent = '⭐ PUBLICIDAD';
-    adBox.appendChild(adLabel);
+
     adBox.onclick = function() { if(ad.url) window.open(ad.url,'_blank'); };
     ov.appendChild(adBox);
     var secs = ad.seconds || 8;
