@@ -68,11 +68,12 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .auth-switch{background:transparent;border:none;color:#4a7a5a;font-size:.82rem;cursor:pointer;margin-top:8px;text-decoration:underline;}
 
 /* CAROUSEL */
-.ad-carousel{background:#0a1525;border-top:1px solid #1a2d40;border-bottom:1px solid #1a2d40;padding:12px 24px;text-align:center;}
-.adc-label{font-size:.6rem;letter-spacing:2px;color:#3a5a4a;text-transform:uppercase;margin-bottom:8px;}
-.adc-slide{cursor:pointer;border-radius:8px;overflow:hidden;max-width:800px;margin:0 auto;}
-.adc-dots{display:flex;gap:6px;justify-content:center;margin-top:8px;}
-.adc-dot{width:8px;height:8px;border-radius:50%;border:1px solid #2a4a38;background:transparent;cursor:pointer;}
+.ad-carousel-bar{position:fixed;bottom:0;left:0;right:0;z-index:300;background:#07111e;border-top:1px solid #1a2d40;box-shadow:0 -4px 20px rgba(0,0,0,.5);}
+.adc-inner{cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;max-height:80px;}
+.adc-img{width:100%;max-height:80px;object-fit:cover;display:block;}
+.adc-no-img{padding:18px;font-size:.72rem;color:#2a4a3a;letter-spacing:2px;text-transform:uppercase;}
+.adc-dots{position:absolute;bottom:6px;right:10px;display:flex;gap:5px;}
+.adc-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;}
 .adc-dot.active{background:#4ade80;}
 
 /* FULL SCREEN AD */
@@ -106,7 +107,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 
 /* APP LAYOUT */
 .app-layout{display:flex;width:100%;}
-.main{flex:1;padding:10px 12px;min-width:0;overflow-x:hidden;}
+.main{flex:1;padding:10px 12px 88px;min-width:0;overflow-x:hidden;}
 
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0a1b2a,#071a10);border-bottom:2px solid #1a3a20;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:200;}
@@ -18264,24 +18265,34 @@ function AdBanner({ ads, slot, className="" }) {
 }
 
 function AdCarousel({ ads }) {
-  const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
-  const [idx,setIdx]=useState(0);
-  useEffect(()=>{
+  var slotAds = useMemo(function(){return ads.filter(function(a){return a.active&&(a.tier==="resto"||a.tier==="todo");});}, [ads]);
+  var idxState = useState(0);
+  var idx = idxState[0], setIdx = idxState[1];
+  useEffect(function(){
     if(!slotAds.length) return;
-    const t=setInterval(()=>setIdx(i=>(i+1)%Math.max(slotAds.length,1)),(slotAds[0]?.seconds||8)*1000);
-    return()=>clearInterval(t);
-  },[slotAds]);
+    var secs = slotAds[0] && slotAds[0].seconds ? slotAds[0].seconds : 6;
+    var t = setInterval(function(){ setIdx(function(i){ return (i+1) % Math.max(slotAds.length, 1); }); }, secs * 1000);
+    return function(){ clearInterval(t); };
+  }, [slotAds]);
   if(!slotAds.length) return null;
-  return (
-    React.createElement('div', { className: "ad-carousel",}
-      , React.createElement('div', { className: "adc-label",}, "PUBLICIDAD")
-      , React.createElement('div', { className: "adc-slide", onClick: ()=>{const a=slotAds[idx];if(a){DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");}},}
-        , React.createElement('div', { className: "ad-placeholder", style: {height:90},}
-          , React.createElement('span', { className: "ad-tier-label", style: {color:"#C0C0C0"},}, "Plata")
-          , React.createElement('div', { className: "ad-name",}, _optionalChain([slotAds, 'access', _13 => _13[idx], 'optionalAccess', _14 => _14.nombre])||"Publicidad")
-        )
-      )
-      , React.createElement('div', { className: "adc-dots",}, slotAds.map((_,i)=>React.createElement('button', { key: i, className: `adc-dot${i===idx?" active":""}`, onClick: ()=>setIdx(i),})))
+  var ad = slotAds[idx];
+  return React.createElement('div', { className: "ad-carousel-bar" },
+    React.createElement('div', {
+      className: "adc-inner",
+      onClick: function(){ if(ad){ DB.trackAdClick(ad.id); if(ad.url) window.open(ad.url,"_blank"); } }
+    },
+      ad && ad.img
+        ? React.createElement('img', { src: ad.img, alt: "", className: "adc-img" })
+        : React.createElement('div', { className: "adc-no-img" }, "Publicidad"),
+      slotAds.length > 1 ? React.createElement('div', { className: "adc-dots" },
+        slotAds.map(function(_, i) {
+          return React.createElement('div', {
+            key: i,
+            className: "adc-dot" + (i === idx ? " active" : ""),
+            onClick: function(e){ e.stopPropagation(); setIdx(i); }
+          });
+        })
+      ) : null
     )
   );
 }
@@ -19986,6 +19997,15 @@ function GranMoishe() {
           , React.createElement('div', null, React.createElement('div', { className: "hdr-title",}, "GRAN " , React.createElement('span', { className: "hdr-yr",}, "MOISHE")), React.createElement('div', { className: "hdr-sub",}, "EL DT DEL MUNDIAL 2026"    ))
         )
         , React.createElement('div', { className: "hdr-r",}
+          , React.createElement('button', {
+              id: "pwaInstallBtn",
+              onClick: function(){ if(typeof triggerInstall!=="undefined") triggerInstall(); },
+              style: {display:"none",alignItems:"center",padding:"5px 10px",
+                background:"rgba(74,222,128,.15)",border:"1px solid rgba(74,222,128,.4)",
+                borderRadius:16,color:"#4ade80",fontFamily:"Oswald,sans-serif",
+                fontWeight:700,fontSize:".72rem",cursor:"pointer",flexShrink:0}
+            }, "Instalar App"
+          )
           , React.createElement('div', { className: "hdr-stats",}
             , React.createElement('div', { className: "hst",}, React.createElement('span', null, "💰"), React.createElement('div', null, React.createElement('span', { className: "hst-v", style: {color:budget<10e6?"#ef4444":"#4ade80"},}, fmt(budget)), React.createElement('span', { className: "hst-n",}, "Budget")))
             , React.createElement('div', { className: "hst",}, React.createElement('span', null, "⭐"), React.createElement('div', null, React.createElement('span', { className: "hst-v", style: {color:"#FFD700"},}, [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0)), React.createElement('span', { className: "hst-n",}, "Pts")))
@@ -20032,6 +20052,7 @@ function GranMoishe() {
         ))
       )
 
+      , React.createElement(AdCarousel, { ads: ads })
       , React.createElement('div', { className: "app-layout",}
         , showSidebar&&React.createElement(SidebarAds, { ads: ads, side:"left",})
         , React.createElement('main', { className: "main",}
@@ -20073,6 +20094,34 @@ function GranMoishe() {
   </script>
 <script>
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+
+
+// ── PWA INSTALL ──────────────────────────────────────────────────────────────
+var _installPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault(); _installPrompt = e;
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', function() {
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  _installPrompt = null;
+});
+function triggerInstall() {
+  if (_installPrompt) {
+    _installPrompt.prompt();
+    _installPrompt.userChoice.then(function(r){
+      _installPrompt = null;
+      if (r.outcome==='accepted') {
+        var btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.style.display='none';
+      }
+    });
+  } else {
+    alert('En iOS: toca el boton Compartir y luego "Agregar a pantalla de inicio"');
+  }
+}
 </script>
 </body>
 </html>
