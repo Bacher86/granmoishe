@@ -19025,20 +19025,23 @@ function RankingView({ user }) {
       return (b.ptsProd||0) - (a.ptsProd||0);
     }), [allUsers]);
 
-  // Community ranking: sum pts of all users per community
+  // Community ranking: sum pts (equipo) + pts prode per community
   const communityRanking = useMemo(() => {
     const map = {};
     allUsers.forEach(u => {
       const c = u.comunidad || "Sin comunidad";
-      if (!map[c]) map[c] = { comunidad: c, pts: 0, count: 0, ptsProd: 0 };
-      map[c].pts += (u.pts || 0);
-      map[c].ptsProd += (u.ptsProd || 0);
+      if (!map[c]) map[c] = { comunidad: c, pts: 0, ptsProd: 0, ptsTotal: 0, count: 0 };
+      // Calcular puntos prode leyendo desde localStorage (igual que tab Prode)
+      const pickData = getLS("gm_prode_" + u.uid, {});
+      const ptsProd = WC2026_FIXTURE.reduce(function(acc, m) {
+        return acc + (calcProdePoints(pickData[m.id], m) || 0);
+      }, 0);
+      map[c].pts     += (u.pts || 0);
+      map[c].ptsProd += ptsProd;
+      map[c].ptsTotal += (u.pts || 0) + ptsProd;
       map[c].count++;
     });
-    return Object.values(map).sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      return b.ptsProd - a.ptsProd;
-    });
+    return Object.values(map).sort((a, b) => b.ptsTotal - a.ptsTotal);
   }, [allUsers]);
 
   const myPos = userRanking.findIndex(u => u.uid === user.uid) + 1;
@@ -19170,8 +19173,8 @@ function RankingView({ user }) {
               React.createElement('div', { style: {fontSize:".72rem",color:"#5a7a8a",marginTop:1} }, c.count+" participante"+(c.count!==1?"s":""))
             ),
             React.createElement('div', { style: {textAlign:"right"} },
-              React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color: i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, c.pts),
-              React.createElement('div', { style: {fontSize:".65rem",color:"#3a5a4a"} }, "pts totales")
+              React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color: i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, c.ptsTotal),
+              React.createElement('div', { style: {fontSize:".65rem",color:"#3a5a4a"} }, c.pts+" eq · "+c.ptsProd+" prode")
             )
           )
         )
@@ -19375,102 +19378,110 @@ function ProfileView({ user, toast }) {
 // ROOT APP
 // ═══════════════════════════════════════════════════════════════════════════
 const WC2026_FIXTURE = [
-// ── FECHA 1 (11-17 junio) ─────────────────────────────────────────────────
-{id:1,  matchday:1, date:"2026-06-11T19:00:00Z", home:"México",          away:"Sudáfrica",      group:"A", round:"Fase de Grupos", venue:"Estadio Azteca, Ciudad de México"},
-{id:2,  matchday:1, date:"2026-06-12T02:00:00Z", home:"Corea del Sur",   away:"Rep. Checa",     group:"A", round:"Fase de Grupos", venue:"SoFi Stadium, Los Ángeles"},
-{id:3,  matchday:1, date:"2026-06-12T19:00:00Z", home:"Canadá",          away:"Bosnia",         group:"B", round:"Fase de Grupos", venue:"BMO Field, Toronto"},
-{id:4,  matchday:1, date:"2026-06-13T01:00:00Z", home:"Estados Unidos",  away:"Paraguay",       group:"D", round:"Fase de Grupos", venue:"SoFi Stadium, Los Ángeles"},
-{id:5,  matchday:1, date:"2026-06-13T19:00:00Z", home:"Qatar",           away:"Suiza",          group:"B", round:"Fase de Grupos", venue:"Estadio Universitario, Monterrey"},
-{id:6,  matchday:1, date:"2026-06-13T22:00:00Z", home:"Brasil",          away:"Marruecos",      group:"E", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:7,  matchday:1, date:"2026-06-14T01:00:00Z", home:"Haití",           away:"Escocia",        group:"E", round:"Fase de Grupos", venue:"Empower Field, Denver"},
-{id:8,  matchday:1, date:"2026-06-14T04:00:00Z", home:"Australia",       away:"Turquía",        group:"D", round:"Fase de Grupos", venue:"Lumen Field, Seattle"},
-{id:9,  matchday:1, date:"2026-06-14T17:00:00Z", home:"Alemania",        away:"Curazao",        group:"E", round:"Fase de Grupos", venue:"AT&T Stadium, Dallas"},
-{id:10, matchday:1, date:"2026-06-14T20:00:00Z", home:"Países Bajos",    away:"Japón",          group:"F", round:"Fase de Grupos", venue:"Levi's Stadium, San Francisco"},
-{id:11, matchday:1, date:"2026-06-14T23:00:00Z", home:"Costa de Marfil", away:"Ecuador",        group:"F", round:"Fase de Grupos", venue:"NRG Stadium, Houston"},
-{id:12, matchday:1, date:"2026-06-15T02:00:00Z", home:"Suecia",          away:"Túnez",          group:"F", round:"Fase de Grupos", venue:"BC Place, Vancouver"},
-{id:13, matchday:1, date:"2026-06-15T16:00:00Z", home:"España",          away:"Cabo Verde",     group:"G", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:14, matchday:1, date:"2026-06-15T19:00:00Z", home:"Bélgica",         away:"Egipto",         group:"G", round:"Fase de Grupos", venue:"Gillette Stadium, Boston"},
-{id:15, matchday:1, date:"2026-06-15T22:00:00Z", home:"Arabia Saudita",  away:"Uruguay",        group:"G", round:"Fase de Grupos", venue:"Arrowhead Stadium, Kansas City"},
-{id:16, matchday:1, date:"2026-06-16T01:00:00Z", home:"Irán",            away:"Nueva Zelanda",  group:"G", round:"Fase de Grupos", venue:"Lumen Field, Seattle"},
-{id:17, matchday:1, date:"2026-06-16T19:00:00Z", home:"Francia",         away:"Senegal",        group:"I", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:18, matchday:1, date:"2026-06-16T22:00:00Z", home:"Irak",            away:"Noruega",        group:"I", round:"Fase de Grupos", venue:"Hard Rock Stadium, Miami"},
-{id:19, matchday:1, date:"2026-06-17T01:00:00Z", home:"Argentina",       away:"Argelia",        group:"J", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:20, matchday:1, date:"2026-06-17T04:00:00Z", home:"Austria",         away:"Jordania",       group:"J", round:"Fase de Grupos", venue:"Levi's Stadium, San Francisco"},
-{id:21, matchday:1, date:"2026-06-17T17:00:00Z", home:"Portugal",        away:"Repechaje 1",    group:"C", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:22, matchday:1, date:"2026-06-17T20:00:00Z", home:"Inglaterra",      away:"Croacia",        group:"H", round:"Fase de Grupos", venue:"AT&T Stadium, Dallas"},
-{id:23, matchday:1, date:"2026-06-17T23:00:00Z", home:"Ghana",           away:"Panamá",         group:"H", round:"Fase de Grupos", venue:"State Farm Stadium, Phoenix"},
-// ── FECHA 2 (18-24 junio) ─────────────────────────────────────────────────
-{id:24, matchday:2, date:"2026-06-18T02:00:00Z", home:"Uzbekistán",      away:"Colombia",       group:"C", round:"Fase de Grupos", venue:"Hard Rock Stadium, Miami"},
-{id:25, matchday:2, date:"2026-06-18T16:00:00Z", home:"Rep. Checa",      away:"Sudáfrica",      group:"A", round:"Fase de Grupos", venue:"Estadio Azteca, Ciudad de México"},
-{id:26, matchday:2, date:"2026-06-18T19:00:00Z", home:"Suiza",           away:"Bosnia",         group:"B", round:"Fase de Grupos", venue:"BMO Field, Toronto"},
-{id:27, matchday:2, date:"2026-06-18T22:00:00Z", home:"Canadá",          away:"Qatar",          group:"B", round:"Fase de Grupos", venue:"Estadio Azteca, Ciudad de México"},
-{id:28, matchday:2, date:"2026-06-19T01:00:00Z", home:"México",          away:"Corea del Sur",  group:"A", round:"Fase de Grupos", venue:"SoFi Stadium, Los Ángeles"},
-{id:29, matchday:2, date:"2026-06-19T19:00:00Z", home:"Estados Unidos",  away:"Australia",      group:"D", round:"Fase de Grupos", venue:"SoFi Stadium, Los Ángeles"},
-{id:30, matchday:2, date:"2026-06-19T22:00:00Z", home:"Escocia",         away:"Marruecos",      group:"E", round:"Fase de Grupos", venue:"Empower Field, Denver"},
-{id:31, matchday:2, date:"2026-06-20T01:00:00Z", home:"Brasil",          away:"Haití",          group:"E", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:32, matchday:2, date:"2026-06-20T04:00:00Z", home:"Turquía",         away:"Paraguay",       group:"D", round:"Fase de Grupos", venue:"Lumen Field, Seattle"},
-{id:33, matchday:2, date:"2026-06-20T17:00:00Z", home:"Países Bajos",    away:"Suecia",         group:"F", round:"Fase de Grupos", venue:"BC Place, Vancouver"},
-{id:34, matchday:2, date:"2026-06-20T20:00:00Z", home:"Alemania",        away:"Costa de Marfil",group:"E", round:"Fase de Grupos", venue:"AT&T Stadium, Dallas"},
-{id:35, matchday:2, date:"2026-06-20T23:00:00Z", home:"Ecuador",         away:"Curazao",        group:"E", round:"Fase de Grupos", venue:"NRG Stadium, Houston"},
-{id:36, matchday:2, date:"2026-06-21T04:00:00Z", home:"Túnez",           away:"Japón",          group:"F", round:"Fase de Grupos", venue:"Levi's Stadium, San Francisco"},
-{id:37, matchday:2, date:"2026-06-21T16:00:00Z", home:"España",          away:"Arabia Saudita", group:"G", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:38, matchday:2, date:"2026-06-21T19:00:00Z", home:"Bélgica",         away:"Irán",           group:"G", round:"Fase de Grupos", venue:"Gillette Stadium, Boston"},
-{id:39, matchday:2, date:"2026-06-21T22:00:00Z", home:"Uruguay",         away:"Cabo Verde",     group:"G", round:"Fase de Grupos", venue:"Arrowhead Stadium, Kansas City"},
-{id:40, matchday:2, date:"2026-06-22T04:00:00Z", home:"Nueva Zelanda",   away:"Egipto",         group:"G", round:"Fase de Grupos", venue:"Lumen Field, Seattle"},
-{id:41, matchday:2, date:"2026-06-22T17:00:00Z", home:"Francia",         away:"Irak",           group:"I", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:42, matchday:2, date:"2026-06-22T21:00:00Z", home:"Noruega",         away:"Senegal",        group:"I", round:"Fase de Grupos", venue:"Hard Rock Stadium, Miami"},
-{id:43, matchday:2, date:"2026-06-22T17:00:00Z", home:"Argentina",       away:"Austria",        group:"J", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:44, matchday:2, date:"2026-06-22T03:00:00Z", home:"Jordania",        away:"Argelia",        group:"J", round:"Fase de Grupos", venue:"Levi's Stadium, San Francisco"},
-{id:45, matchday:2, date:"2026-06-23T17:00:00Z", home:"Portugal",        away:"Uzbekistán",     group:"C", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:46, matchday:2, date:"2026-06-23T20:00:00Z", home:"Inglaterra",      away:"Ghana",          group:"H", round:"Fase de Grupos", venue:"AT&T Stadium, Dallas"},
-{id:47, matchday:2, date:"2026-06-23T23:00:00Z", home:"Panamá",          away:"Croacia",        group:"H", round:"Fase de Grupos", venue:"State Farm Stadium, Phoenix"},
-{id:48, matchday:2, date:"2026-06-24T02:00:00Z", home:"Colombia",        away:"Repechaje 1",    group:"C", round:"Fase de Grupos", venue:"Hard Rock Stadium, Miami"},
-{id:49, matchday:2, date:"2026-06-24T19:00:00Z", home:"Suiza",           away:"Canadá",         group:"B", round:"Fase de Grupos", venue:"BMO Field, Toronto"},
-{id:50, matchday:2, date:"2026-06-24T19:00:00Z", home:"Bosnia",          away:"Qatar",          group:"B", round:"Fase de Grupos", venue:"Estadio Universitario, Monterrey"},
-// ── FECHA 3 (25-28 junio) ─────────────────────────────────────────────────
-{id:51, matchday:3, date:"2026-06-26T19:00:00Z", home:"Estados Unidos",  away:"Turquía",        group:"D", round:"Fase de Grupos", venue:"SoFi Stadium, Los Ángeles"},
-{id:52, matchday:3, date:"2026-06-26T19:00:00Z", home:"Paraguay",        away:"Australia",      group:"D", round:"Fase de Grupos", venue:"Lumen Field, Seattle"},
-{id:53, matchday:3, date:"2026-06-27T21:00:00Z", home:"Panamá",          away:"Inglaterra",     group:"H", round:"Fase de Grupos", venue:"AT&T Stadium, Dallas"},
-{id:54, matchday:3, date:"2026-06-27T21:00:00Z", home:"Croacia",         away:"Ghana",          group:"H", round:"Fase de Grupos", venue:"State Farm Stadium, Phoenix"},
-{id:55, matchday:3, date:"2026-06-28T02:00:00Z", home:"Jordania",        away:"Argentina",      group:"J", round:"Fase de Grupos", venue:"MetLife Stadium, Nueva York"},
-{id:56, matchday:3, date:"2026-06-28T02:00:00Z", home:"Argelia",         away:"Austria",        group:"J", round:"Fase de Grupos", venue:"Levi's Stadium, San Francisco"},
-// ── DIECISEISAVOS ────────────────────────────────────────────────────────
-{id:73, matchday:null, date:"2026-06-28T19:00:00Z", home:"2° Grupo A",    away:"2° Grupo B",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:74, matchday:null, date:"2026-06-28T23:00:00Z", home:"1° Grupo C",    away:"3° D/E/F",       group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:75, matchday:null, date:"2026-06-29T17:00:00Z", home:"1° Grupo E",    away:"2° Grupo F",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:76, matchday:null, date:"2026-06-29T20:30:00Z", home:"1° Grupo E",    away:"Mejor 3°",       group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:77, matchday:null, date:"2026-06-30T01:00:00Z", home:"1° Grupo F",    away:"2° Grupo C",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:78, matchday:null, date:"2026-06-30T17:00:00Z", home:"2° Grupo E",    away:"2° Grupo I",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:79, matchday:null, date:"2026-06-30T21:00:00Z", home:"1° Grupo I",    away:"Mejor 3°",       group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:80, matchday:null, date:"2026-07-01T01:00:00Z", home:"1° Grupo A",    away:"Mejor 3°",       group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:81, matchday:null, date:"2026-07-01T16:00:00Z", home:"1° Grupo L",    away:"Mejor 3°",       group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:82, matchday:null, date:"2026-07-01T20:00:00Z", home:"1° Grupo G",    away:"3° A/E/H/I/J",   group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:83, matchday:null, date:"2026-07-02T00:00:00Z", home:"1° Grupo D",    away:"3° B/E/F/I/J",   group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:84, matchday:null, date:"2026-07-02T17:00:00Z", home:"2° Grupo K",    away:"2° Grupo L",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:85, matchday:null, date:"2026-07-02T21:00:00Z", home:"1° Grupo H",    away:"2° Grupo J",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:86, matchday:null, date:"2026-07-03T01:00:00Z", home:"1° Grupo B",    away:"3° E/F/G/I/J",   group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:87, matchday:null, date:"2026-07-03T18:00:00Z", home:"2° Grupo D",    away:"2° Grupo G",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:88, matchday:null, date:"2026-07-03T22:00:00Z", home:"1° Grupo J",    away:"2° Grupo H",     group:null, round:"Dieciseisavos", venue:"Por definir"},
-{id:89, matchday:null, date:"2026-07-04T01:30:00Z", home:"1° Grupo K",    away:"3° D/E/I/J/L",   group:null, round:"Dieciseisavos", venue:"Por definir"},
-// ── OCTAVOS ──────────────────────────────────────────────────────────────
-{id:90, matchday:null, date:"2026-07-04T17:00:00Z", home:"Gan. P73",      away:"Gan. P75",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:91, matchday:null, date:"2026-07-04T21:00:00Z", home:"Gan. P74",      away:"Gan. P77",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:92, matchday:null, date:"2026-07-05T20:00:00Z", home:"Gan. P76",      away:"Gan. P78",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:93, matchday:null, date:"2026-07-06T00:00:00Z", home:"Gan. P79",      away:"Gan. P80",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:94, matchday:null, date:"2026-07-06T19:00:00Z", home:"Gan. P83",      away:"Gan. P84",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:95, matchday:null, date:"2026-07-07T00:00:00Z", home:"Gan. P81",      away:"Gan. P82",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:96, matchday:null, date:"2026-07-07T16:00:00Z", home:"Gan. P86",      away:"Gan. P88",       group:null, round:"Octavos",       venue:"Por definir"},
-{id:97, matchday:null, date:"2026-07-07T20:00:00Z", home:"Gan. P85",      away:"Gan. P87",       group:null, round:"Octavos",       venue:"Por definir"},
-// ── CUARTOS ──────────────────────────────────────────────────────────────
-{id:98, matchday:null, date:"2026-07-09T20:00:00Z", home:"Gan. P89",      away:"Gan. P90",       group:null, round:"Cuartos",       venue:"Por definir"},
-{id:99, matchday:null, date:"2026-07-10T19:00:00Z", home:"Gan. P93",      away:"Gan. P94",       group:null, round:"Cuartos",       venue:"Por definir"},
-{id:100,matchday:null, date:"2026-07-11T21:00:00Z", home:"Gan. P91",      away:"Gan. P92",       group:null, round:"Cuartos",       venue:"Por definir"},
-{id:101,matchday:null, date:"2026-07-12T01:00:00Z", home:"Gan. P95",      away:"Gan. P96",       group:null, round:"Cuartos",       venue:"Por definir"},
-// ── SEMIS + FINAL ────────────────────────────────────────────────────────
-{id:102,matchday:null, date:"2026-07-14T19:00:00Z", home:"Semifinal 1A",  away:"Semifinal 1B",   group:null, round:"Semifinal",     venue:"Por definir"},
-{id:103,matchday:null, date:"2026-07-15T19:00:00Z", home:"Semifinal 2A",  away:"Semifinal 2B",   group:null, round:"Semifinal",     venue:"Por definir"},
-{id:104,matchday:null, date:"2026-07-18T21:00:00Z", home:"3er Puesto",    away:"3er Puesto",     group:null, round:"3er Puesto",    venue:"Hard Rock Stadium, Miami"},
-{id:105,matchday:null, date:"2026-07-19T19:00:00Z", home:"Final Local",   away:"Final Visit.",   group:null, round:"Final",         venue:"MetLife Stadium, Nueva York"},
+{id:1, matchday:1, date:"2026-06-11T19:00:00Z", home:"México", away:"Sudáfrica", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:2, matchday:1, date:"2026-06-12T02:00:00Z", home:"Corea del Sur", away:"Rep. Checa", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:3, matchday:2, date:"2026-06-18T16:00:00Z", home:"Rep. Checa", away:"Sudáfrica", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:4, matchday:2, date:"2026-06-19T01:00:00Z", home:"México", away:"Corea del Sur", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:5, matchday:3, date:"2026-06-25T01:00:00Z", home:"Rep. Checa", away:"México", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:6, matchday:3, date:"2026-06-25T01:00:00Z", home:"Sudáfrica", away:"Corea del Sur", group:"Grupo A", round:"Fase de Grupos", venue:"Por definir"},
+{id:7, matchday:1, date:"2026-06-12T19:00:00Z", home:"Canadá", away:"Bosnia-Herzegovina", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:8, matchday:1, date:"2026-06-13T19:00:00Z", home:"Qatar", away:"Suiza", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:9, matchday:2, date:"2026-06-18T19:00:00Z", home:"Suiza", away:"Bosnia-Herzegovina", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:10, matchday:2, date:"2026-06-18T22:00:00Z", home:"Canadá", away:"Qatar", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:11, matchday:3, date:"2026-06-24T19:00:00Z", home:"Suiza", away:"Canadá", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:12, matchday:3, date:"2026-06-24T19:00:00Z", home:"Bosnia-Herzegovina", away:"Qatar", group:"Grupo B", round:"Fase de Grupos", venue:"Por definir"},
+{id:13, matchday:1, date:"2026-06-13T22:00:00Z", home:"Brasil", away:"Marruecos", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:14, matchday:1, date:"2026-06-14T01:00:00Z", home:"Haití", away:"Escocia", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:15, matchday:2, date:"2026-06-19T22:00:00Z", home:"Escocia", away:"Marruecos", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:16, matchday:2, date:"2026-06-20T01:00:00Z", home:"Brasil", away:"Haití", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:17, matchday:3, date:"2026-06-24T22:00:00Z", home:"Escocia", away:"Brasil", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:18, matchday:3, date:"2026-06-26T22:00:00Z", home:"Marruecos", away:"Haití", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
+{id:19, matchday:1, date:"2026-06-13T01:00:00Z", home:"Estados Unidos", away:"Paraguay", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:20, matchday:1, date:"2026-06-13T04:00:00Z", home:"Australia", away:"Rumania", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:21, matchday:2, date:"2026-06-19T04:00:00Z", home:"Rumania", away:"Paraguay", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:22, matchday:2, date:"2026-06-19T19:00:00Z", home:"Estados Unidos", away:"Australia", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:23, matchday:3, date:"2026-06-27T02:00:00Z", home:"Rumania", away:"Estados Unidos", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:24, matchday:3, date:"2026-06-26T02:00:00Z", home:"Paraguay", away:"Australia", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:25, matchday:1, date:"2026-06-14T17:00:00Z", home:"Alemania", away:"Curazao", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:26, matchday:1, date:"2026-06-14T23:00:00Z", home:"Costa de Marfil", away:"Ecuador", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:27, matchday:2, date:"2026-06-20T20:00:00Z", home:"Alemania", away:"Costa de Marfil", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:28, matchday:2, date:"2026-06-21T00:00:00Z", home:"Curazao", away:"Ecuador", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:29, matchday:3, date:"2026-06-25T20:00:00Z", home:"Ecuador", away:"Alemania", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:30, matchday:3, date:"2026-06-25T20:00:00Z", home:"Curazao", away:"Costa de Marfil", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
+{id:31, matchday:1, date:"2026-06-14T20:00:00Z", home:"Países Bajos", away:"Japón", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:32, matchday:1, date:"2026-06-15T02:00:00Z", home:"Turquía", away:"Túnez", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:33, matchday:2, date:"2026-06-20T17:00:00Z", home:"Países Bajos", away:"Turquía", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:34, matchday:2, date:"2026-06-20T04:00:00Z", home:"Túnez", away:"Japón", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:35, matchday:3, date:"2026-06-25T23:00:00Z", home:"Japón", away:"Turquía", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:36, matchday:3, date:"2026-06-25T23:00:00Z", home:"Túnez", away:"Países Bajos", group:"Grupo F", round:"Fase de Grupos", venue:"Por definir"},
+{id:37, matchday:1, date:"2026-06-16T01:00:00Z", home:"Irán", away:"Nueva Zelanda", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:38, matchday:1, date:"2026-06-15T19:00:00Z", home:"Bélgica", away:"Egipto", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:39, matchday:2, date:"2026-06-21T19:00:00Z", home:"Bélgica", away:"Irán", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:40, matchday:2, date:"2026-06-22T01:00:00Z", home:"Nueva Zelanda", away:"Egipto", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:41, matchday:3, date:"2026-06-27T03:00:00Z", home:"Egipto", away:"Irán", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:42, matchday:3, date:"2026-06-27T03:00:00Z", home:"Nueva Zelanda", away:"Bélgica", group:"Grupo G", round:"Fase de Grupos", venue:"Por definir"},
+{id:43, matchday:1, date:"2026-06-15T16:00:00Z", home:"España", away:"Cabo Verde", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:44, matchday:1, date:"2026-06-15T22:00:00Z", home:"Arabia Saudita", away:"Uruguay", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:45, matchday:2, date:"2026-06-21T16:00:00Z", home:"España", away:"Arabia Saudita", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:46, matchday:2, date:"2026-06-21T22:00:00Z", home:"Uruguay", away:"Cabo Verde", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:47, matchday:3, date:"2026-06-27T00:00:00Z", home:"Cabo Verde", away:"Arabia Saudita", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:48, matchday:3, date:"2026-06-27T00:00:00Z", home:"Uruguay", away:"España", group:"Grupo H", round:"Fase de Grupos", venue:"Por definir"},
+{id:49, matchday:1, date:"2026-06-16T19:00:00Z", home:"Francia", away:"Senegal", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:50, matchday:1, date:"2026-06-16T22:00:00Z", home:"Eslovenia", away:"Noruega", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:51, matchday:2, date:"2026-06-22T21:00:00Z", home:"Francia", away:"Eslovenia", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:52, matchday:2, date:"2026-06-23T00:00:00Z", home:"Noruega", away:"Senegal", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:53, matchday:3, date:"2026-06-26T19:00:00Z", home:"Noruega", away:"Francia", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:54, matchday:3, date:"2026-06-26T19:00:00Z", home:"Senegal", away:"Eslovenia", group:"Grupo I", round:"Fase de Grupos", venue:"Por definir"},
+{id:55, matchday:1, date:"2026-06-17T01:00:00Z", home:"Argentina", away:"Argelia", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:56, matchday:1, date:"2026-06-17T04:00:00Z", home:"Jordania", away:"Austria", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:57, matchday:2, date:"2026-06-23T01:00:00Z", home:"Argentina", away:"Jordania", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:58, matchday:2, date:"2026-06-22T04:00:00Z", home:"Argelia", away:"Austria", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:59, matchday:3, date:"2026-06-27T23:00:00Z", home:"Austria", away:"Argentina", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:60, matchday:3, date:"2026-06-27T23:00:00Z", home:"Argelia", away:"Jordania", group:"Grupo J", round:"Fase de Grupos", venue:"Por definir"},
+{id:61, matchday:1, date:"2026-06-17T23:00:00Z", home:"Colombia", away:"Portugal", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:62, matchday:1, date:"2026-06-17T23:00:00Z", home:"R.D. Congo", away:"Uzbekistán", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:63, matchday:2, date:"2026-06-23T23:00:00Z", home:"Colombia", away:"R.D. Congo", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:64, matchday:2, date:"2026-06-23T19:00:00Z", home:"Uzbekistán", away:"Portugal", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:65, matchday:3, date:"2026-06-27T23:00:00Z", home:"Portugal", away:"Colombia", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:66, matchday:3, date:"2026-06-27T23:00:00Z", home:"Uzbekistán", away:"R.D. Congo", group:"Grupo K", round:"Fase de Grupos", venue:"Por definir"},
+{id:67, matchday:1, date:"2026-06-17T20:00:00Z", home:"Croacia", away:"Ghana", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:68, matchday:1, date:"2026-06-18T02:00:00Z", home:"Panamá", away:"Inglaterra", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:69, matchday:2, date:"2026-06-23T16:00:00Z", home:"Croacia", away:"Panamá", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:70, matchday:2, date:"2026-06-24T02:00:00Z", home:"Ghana", away:"Inglaterra", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:71, matchday:3, date:"2026-06-27T19:00:00Z", home:"Ghana", away:"Croacia", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:72, matchday:3, date:"2026-06-27T19:00:00Z", home:"Inglaterra", away:"Panamá", group:"Grupo L", round:"Fase de Grupos", venue:"Por definir"},
+{id:200, matchday:4, date:"2026-06-28T19:00:00Z", home:"Clasificado 2°A", away:"Clasificado 2°B", group:"16avos P73", round:"Dieciseisavos", venue:"Por definir"},
+{id:201, matchday:4, date:"2026-06-29T00:00:00Z", home:"Clasificado 1°C", away:"Clasificado 3°DEF", group:"16avos P74", round:"Dieciseisavos", venue:"Por definir"},
+{id:202, matchday:4, date:"2026-06-29T18:00:00Z", home:"Clasificado 1°E", away:"Clasificado 2°F", group:"16avos P75", round:"Dieciseisavos", venue:"Por definir"},
+{id:203, matchday:4, date:"2026-06-30T01:00:00Z", home:"Clasificado 1°E", away:"Clasificado M3°", group:"16avos P76", round:"Dieciseisavos", venue:"Por definir"},
+{id:204, matchday:4, date:"2026-06-30T18:00:00Z", home:"Clasificado 2°E", away:"Clasificado 2°I", group:"16avos P77", round:"Dieciseisavos", venue:"Por definir"},
+{id:205, matchday:4, date:"2026-07-01T01:00:00Z", home:"Clasificado 1°I", away:"Clasificado M3°", group:"16avos P78", round:"Dieciseisavos", venue:"Por definir"},
+{id:206, matchday:4, date:"2026-07-02T01:00:00Z", home:"Clasificado 1°A", away:"Clasificado M3°", group:"16avos P79", round:"Dieciseisavos", venue:"Por definir"},
+{id:207, matchday:4, date:"2026-07-01T16:00:00Z", home:"Clasificado 1°L", away:"Clasificado M3°", group:"16avos P80", round:"Dieciseisavos", venue:"Por definir"},
+{id:208, matchday:4, date:"2026-07-01T22:00:00Z", home:"Clasificado 1°G", away:"Clasificado 3°AEHI", group:"16avos P81", round:"Dieciseisavos", venue:"Por definir"},
+{id:209, matchday:4, date:"2026-07-02T03:00:00Z", home:"Clasificado 1°D", away:"Clasificado 3°BEFIJ", group:"16avos P82", round:"Dieciseisavos", venue:"Por definir"},
+{id:210, matchday:4, date:"2026-07-02T17:00:00Z", home:"Clasificado 2°K", away:"Clasificado 2°L", group:"16avos P83", round:"Dieciseisavos", venue:"Por definir"},
+{id:211, matchday:4, date:"2026-07-02T21:00:00Z", home:"Clasificado 1°H", away:"Clasificado 2°J", group:"16avos P84", round:"Dieciseisavos", venue:"Por definir"},
+{id:212, matchday:4, date:"2026-07-03T02:00:00Z", home:"Clasificado 1°B", away:"Clasificado 3°EFGIJ", group:"16avos P85", round:"Dieciseisavos", venue:"Por definir"},
+{id:213, matchday:4, date:"2026-07-03T18:00:00Z", home:"Clasificado 2°D", away:"Clasificado 2°G", group:"16avos P86", round:"Dieciseisavos", venue:"Por definir"},
+{id:214, matchday:4, date:"2026-07-03T22:00:00Z", home:"Clasificado 1°J", away:"Clasificado 2°H", group:"16avos P87", round:"Dieciseisavos", venue:"Por definir"},
+{id:215, matchday:4, date:"2026-07-04T02:30:00Z", home:"Clasificado 1°K", away:"Clasificado 3°DEIJL", group:"16avos P88", round:"Dieciseisavos", venue:"Por definir"},
+{id:216, matchday:5, date:"2026-07-04T18:00:00Z", home:"Clasificado G73/74", away:"Clasificado G75/76", group:"Octavos P89", round:"Octavos", venue:"Por definir"},
+{id:217, matchday:5, date:"2026-07-04T22:00:00Z", home:"Clasificado G77/78", away:"Clasificado G79/80", group:"Octavos P90", round:"Octavos", venue:"Por definir"},
+{id:218, matchday:5, date:"2026-07-05T17:00:00Z", home:"Clasificado G81/82", away:"Clasificado G83/84", group:"Octavos P91", round:"Octavos", venue:"Por definir"},
+{id:219, matchday:5, date:"2026-07-05T21:00:00Z", home:"Clasificado G85/86", away:"Clasificado G87/88", group:"Octavos P92", round:"Octavos", venue:"Por definir"},
+{id:220, matchday:5, date:"2026-07-06T17:00:00Z", home:"Clasificado G89/90", away:"Clasificado G91/92", group:"Octavos P93", round:"Octavos", venue:"Por definir"},
+{id:221, matchday:5, date:"2026-07-06T21:00:00Z", home:"Clasificado G89/90", away:"Clasificado G91/92", group:"Octavos P94", round:"Octavos", venue:"Por definir"},
+{id:222, matchday:5, date:"2026-07-07T17:00:00Z", home:"Clasificado G93/94", away:"Clasificado G95/96", group:"Octavos P95", round:"Octavos", venue:"Por definir"},
+{id:223, matchday:5, date:"2026-07-07T21:00:00Z", home:"Clasificado G93/94", away:"Clasificado G95/96", group:"Octavos P96", round:"Octavos", venue:"Por definir"},
+{id:224, matchday:6, date:"2026-07-09T21:00:00Z", home:"Clasificado G89/90 ganador", away:"Clasificado G91/92 ganador", group:"Cuartos P97 — Boston", round:"Cuartos", venue:"Por definir"},
+{id:225, matchday:6, date:"2026-07-10T01:00:00Z", home:"Clasificado G93/94 ganador", away:"Clasificado G95/96 ganador", group:"Cuartos P98 — Los Ángeles", round:"Cuartos", venue:"Por definir"},
+{id:226, matchday:6, date:"2026-07-10T21:00:00Z", home:"Clasificado G97 perdedor", away:"Clasificado G98 perdedor", group:"Cuartos P99 — Miami", round:"Cuartos", venue:"Por definir"},
+{id:227, matchday:6, date:"2026-07-11T01:00:00Z", home:"Clasificado G99 perdedor", away:"Clasificado G100 perdedor", group:"Cuartos P100 — Kansas City", round:"Cuartos", venue:"Por definir"},
+{id:228, matchday:7, date:"2026-07-14T22:00:00Z", home:"Clasificado G97 ganador", away:"Clasificado G98 ganador", group:"Semifinal 1 — Dallas", round:"Semifinal", venue:"Por definir"},
+{id:229, matchday:7, date:"2026-07-15T22:00:00Z", home:"Clasificado G99 ganador", away:"Clasificado G100 ganador", group:"Semifinal 2 — Atlanta", round:"Semifinal", venue:"Por definir"},
+{id:230, matchday:8, date:"2026-07-18T18:00:00Z", home:"Clasificado SF1 perdedor", away:"Clasificado SF2 perdedor", group:"3er Puesto — Miami", round:"3er Puesto", venue:"Por definir"},
+{id:231, matchday:9, date:"2026-07-19T22:00:00Z", home:"Clasificado SF1 ganador", away:"Clasificado SF2 ganador", group:"FINAL — Nueva York/NJ", round:"Final", venue:"Por definir"}
 ];
 
 // Cargar scores publicados por admin en WC2026_FIXTURE (necesario para el prode)
@@ -20109,7 +20120,7 @@ function GranMoishe() {
     const cost=player.eliminated?player.valor/2:player.valor;
     if(budget<cost) return toast("Presupuesto insuficiente 💸","error");
     if((countryCounts[player.pais]||0)>=MAX_PER_COUNTRY) return toast(`Máx. ${MAX_PER_COUNTRY} de ${player.pais}`,"warn");
-    if(player.status!=="ok") return toast("Jugador no disponible","error");
+    // status check removed - all players available
     var fm2=FORMATIONS[formation]||FORMATIONS["4-3-3"];
     var needsPos={GK:fm2.GK.length,DEF:fm2.DEF.length,MID:fm2.MID.length,FWD:fm2.FWD.length};
     var pos=player.posicion;
