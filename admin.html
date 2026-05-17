@@ -248,19 +248,19 @@ function ConfirmDialog({msg, onOk, onCancel}) {
 function AdManager({ toast }) {
   const [ads,    setAds]   = useState(()=>DB.getAds());
   const [editId, setEdit]  = useState(null);
-  const [form,   setForm]  = useState({ tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true });
+  const [form,   setForm]  = useState({ tier:"login",nombre:"",url:"",img:"",seconds:10,active:true });
   const save = u => { setAds(u); DB.saveAds(u); };
 
   const submit = () => {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
     else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Creada ✅","success"); }
-    setForm({ tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true });
+    setForm({ tier:"login",nombre:"",url:"",img:"",seconds:10,active:true });
   };
   const edit   = a=>{ setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active}); window.scrollTo({top:0,behavior:"smooth"}); };
   const toggle = id=>save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id=>{ if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","info"); };
-  const cancel = ()=>{ setEdit(null); setForm({tier:"bronce",nombre:"",url:"",img:"",seconds:8,active:true}); };
+  const cancel = ()=>{ setEdit(null); setForm({tier:"login",nombre:"",url:"",img:"",seconds:10,active:true}); };
 
   const tv=ads.reduce((s,a)=>s+(a.views||0),0), tc=ads.reduce((s,a)=>s+(a.clicks||0),0), tr=ads.reduce((s,a)=>s+(AD_TIERS[a.tier]?.price||0),0);
 
@@ -283,7 +283,7 @@ function AdManager({ toast }) {
             <div className="pf"><label>Nombre del anunciante *</label><input value={form.nombre} onChange={e=>setForm(p=>({...p,nombre:e.target.value}))} placeholder="Empresa o marca"/></div>
             <div className="pf">
               <label>Tier / Espacio</label>
-              <select value={form.tier} onChange={e=>setForm(p=>({...p,tier:e.target.value,seconds:e.target.value==="oro"?15:e.target.value==="elite"||e.target.value==="diamante"?10:8}))}>
+              <select value={form.tier} onChange={e=>setForm(p=>({...p,tier:e.target.value,seconds:e.target.value==="resto"?8:10}))}>
                 {Object.entries(AD_TIERS).map(([k,v])=><option key={k} value={k}>{v.name} — {fmtARS(v.price)}</option>)}
               </select>
             </div>
@@ -422,7 +422,6 @@ export default function AdminPage() {
     { id:"stats",   icon:"📊", label:"Estadísticas" },
     { id:"users",   icon:"👥", label:"Usuarios" },
     { id:"ads",     icon:"📢", label:"Publicidad" },
-    { id:"scoring", icon:"⚽", label:"Puntos" },
   ];
 
   return (
@@ -18205,7 +18204,7 @@ function UsersPanel() {
 function AdManager({ toast }) {
   const [ads,    setAds]  = useState(()=>DB.getAds());
   const [editId, setEdit] = useState(null);
-  const [form,   setForm] = useState({ tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true });
+  const [form,   setForm] = useState({ tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true });
   const save = u => { setAds(u); DB.saveAds(u); };
 
   const TIER_COLORS = {elite:"#a855f7",diamante:"#60a5fa",oro:"#fbbf24",plata:"#94a3b8",bronce:"#c8793a"};
@@ -18215,12 +18214,12 @@ function AdManager({ toast }) {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
     else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Publicidad creada ✅","success"); }
-    setForm({tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true});
+    setForm({tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true});
   };
   const edit   = a => { setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,descripcion:a.descripcion||"",url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active!==false}); };
   const toggle = id => save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id => { if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","success"); };
-  const cancel = () => { setEdit(null); setForm({tier:"resto",nombre:"",descripcion:"",url:"",img:"",seconds:8,active:true}); };
+  const cancel = () => { setEdit(null); setForm({tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true}); };
   const resetViews = id => { save(ads.map(a=>a.id===id?{...a,views:0,clicks:0}:a)); toast("Vistas reseteadas","success"); };
 
   const tv = ads.reduce((s,a)=>s+(a.views||0),0);
@@ -18252,10 +18251,9 @@ function AdManager({ toast }) {
       React.createElement("div", {className:"apc-t"}, editId ? "✏️ Editar publicidad" : "➕ Nueva publicidad"),
       React.createElement("div", {className:"ps-form"},
         React.createElement("div", {className:"ps-row2"},
-          fld("Tier", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value}))},
-            ["elite","diamante","oro","plata","bronce"].map(t =>
-              React.createElement("option", {key:t, value:t}, t.charAt(0).toUpperCase()+t.slice(1))
-            )
+          fld("Espacio publicitario", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value,seconds:e.target.value==="resto"?8:10}))},
+            [{v:"login",l:"Pantalla de inicio (login/registro — pantalla completa)"},{v:"resto",l:"Resto del juego (sidebar, carrusel, espacios internos)"},{v:"todo",l:"Ambas (máxima exposición)"}]
+            .map(t => React.createElement("option", {key:t.v, value:t.v}, t.l))
           )),
           fld("Segundos visibles", inp("seconds","8","number"))
         ),
@@ -18689,7 +18687,6 @@ function AdminPage() {
     { id:"stats",     icon:"📊", label:"Estadísticas" },
     { id:"users",     icon:"👥", label:"Usuarios" },
     { id:"ads",       icon:"📢", label:"Publicidad" },
-    { id:"scoring",   icon:"⚽", label:"Puntos" },
     { id:"api",       icon:"🌐", label:"Fixture" },
     { id:"plantillas",icon:"🗂", label:"Plantillas" },
   ];
@@ -18756,7 +18753,6 @@ function AdminPage() {
         , tab==="stats"   && React.createElement(StatsPanel, null)
         , tab==="users"   && React.createElement(UsersPanel, null)
         , tab==="ads"     && React.createElement(AdManager, { toast: toast,})
-        , tab==="scoring" && React.createElement(ScoreManager, { toast: toast,})
         , tab==="api"     && React.createElement(ApiPanel, { toast: toast,})
         , tab==="plantillas" && React.createElement(PlantillasPanel, { toast: toast,})
       )
