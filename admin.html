@@ -19615,14 +19615,14 @@ function ApiPanel({ toast }) {
           // Guardar todos los resultados de la fecha (marca como FINISHED los que tengan score)
           React.createElement("button", {
             onClick: () => {
-              const sinResultado = matchesByFecha.filter(m => m.score_home===null || m.score_away===null);
+              const sinResultado = []; // 0-0 es resultado válido — no se bloquea
               if (sinResultado.length > 0) {
                 toast("⚠️ Faltan resultados en: " + sinResultado.map(m => m.home+" vs "+m.away).join(", "), "warn");
                 return;
               }
               const updated = matches.map(m => {
                 const inFecha = matchesByFecha.find(x => x.id===m.id);
-                if (inFecha && m.score_home!==null && m.score_away!==null && m.status!=="FINISHED") {
+                if (inFecha && m.score_home!==null && m.score_away!==null) {
                   return {...m, status:"FINISHED"};
                 }
                 return m;
@@ -19639,7 +19639,7 @@ function ApiPanel({ toast }) {
           React.createElement("button", {
             onClick: () => {
               // Verificar que todos tienen resultado
-              const sinResultado = matchesByFecha.filter(m => m.status!=="FINISHED" || m.score_home===null || m.score_away===null);
+              const sinResultado = matchesByFecha.filter(m => m.score_home===null || m.score_away===null);
               if (sinResultado.length > 0) {
                 toast("❌ Hay " + sinResultado.length + " partido(s) sin resultado: " + sinResultado.slice(0,3).map(m => m.home+" vs "+m.away).join(", ") + (sinResultado.length>3?"...":""), "error");
                 return;
@@ -19743,10 +19743,10 @@ function ApiPanel({ toast }) {
           React.createElement("span", {style:{fontWeight:700,fontSize:"1rem",flex:1,textAlign:"right"}}, currentMatch.home),
           React.createElement("input", {
             type:"number", min:0, max:20,
-            value: currentMatch.score_home??'',
+            value: currentMatch.score_home??0,
             placeholder:"0",
             onChange: e => {
-              const v = e.target.value==='' ? null : parseInt(e.target.value);
+              const v = e.target.value==='' ? 0 : parseInt(e.target.value)||0;
               const updated = matches.map(x => x.id===currentMatch.id ? {...x, score_home:v} : x);
               setMatches(updated); setLS("gm_matches_cache", updated);
             },
@@ -19756,10 +19756,10 @@ function ApiPanel({ toast }) {
           React.createElement("span", {style:{color:"#3a5a4a",fontFamily:"Oswald,sans-serif",fontSize:"1.4rem"}},"–"),
           React.createElement("input", {
             type:"number", min:0, max:20,
-            value: currentMatch.score_away??'',
+            value: currentMatch.score_away??0,
             placeholder:"0",
             onChange: e => {
-              const v = e.target.value==='' ? null : parseInt(e.target.value);
+              const v = e.target.value==='' ? 0 : parseInt(e.target.value)||0;
               const updated = matches.map(x => x.id===currentMatch.id ? {...x, score_away:v} : x);
               setMatches(updated); setLS("gm_matches_cache", updated);
             },
