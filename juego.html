@@ -80,7 +80,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .fullad-content{flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 .fullad-inner{text-align:center;padding:24px;overflow-y:auto;max-height:80vh;}
 .fullad-tier{font-size:.9rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
-.fullad-name{font-family:'Oswald',sans-serif;font-size:3rem;font-weight:900;color:#fff;margin-bottom:12px;}
+.fullad-name{display:none;}
 .fullad-hint{font-size:.85rem;color:#5a7a6a;}
 .fullad-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#0a1525;border-top:1px solid #1a2d40;}
 .fullad-timer{font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;color:#e2e8f0;}
@@ -18172,7 +18172,7 @@ function AdBanner({ ads, slot, className="" }) {
     React.createElement('div', { className: `ad-banner ${className}`, onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
       , ad.img
         ?React.createElement('img', { src: ad.img, alt: ad.nombre, style: {width:"100%",height:"100%",objectFit:"cover"},})
-        :React.createElement('div', { className: "ad-placeholder",}, React.createElement('span', { className: "ad-tier-label", style: {color:_optionalChain([AD_TIERS, 'access', _9 => _9[ad.tier], 'optionalAccess', _10 => _10.color])},}, _optionalChain([AD_TIERS, 'access', _11 => _11[ad.tier], 'optionalAccess', _12 => _12.name])), React.createElement('div', { className: "ad-name",}, ad.nombre), React.createElement('div', { className: "ad-cta",}, "Publicidad · Click para más info"     ))
+        :React.createElement('div', { className: "ad-placeholder",}, React.createElement('span', { className: "ad-tier-label", style: {color:_optionalChain([AD_TIERS, 'access', _9 => _9[ad.tier], 'optionalAccess', _10 => _10.color])},}, _optionalChain([AD_TIERS, 'access', _11 => _11[ad.tier], 'optionalAccess', _12 => _12.name])), React.createElement('div', { className: "ad-cta",}, "Publicidad · Click para más info"     ))
     )
   );
 }
@@ -18219,10 +18219,11 @@ function FullScreenAd({ ad, onClose }) {
     React.createElement('div', { className: "fullad-overlay",}
       , React.createElement('div', { className: "fullad-content", onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
         , React.createElement('div', { className: "fullad-inner",}
-          , ad.img&&React.createElement('img',{src:ad.img,alt:ad.nombre,style:{width:"100%",maxHeight:"52vh",objectFit:"contain",borderRadius:10,marginBottom:14,display:"block"}})
-          , React.createElement('div', { className: "fullad-tier", style: {color:_optionalChain([AD_TIERS, 'access', _16 => _16[ad.tier], 'optionalAccess', _17 => _17.color])},}, _optionalChain([AD_TIERS, 'access', _18 => _18[ad.tier], 'optionalAccess', _19 => _19.name]), " · Publicidad"  )
-          , React.createElement('div', { className: "fullad-name",}, ad.nombre)
-          , ad.descripcion&&React.createElement('div',{style:{fontSize:".82rem",color:"#8a9ab0",marginTop:4,textAlign:"center",lineHeight:1.4}},ad.descripcion)
+          , ad.img
+            ? React.createElement('img',{src:ad.img,alt:"",style:{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:10,display:"block"}})
+            : React.createElement('div',{style:{height:200,display:"flex",alignItems:"center",justifyContent:"center"}},
+                React.createElement('div',{style:{fontSize:"3rem",opacity:.15}}, "📢")
+              )
           , React.createElement('div', { className: "fullad-hint",}, "Tocá para más información"   )
         )
         )
@@ -18260,9 +18261,7 @@ function SidebarAds({ ads, side }) {
               ? React.createElement('img', {src:a.img, alt:a.nombre,
                   style:{width:"100%",height:"100%",objectFit:"cover",display:"block"}})
               : React.createElement('div', { className: "ad-placeholder"}
-                  , React.createElement('div', {style:{fontSize:".6rem",fontWeight:700,letterSpacing:1,color:"#4ade80",marginBottom:6}}, "⭐ PUBLICIDAD")
-                  , React.createElement('div', {style:{fontSize:".85rem",fontWeight:700,color:"#e2e8f0",lineHeight:1.3,textAlign:"center"}}, a.nombre)
-                  , a.descripcion&&React.createElement('div', {style:{fontSize:".72rem",color:"#4a6a5a",marginTop:6,textAlign:"center"}}, a.descripcion)
+                  , React.createElement('div', {style:{fontSize:"2rem",opacity:.12}}, "📢")
                 )
           )
         : React.createElement('div', { key: "empty"+i, className: "sba-item",
@@ -18424,10 +18423,8 @@ function PitchView({ xi, subs, formation, capitan, ads, onPlayerClick }) {
     return React.createElement('div', { className: "pitch-ad-side", onClick: ()=>{if(a){DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");}}, style:{minHeight:240}}
       , a.img
         ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:"100%",objectFit:"contain",background:"#000",borderRadius:7}})
-        : React.createElement('div', { className: "ad-placeholder", style: {height:"100%",padding:"12px 8px"}}
-          , React.createElement('span', { style: {color:"#FFA500",fontSize:".65rem",fontWeight:700,letterSpacing:1}}, "ORO")
-          , React.createElement('div', { style: {fontSize:".82rem",fontWeight:700,color:"#e2e8f0",marginTop:6,textAlign:"center",lineHeight:1.3}}, a.nombre)
-          , a.descripcion && React.createElement('div', { style: {fontSize:".68rem",color:"#5a7a8a",marginTop:4,textAlign:"center"}}, a.descripcion)
+        : React.createElement('div', { className: "ad-placeholder", style: {height:"100%"}}
+          , React.createElement('div', {style:{fontSize:"2rem",opacity:.12}}, "📢")
         )
     );
   };
