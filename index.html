@@ -734,4 +734,198 @@ function renderForm() {
 
 function renderFormLogo() {
   // Make sure logo is visible and using correct URL
-  const logo = do
+  const logo = document.getElementById('modalLogo');
+  if (logo) {
+    logo.src = 'almagro.jpg';
+    logo.onerror = function() { this.style.display='none'; };
+  }
+}
+
+// ── CANTIDAD DE CUENTAS ──────────────────────────────────────────────────────
+window._cantidad = 1;
+function setCantidad(n) {
+  window._cantidad = n;
+  // Actualizar botones
+  for (let i=1;i<=5;i++) {
+    const b = document.getElementById('qty_'+i);
+    if (!b) continue;
+    b.style.border = i===n ? '1.5px solid rgba(74,124,201,.9)' : '1.5px solid rgba(74,124,201,.25)';
+    b.style.background = i===n ? 'rgba(74,124,201,.25)' : 'transparent';
+  }
+  // Actualizar precio
+  const pt = document.getElementById('precioTotal');
+  if (pt) pt.textContent = '$' + (n*6000).toLocaleString('es-AR');
+  // Actualizar botón submit
+  const bs = document.getElementById('btnSubmit');
+  if (bs) bs.textContent = 'Registrarse · $' + (n*6000).toLocaleString('es-AR');
+  // Mostrar/ocultar cuentas extra
+  const ce = document.getElementById('cuentasExtra');
+  const eaf = document.getElementById('extraAccountsForm');
+  if (ce && eaf) {
+    if (n > 1) {
+      ce.style.display = 'block';
+      let html = '';
+      for (let i=2; i<=n; i++) {
+        html += `
+          <div style="border:1px solid rgba(74,124,201,.2);border-radius:8px;padding:12px;margin-bottom:10px;">
+            <div style="font-size:.72rem;font-weight:700;color:var(--celeste);margin-bottom:8px;">Cuenta ${i}</div>
+            <div class="field"><label>Nombre del equipo · Cuenta ${i} *</label><input id="f_equipo_${i}" placeholder="Mi Equipo FC" maxlength="40"/></div>
+            <div class="field"><label>Email · Cuenta ${i} *</label><input id="f_email_${i}" type="email" placeholder="otro@email.com"/></div>
+            <div class="field"><label>Contraseña · Cuenta ${i} *</label><input id="f_password_${i}" type="password" placeholder="••••••••"/></div>
+          </div>`;
+      }
+      eaf.innerHTML = html;
+    } else {
+      ce.style.display = 'none';
+      eaf.innerHTML = '';
+    }
+  }
+}
+
+// ── PAÍS / PROVINCIA ─────────────────────────────────────────────────────────
+function onPaisChange() {
+  const pais = document.getElementById('f_pais')?.value;
+  const provSel = document.getElementById('f_provincia');
+  if (!provSel) return;
+  if (pais === 'Argentina') {
+    provSel.outerHTML = `<select id="f_provincia">${PROVS_AR.map(p=>`<option>${p}</option>`).join('')}</select>`;
+  } else {
+    provSel.outerHTML = `<input id="f_provincia" placeholder="Región / Provincia"/>`;
+  }
+}
+
+// ── COMUNIDAD CUSTOM ─────────────────────────────────────────────────────────
+function onComChange() {
+  const sel = document.getElementById('f_comunidad');
+  const wrap = document.getElementById('comCustomWrap');
+  if (wrap) wrap.style.display = sel?.value === '__otra__' ? 'block' : 'none';
+}
+
+// ── PAGAR MP ─────────────────────────────────────────────────────────────────
+function pagarMP() {
+  window.open('https://www.mercadopago.com.ar','_blank');
+}
+
+// ── CLOSE PAY MODAL ──────────────────────────────────────────────────────────
+function closePayModal() {
+  document.getElementById('payModal').style.display = 'none';
+}
+
+// ── SUBMIT AUTH ───────────────────────────────────────────────────────────────
+async function submitAuth() {
+  const btn = document.getElementById('btnSubmit');
+  const errDiv = document.getElementById('authErr');
+  errDiv.style.display = 'none';
+
+  if (authMode === 'login') {
+    const email = document.getElementById('f_email')?.value.trim();
+    const pass  = document.getElementById('f_password')?.value;
+    if (!email || !pass) { showErr('Completá email y contraseña'); return; }
+    const users = getLS('gm_users', []);
+    const user  = users.find(u => u.email === email);
+    if (!user) { showErr('Email no encontrado'); return; }
+    if (user.password && user.password !== pass) { showErr('Contraseña incorrecta'); return; }
+    setLS('gm_session', user);
+    closeModal();
+    window.location.href = 'juego.html';
+    return;
+  }
+
+  // REGISTER
+  const nombre   = document.getElementById('f_nombre')?.value.trim();
+  const apellido = document.getElementById('f_apellido')?.value.trim();
+  const dni      = document.getElementById('f_dni')?.value.trim();
+  const equipo   = document.getElementById('f_equipo')?.value.trim();
+  const email    = document.getElementById('f_email')?.value.trim();
+  const pass     = document.getElementById('f_password')?.value;
+  const pais     = document.getElementById('f_pais')?.value || 'Argentina';
+  const prov     = document.getElementById('f_provincia')?.value || '';
+  const edad     = document.getElementById('f_edad')?.value || '';
+  const comSel   = document.getElementById('f_comunidad')?.value;
+  const comCustom= document.getElementById('f_comCustom')?.value.trim();
+  const comDir   = document.getElementById('f_comDir')?.value.trim();
+  const comCont  = document.getElementById('f_comContacto')?.value.trim();
+  const comunidad = comSel === '__otra__' ? comCustom : comSel;
+
+  if (!nombre || !apellido) { showErr('Completá nombre y apellido'); return; }
+  if (!dni)    { showErr('El DNI es obligatorio'); return; }
+  if (!equipo) { showErr('Completá el nombre del equipo'); return; }
+  if (!email || !pass) { showErr('Completá email y contraseña'); return; }
+  if (comSel === '__otra__' && !comCustom) { showErr('Escribí el nombre de tu comunidad'); return; }
+
+  // Validar cuentas extra
+  const n = window._cantidad || 1;
+  const extras = [];
+  for (let i=2; i<=n; i++) {
+    const eq = document.getElementById(`f_equipo_${i}`)?.value.trim();
+    const em = document.getElementById(`f_email_${i}`)?.value.trim();
+    const pw = document.getElementById(`f_password_${i}`)?.value;
+    if (!eq || !em || !pw) { showErr(`Completá todos los datos para la cuenta ${i}`); return; }
+    extras.push({ equipo:eq, email:em, password:pw });
+  }
+
+  const users = getLS('gm_users', []);
+  const dniUsers = users.filter(u => u.dni === dni);
+  if (dniUsers.length + n > 5) { showErr(`Con este DNI ya hay ${dniUsers.length} cuenta(s). Solo podés agregar ${5-dniUsers.length} más.`); return; }
+  if (users.find(u => u.email === email)) { showErr('Ese email ya está registrado'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Registrando...';
+
+  const registeredUsers = [];
+
+  // Registrar cuenta principal
+  const uid1 = 'u_' + Math.random().toString(36).slice(2);
+  const pid1 = 'GM-' + String(users.length + 1).padStart(4,'0');
+  const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, provincia:prov, edad:parseInt(edad)||0, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1 };
+  registeredUsers.push(user1);
+  let allUsers = [...users, user1];
+
+  // Registrar cuentas extra
+  for (let i=0; i<extras.length; i++) {
+    const ex = extras[i];
+    if (allUsers.find(u=>u.email===ex.email)) { showErr(`El email ${ex.email} ya está registrado`); btn.disabled=false; renderForm(); return; }
+    const uid2 = 'u_' + Math.random().toString(36).slice(2);
+    const pid2 = 'GM-' + String(allUsers.length + 1).padStart(4,'0');
+    const u2 = { uid:uid2, email:ex.email, password:ex.password, dni, nombre, apellido, equipo:ex.equipo, comunidad, pais, provincia:prov, edad:parseInt(edad)||0, admin:false, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid2 };
+    registeredUsers.push(u2);
+    allUsers.push(u2);
+  }
+
+  setLS('gm_users', allUsers);
+
+  // Guardar comunidad custom si es nueva
+  if (comSel === '__otra__' && comCustom) {
+    const saved = getLS('gm_comunidades', []);
+    if (!saved.includes(comCustom)) setLS('gm_comunidades', [...saved, comCustom]);
+  }
+
+  // Guardar sesión del usuario principal
+  setLS('gm_session', user1);
+
+  // Mostrar modal de pago
+  closeModal();
+  const totalCuentas = registeredUsers.length;
+  const totalPago = totalCuentas * 6000;
+  document.getElementById('payId').textContent = registeredUsers.map(u=>u.playerId).join(' · ');
+  document.getElementById('paySubject').textContent = `Comprobante · ${nombre} ${apellido} · ${registeredUsers.map(u=>u.playerId).join(', ')}`;
+  // Actualizar monto en el modal de pago si existe el elemento
+  const payAmountEl = document.getElementById('payAmount');
+  if (payAmountEl) payAmountEl.textContent = '$' + totalPago.toLocaleString('es-AR');
+  document.getElementById('payModal').style.display = 'flex';
+
+  btn.disabled = false;
+}
+
+function showErr(msg) {
+  const e = document.getElementById('authErr');
+  e.textContent = '⚠ ' + msg;
+  e.style.display = 'block';
+}
+
+// Mostrar ad al cargar
+showFullAd(null);
+
+</script>
+</body>
+</html>
