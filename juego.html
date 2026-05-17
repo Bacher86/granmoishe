@@ -421,6 +421,8 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   .idx-features{grid-template-columns:1fr 1fr;}
 }
 .prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}</style>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div id="root"></div>
@@ -17616,20 +17618,104 @@ exports.version = "19.2.5";
 // ║                    GRAN MOISHE 2026 — v2.1                              ║
 // ║           Fantasy Fútbol · Mundial · Comunidades Judías                 ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────
+const ADMIN_EMAIL = "jajapepe423@gmail.com";
+
+// ─── MOCK LAYER (replace with real Firebase SDK in production) ────────────
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE SYNC LAYER — Gran Moishe 2026
+// Reemplaza localStorage para claves compartidas entre dispositivos
+// ═══════════════════════════════════════════════════════════════════
 const FB_CONFIG = {
   apiKey: "AIzaSyABCUYQH6NlEybXICvyTQRMDUIW8Jqo9A4",
   authDomain: "mundialdt-e09d7.firebaseapp.com",
+  databaseURL: "https://mundialdt-e09d7-default-rtdb.firebaseio.com",
   projectId: "mundialdt-e09d7",
   storageBucket: "mundialdt-e09d7.firebasestorage.app",
   messagingSenderId: "272250193232",
   appId: "1:272250193232:web:45ad446d08b45163c1d855"
 };
-const ADMIN_EMAIL = "jajapepe423@gmail.com";
 
-// ─── MOCK LAYER (replace with real Firebase SDK in production) ────────────
-const getLS  = (k, d) => { try { return _nullishCoalesce(JSON.parse(_nullishCoalesce(localStorage.getItem(k), () => ( "null"))), () => ( d)); } catch (e2) { return d; } };
-const setLS  = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+// Claves que se sincronizan en Firebase (compartidas entre todos)
+const FB_KEYS = [
+  "gm_users", "gm_ads", "gm_player_stats", "gm_stats_by_name",
+  "gm_matches_cache", "gm_published_matches", "gm_match_stats",
+  "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players"
+];
+
+let _fbApp = null, _fbDB = null, _fbReady = false;
+const _fbCache = {}; // cache local de Firebase
+const _fbListeners = {}; // callbacks para cuando cambia un key
+
+function fbInit() {
+  try {
+    if (typeof firebase === 'undefined') { console.warn("Firebase SDK no disponible"); return; }
+    if (!firebase.apps || !firebase.apps.length) {
+      _fbApp = firebase.initializeApp(FB_CONFIG);
+    } else {
+      _fbApp = firebase.apps[0];
+    }
+    _fbDB = firebase.database();
+    _fbReady = true;
+
+    // Escuchar cambios en tiempo real para todas las claves compartidas
+    FB_KEYS.forEach(key => {
+      _fbDB.ref('gm/' + key).on('value', snap => {
+        const val = snap.val();
+        // Guardar en cache local
+        _fbCache[key] = val !== null ? val : undefined;
+        // También sincronizar al localStorage local para lectura offline
+        if (val !== null) {
+          try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
+        }
+        // Notificar listeners
+        if (_fbListeners[key]) _fbListeners[key].forEach(fn => fn(val));
+        // Disparar evento storage para que React re-renderice
+        try { window.dispatchEvent(new StorageEvent('storage', {key, newValue: JSON.stringify(val)})); } catch(e){}
+      });
+    });
+
+    console.log("🔥 Firebase conectado — Gran Moishe 2026");
+  } catch(e) {
+    console.error("Firebase init error:", e);
+  }
+}
+
+// getLS — lee de Firebase cache (o localStorage como fallback)
+function getLS(key, def) {
+  // Claves compartidas: usar cache de Firebase (o localStorage como fallback offline)
+  if (FB_KEYS.includes(key)) {
+    if (_fbCache[key] !== undefined) return _fbCache[key];
+    // Fallback a localStorage mientras carga
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+  }
+  // Claves per-usuario: solo localStorage
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+
+// setLS — escribe en Firebase Y en localStorage
+function setLS(key, val) {
+  // Siempre guardar en localStorage (inmediato, offline)
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+  // Si es clave compartida, subir a Firebase
+  if (FB_KEYS.includes(key) && _fbReady && _fbDB) {
+    _fbDB.ref('gm/' + key).set(val !== undefined ? val : null)
+      .catch(e => console.error("Firebase write error:", key, e));
+  }
+}
+
+// onFBChange — suscribirse a cambios de una clave desde Firebase
+function onFBChange(key, callback) {
+  if (!_fbListeners[key]) _fbListeners[key] = [];
+  _fbListeners[key].push(callback);
+}
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', fbInit);
+} else {
+  fbInit();
+}
+
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────
 const BUDGET = 150000000;
