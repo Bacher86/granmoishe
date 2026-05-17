@@ -97,13 +97,15 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .ad-cta{font-size:.65rem;color:#4a6a5a;margin-top:2px;}
 
 /* SIDEBAR ADS */
-.sidebar-ads{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:12px 0 12px 12px;align-self:stretch;}
-.sba-label{font-size:.55rem;letter-spacing:2px;color:#3a5a4a;text-transform:uppercase;text-align:center;padding-bottom:4px;}
-.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.15s;flex:1;min-height:160px;}
-.sba-item:hover{border-color:#2a4a38;}
+.sidebar-ads{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:8px 0 8px 10px;align-self:stretch;position:sticky;top:56px;height:calc(100vh - 56px);}
+.sba-label{font-size:.55rem;letter-spacing:2px;color:#3a5a4a;text-transform:uppercase;text-align:center;padding-bottom:4px;flex-shrink:0;}
+.sba-item{border-radius:10px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;}
+.sba-item:hover{border-color:#2a4a38;transform:scale(1.01);}
+.sba-item img{width:100%;height:100%;object-fit:cover;display:block;}
+.ad-placeholder{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a1622;padding:16px;text-align:center;}
 
 /* APP LAYOUT */
-.app-layout{display:flex;max-width:1400px;margin:0 auto;}
+.app-layout{display:flex;max-width:1400px;margin:0 auto;align-items:flex-start;}
 .main{flex:1;padding:14px;min-width:0;}
 
 /* HEADER */
@@ -136,7 +138,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 /* PITCH */
 .pitch-full{display:flex;flex-direction:column;gap:0;}
 .pitch-row{display:flex;gap:0;align-items:stretch;}
-.pitch-ad-side{width:180px;min-height:240px;background:#0a1525;border:1px solid #1a2d40;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border-radius:8px;}
+.pitch-ad-side{width:200px;min-height:260px;background:#0a1525;border:1px solid #1a2d40;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border-radius:10px;overflow:hidden;}
 .pitch-ad-side.empty{border-style:dashed;opacity:.4;}
 .pitch-ad-col{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
 .pitch-container{flex:1;display:flex;flex-direction:column;}
@@ -18231,32 +18233,39 @@ function FullScreenAd({ ad, onClose }) {
   );
 }
 
-function SidebarAds({ ads }) {
+function SidebarAds({ ads, side }) {
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
     if(slotAds.length<2) return;
-    const t=setInterval(()=>setIdx(i=>(i+1)%slotAds.length),8000);
+    const t=setInterval(()=>setIdx(i=>(i+1)%slotAds.length),5000);
     return()=>clearInterval(t);
   },[slotAds]);
 
-  // Always render 3 slots
   const slots = [0,1,2].map(i => slotAds.length ? slotAds[(idx+i)%slotAds.length] : null);
+  const padStyle = side==="left"
+    ? {paddingLeft:0, paddingRight:10}
+    : {paddingLeft:10, paddingRight:0};
 
-  return React.createElement('div', { className: "sidebar-ads",}
-    , React.createElement('div', { className: "sba-label",}, "PUBLICIDAD")
+  return React.createElement('div', { className: "sidebar-ads", style: padStyle}
+    , React.createElement('div', { className: "sba-label"}, "PUBLICIDAD")
     , slots.map((a, i) =>
       a
-        ? React.createElement('div', { key: a.id+i, className: "sba-item", onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
+        ? React.createElement('div', { key: a.id+i, className: "sba-item",
+            onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
             , a.img
-              ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:"100%",objectFit:"contain",background:"#000",display:"block"}})
-              : React.createElement('div', { className: "ad-placeholder", style: {height:"100%",minHeight:160},}
-                  , React.createElement('span', { style: {color:_optionalChain([AD_TIERS, 'access', _20 => _20[a.tier], 'optionalAccess', _21 => _21.color]),fontSize:".6rem",fontWeight:700,letterSpacing:1}}, _optionalChain([AD_TIERS, 'access', _22 => _22[a.tier], 'optionalAccess', _23 => _23.name]))
-                  , React.createElement('div', { style: {fontSize:".8rem",fontWeight:700,color:"#e2e8f0",marginTop:4,textAlign:"center",lineHeight:1.3}}, a.nombre)
+              ? React.createElement('img', {src:a.img, alt:a.nombre,
+                  style:{width:"100%",height:"100%",objectFit:"cover",display:"block"}})
+              : React.createElement('div', { className: "ad-placeholder"}
+                  , React.createElement('div', {style:{fontSize:".6rem",fontWeight:700,letterSpacing:1,color:"#4ade80",marginBottom:6}}, "⭐ PUBLICIDAD")
+                  , React.createElement('div', {style:{fontSize:".85rem",fontWeight:700,color:"#e2e8f0",lineHeight:1.3,textAlign:"center"}}, a.nombre)
+                  , a.descripcion&&React.createElement('div', {style:{fontSize:".72rem",color:"#4a6a5a",marginTop:6,textAlign:"center"}}, a.descripcion)
                 )
           )
-        : React.createElement('div', { key: "empty"+i, className: "sba-item", style:{minHeight:160,border:"1px dashed #1a2d40",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"},}
-            , React.createElement('span', {style:{fontSize:".65rem",color:"#1a3a28"}}, "Publicidad")
+        : React.createElement('div', { key: "empty"+i, className: "sba-item",
+            style:{border:"1px dashed #1a2d40",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6}}
+            , React.createElement('div', {style:{fontSize:"1.5rem",opacity:.15}}, "📢")
+            , React.createElement('span', {style:{fontSize:".6rem",color:"#1a3a28",letterSpacing:1}}, "PUBLICIDAD")
           )
     )
   );
@@ -19938,7 +19947,7 @@ function GranMoishe() {
       )
 
       , React.createElement('div', { className: "app-layout",}
-        , showSidebar&&React.createElement(SidebarAds, { ads: ads,})
+        , showSidebar&&React.createElement(SidebarAds, { ads: ads, side:"left",})
         , React.createElement('main', { className: "main",}
           /* ── EQUIPO ── */
           , tab==="equipo"&&React.createElement(EquipoListView,{xi:xi,subs:subs,squad:squad,capitan:capitan,formation:formation,setXi:setXi,setSubs:setSubs,setTab:setTab,toast:toast,autoXI:autoXI})
