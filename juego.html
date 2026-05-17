@@ -18166,9 +18166,11 @@ const Auth = {
     if (dniUsers.length>=5) return { error:"Ya hay 5 cuentas con ese DNI" };
     if (users.find(u=>u.email===email)) return { error:"Email ya registrado" };
     const uid = "u_"+Math.random().toString(36).slice(2);
+    const playerNum = String(users.length + 1).padStart(4, "0");
+    const playerId = "GM-" + playerNum;
     const user = { uid, email, dni, nombre, apellido, comunidad, pais, provincia, edad:parseInt(edad),
-                   equipo, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null };
-    setLS("gm_users",[...users,user]); notifyAuth(user); return { ok:true, user };
+                   equipo, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, playerId };
+    setLS("gm_users",[...users,user]); return { ok:true, user };
   },
   login: async ({ email, password }) => {
     const users = getLS("gm_users",[]);
@@ -18426,8 +18428,9 @@ function IndexPage({ onLogin, onRegister, ads }) {
           )
           , React.createElement('div', { className: "idx-tagline",}, "Armá tu equipo, competí con tu comunidad, viví el Mundial"         )
           , React.createElement('div', { className: "idx-ctas",}
-            , React.createElement('button', { className: "idx-btn primary" , onClick: ()=>setMode("login"),}, "Ingresar")
+            , React.createElement('button', { className: "idx-btn primary" , onClick: ()=>setMode("register"),}, "⚽ Sumate al torneo")
             , React.createElement('button', { className: "idx-btn secondary" , onClick: ()=>setMode("register"),}, "Registrarse · "  , fmtARS(ACCOUNT_PRICE))
+            , React.createElement('button', { className: "idx-btn secondary" , onClick: ()=>setMode("login"),}, "Ya tengo cuenta")
           )
           , React.createElement('div', { className: "idx-features",}
             , React.createElement('div', { className: "idx-features",}
@@ -18472,42 +18475,205 @@ function IndexPage({ onLogin, onRegister, ads }) {
   );
 }
 
+// ── PAYMENT MODAL COMPONENT ─────────────────────────────────────────────────
+function PayModal({ users, onClose }) {
+  if(!users||!users.length) return null;
+  const total = users.length * ACCOUNT_PRICE;
+  const ids = users.map(u=>u.playerId||u.uid).join(", ");
+  const subject = `Comprobante · ${users[0].nombre} ${users[0].apellido} · ${ids}`;
+  return (
+    React.createElement('div', { style: {position:"fixed",inset:0,background:"rgba(0,0,0,.95)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"},}
+      , React.createElement('div', { style: {background:"#0d1b2a",border:"2px solid #4ade80",borderRadius:18,padding:28,maxWidth:460,width:"100%",textAlign:"center",maxHeight:"90vh",overflowY:"auto"},}
+        , React.createElement('div', { style: {textAlign:"center",marginBottom:10},}
+          , React.createElement('img', { src: "almagro.jpg", alt: "Olami Almagro", style: {width:64,height:64,objectFit:"cover",borderRadius:14,display:"inline-block",border:"2px solid rgba(74,222,128,.4)",boxShadow:"0 0 16px rgba(74,222,128,.25)"}, onError: e=>{e.target.style.display="none";} })
+        )
+        , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.5rem",fontWeight:900,letterSpacing:2,marginBottom:6,color:"#4ade80"},}, "¡Registro exitoso!")
+        , React.createElement('div', { style: {fontSize:".88rem",color:"#8a9ab0",lineHeight:1.8,marginBottom:16},}
+          , "¡Bienvenido/a al Gran Moishe 2026! 🎉"
+          , React.createElement('br', null)
+          , React.createElement('br', null)
+          , "Para activar tu cuenta completá el pago y envianos el comprobante."
+          , React.createElement('br', null)
+          , React.createElement('br', null)
+          , React.createElement('span', { style: {color:"#fbbf24",fontSize:".8rem"},}, "⚠ En caso de no confirmarse el pago, la sesión puede ser suspendida temporalmente hasta regularizarlo.")
+        )
+        , React.createElement('div', { style: {background:"rgba(74,222,128,.06)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:14,marginBottom:16},}
+          , React.createElement('div', { style: {fontSize:".68rem",letterSpacing:2,color:"#2a6a3a",textTransform:"uppercase",marginBottom:6},}, users.length===1?"Tu ID de participante":"IDs de participantes")
+          , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.1rem",fontWeight:700,color:"#4ade80",letterSpacing:2,wordBreak:"break-all"},}, ids)
+        )
+        , React.createElement('div', { style: {background:"rgba(74,222,128,.06)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:14,marginBottom:16},}
+          , React.createElement('div', { style: {fontSize:".68rem",letterSpacing:2,color:"#2a6a3a",textTransform:"uppercase",marginBottom:6},}, "Total a pagar")
+          , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"2rem",fontWeight:900,color:"#4ade80"},}, fmtARS(total))
+          , users.length>1&&React.createElement('div', { style: {fontSize:".72rem",color:"#4a6a5a",marginTop:4},}, users.length, " cuentas × ", fmtARS(ACCOUNT_PRICE))
+        )
+        , React.createElement('div', { style: {marginBottom:16},}
+          , React.createElement('div', { style: {fontSize:".68rem",letterSpacing:2,color:"#2a6a3a",textTransform:"uppercase",fontWeight:600,marginBottom:10,textAlign:"center"},}, "Realizá el pago")
+          , React.createElement('div', { style: {background:"rgba(0,158,227,.07)",border:"1px solid rgba(0,158,227,.25)",borderRadius:10,padding:"16px",textAlign:"center"},}
+            , React.createElement('div', { style: {fontSize:".75rem",color:"#4a6a5a",marginBottom:8},}, "Alias de Mercado Pago:")
+            , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.8rem",fontWeight:900,color:"#009EE3",letterSpacing:4},}, "uriel.bacher")
+          )
+        )
+        , React.createElement('div', { style: {fontSize:".68rem",letterSpacing:2,color:"#2a6a3a",textTransform:"uppercase",fontWeight:600,marginBottom:10,textAlign:"center"},}, "Enviá el comprobante")
+        , React.createElement('div', { style: {background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:10,padding:14,marginBottom:16,fontSize:".82rem",color:"#8a9ab0",lineHeight:1.8,textAlign:"left"},}
+          , React.createElement('strong', null, "📧 Enviá el comprobante a:")
+          , React.createElement('br', null)
+          , React.createElement('span', { style: {color:"#60a5fa",fontWeight:700},}, "granmoisheolamialmagro@gmail.com")
+          , React.createElement('br', null)
+          , React.createElement('br', null)
+          , React.createElement('strong', null, "Asunto: ")
+          , React.createElement('span', { style: {color:"#fbbf24"},}, subject)
+          , React.createElement('br', null)
+          , React.createElement('strong', null, "Adjuntá: "), "foto o captura del comprobante"
+        )
+        , React.createElement('div', { style: {color:"#ef4444",fontSize:".78rem",marginBottom:12},}, "⚠ Tu acceso puede ser removido si no se confirma el pago")
+        , React.createElement('button', { onClick: onClose, style: {width:"100%",padding:"12px",borderRadius:10,border:"none",background:"#4ade80",color:"#07111e",fontFamily:"'Oswald',sans-serif",fontSize:".95rem",fontWeight:700,cursor:"pointer"},}
+          , "Entendido, voy a enviar el comprobante ✓"
+        )
+      )
+    )
+  );
+}
+
+// ── GET COMMUNITIES (dynamic, from registered users) ────────────────────────
+function getCommunities() {
+  const base = ["Macabi","Cisaab","Hacoaj","Círculo","Venado","Mi Refugio","Kadima","Barkojba",
+    "Lambtroh Hakol","Hebraica","Or Jadash","Dor Jadash","Jai (Bialik)","Iona",
+    "Amijai","Betam del Oeste","Bet El","Bet Hilel","Juventud Sión","Tfilat Shalom",
+    "Pardes","Olami Almagro","Olami Belgrano","Olami Urquiza","Olami Villa Crespo","Olami Palermo"];
+  const fromUsers = getLS("gm_users",[]).map(u=>u.comunidad).filter(c=>c&&c!=="Otra / Independiente");
+  const fromSaved = getLS("gm_comunidades",[]);
+  return [...new Set([...base,...fromUsers,...fromSaved])].sort((a,b)=>a.localeCompare(b));
+}
+
 function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
   const isReg = mode==="register";
-  const [f,setF]=useState({email:"",password:"",dni:"",nombre:"",apellido:"",equipo:"",pais:"Argentina",provincia:"Buenos Aires",edad:"",comunidad:"Macabi",comunidadDir:"",comunidadContacto:""});
+  const [cantidad,setCantidad]=useState(1);
+  const [f,setF]=useState({email:"",password:"",dni:"",nombre:"",apellido:"",equipo:"",pais:"Argentina",provincia:"Buenos Aires",edad:"",comunidad:"Macabi",comunidadCustom:"",comunidadDir:"",comunidadContacto:""});
+  // extra accounts: array of {email, password, equipo}
+  const [extras,setExtras]=useState([]);
   const [err,setErr]=useState("");
   const [loading,setLoading]=useState(false);
+  const [payUsers,setPayUsers]=useState(null);
+
   const set=(k,v)=>setF(p=>({...p,[k]:v,...(k==="pais"?{provincia:""}:{})}));
+
+  const handleSetCantidad=(n)=>{
+    setCantidad(n);
+    const arr=[];
+    for(let i=1;i<n;i++) arr.push({email:"",password:"",equipo:""});
+    setExtras(arr);
+  };
+
+  const setExtra=(idx,k,v)=>{
+    setExtras(p=>{const a=[...p];a[idx]={...a[idx],[k]:v};return a;});
+  };
+
+  const comunidades = getCommunities();
+  const comunidadFinal = f.comunidad==="__otra__" ? f.comunidadCustom : f.comunidad;
+  const totalPrecio = cantidad * ACCOUNT_PRICE;
 
   const submit=async()=>{
     if(!f.email||!f.password){setErr("Completá email y contraseña");return;}
     if(isReg&&!f.dni){setErr("El DNI es obligatorio");return;}
     if(isReg&&!f.nombre){setErr("Completá tu nombre");return;}
+    if(isReg&&f.comunidad==="__otra__"&&!f.comunidadCustom.trim()){setErr("Escribí el nombre de tu comunidad");return;}
+    // validate extras
+    if(isReg&&extras.length>0){
+      for(let i=0;i<extras.length;i++){
+        if(!extras[i].email||!extras[i].password){setErr(`Completá email y contraseña para la cuenta ${i+2}`);return;}
+        if(!extras[i].equipo){setErr(`Completá el nombre de equipo para la cuenta ${i+2}`);return;}
+      }
+    }
     setLoading(true);setErr("");
-    const res=await onSubmit(f);
-    if(_optionalChain([res, 'optionalAccess', _24 => _24.error])){setErr(res.error);}
+    // Register primary account
+    const res=await onSubmit({...f, comunidad: comunidadFinal});
+    if(_optionalChain([res, 'optionalAccess', _24 => _24.error])){setErr(res.error);setLoading(false);return;}
+    const registeredUsers=[res.user];
+    // Register extra accounts (same DNI)
+    for(let i=0;i<extras.length;i++){
+      const ex=extras[i];
+      const r2=await onSubmit({
+        email:ex.email, password:ex.password, equipo:ex.equipo,
+        dni:f.dni, nombre:f.nombre, apellido:f.apellido,
+        pais:f.pais, provincia:f.provincia, edad:f.edad,
+        comunidad:comunidadFinal, comunidadDir:f.comunidadDir, comunidadContacto:f.comunidadContacto
+      });
+      if(_optionalChain([r2,'optionalAccess',_=>_.user])) registeredUsers.push(r2.user);
+    }
+    // Save custom community if needed
+    if(f.comunidad==="__otra__"&&f.comunidadCustom.trim()){
+      const saved=getLS("gm_comunidades",[]);
+      if(!saved.includes(f.comunidadCustom.trim())){
+        setLS("gm_comunidades",[...saved,f.comunidadCustom.trim()]);
+      }
+    }
     setLoading(false);
+    setPayUsers(registeredUsers);
   };
+
+  const handlePayClose = () => {
+    // Log in the primary registered user after closing pay modal
+    if(payUsers&&payUsers.length>0) notifyAuth(payUsers[0]);
+    setPayUsers(null);
+    onClose();
+  };
+
+  if(payUsers) return React.createElement(PayModal, { users: payUsers, onClose: handlePayClose });
 
   return (
     React.createElement('div', { className: "auth-overlay", onClick: onClose,}
       , React.createElement('div', { className: "auth-modal", onClick: e=>e.stopPropagation(),}
         , React.createElement('button', { className: "auth-close", onClick: onClose,}, "✕")
-        , React.createElement('div', { className: "auth-logo",}, "✡")
+        , React.createElement('div', { style: {textAlign:"center",marginBottom:8},}
+          , React.createElement('img', { src: "almagro.jpg", alt: "Olami Almagro", style: {width:64,height:64,objectFit:"cover",borderRadius:14,display:"inline-block",border:"2px solid rgba(74,222,128,.4)",boxShadow:"0 0 16px rgba(74,222,128,.25)"}, onError: e=>{e.target.style.display="none";} })
+        )
         , React.createElement('div', { className: "auth-title",}, isReg?"Crear cuenta":"Ingresar")
         , isReg&&React.createElement('div', { className: "auth-price",}, "Costo: " , fmtARS(ACCOUNT_PRICE), " · Máx. 5 cuentas por DNI"      )
 
         , React.createElement('div', { className: "auth-form",}
+
+          /* ── CANTIDAD DE CUENTAS ── */
+          , isReg&&React.createElement('div', { style: {background:"rgba(74,222,128,.05)",border:"1px solid rgba(74,222,128,.15)",borderRadius:10,padding:14},}
+            , React.createElement('label', { style: {fontSize:".72rem",fontWeight:600,letterSpacing:1,color:"#4a6a7a",textTransform:"uppercase"},}, "¿Cuántas cuentas querés crear ahora?")
+            , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:14,marginTop:8,flexWrap:"wrap"},}
+              , React.createElement('div', { style: {display:"flex",gap:6},}
+                , [1,2,3,4,5].map(n=>React.createElement('button', {
+                    key:n, type:"button",
+                    onClick:()=>handleSetCantidad(n),
+                    style:{width:38,height:38,borderRadius:8,border:`1.5px solid ${n===cantidad?"#4ade80":"rgba(74,222,128,.2)"}`,background:n===cantidad?"rgba(74,222,128,.2)":"transparent",color:"#e2e8f0",fontFamily:"'Oswald',sans-serif",fontSize:"1rem",fontWeight:700,cursor:"pointer"},
+                  }, n))
+              )
+              , React.createElement('div', { style: {flex:1,minWidth:180},}
+                , React.createElement('div', { style: {fontSize:".72rem",color:"#4a6a5a"},}, "Total a pagar:")
+                , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.4rem",fontWeight:900,color:"#4ade80"},}, fmtARS(totalPrecio))
+              )
+            )
+          )
+
+          /* ── DATOS CUENTA PRINCIPAL ── */
           , isReg&&React.createElement(React.Fragment, null
             , React.createElement('div', { className: "ps-row2",}
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Nombre *" ), React.createElement('input', { value: f.nombre, onChange: e=>set("nombre",e.target.value), placeholder: "Lionel",}))
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Apellido *" ), React.createElement('input', { value: f.apellido, onChange: e=>set("apellido",e.target.value), placeholder: "Moishe",}))
             )
-            , React.createElement('div', { className: "pf",}, React.createElement('label', null, "DNI *" ), React.createElement('input', { value: f.dni, onChange: e=>set("dni",e.target.value), placeholder: "30123456", maxLength: 10,}))
-            , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Nombre del equipo *"   ), React.createElement('input', { value: f.equipo, onChange: e=>set("equipo",e.target.value), placeholder: "Mi Equipo FC"  , maxLength: 40,}))
+            , React.createElement('div', { className: "pf",}
+              , React.createElement('label', null, "DNI *" )
+              , React.createElement('input', { value: f.dni, onChange: e=>set("dni",e.target.value), placeholder: "30123456", maxLength: 10,})
+              , React.createElement('div', { style: {fontSize:".7rem",color:"#4a6a5a",marginTop:3},}, "🪪 Ingresá tu DNI real — será requerido para verificar tu identidad en caso de ganar un premio.")
+            )
+            , React.createElement('div', { className: "pf",}
+              , React.createElement('label', null, "Nombre del equipo · Cuenta 1 *"   )
+              , React.createElement('input', { value: f.equipo, onChange: e=>set("equipo",e.target.value), placeholder: "Mi Equipo FC"  , maxLength: 40,})
+            )
           )
-          , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Email *" ), React.createElement('input', { type: "email", value: f.email, onChange: e=>set("email",e.target.value), placeholder: "tu@email.com",}))
-          , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Contraseña *" ), React.createElement('input', { type: "password", value: f.password, onChange: e=>set("password",e.target.value), placeholder: "••••••••",}))
+          , React.createElement('div', { className: "pf",}
+            , React.createElement('label', null, "Email · Cuenta 1 *" )
+            , React.createElement('input', { type: "email", value: f.email, onChange: e=>set("email",e.target.value), placeholder: "tu@email.com",})
+            , isReg&&React.createElement('div', { style: {fontSize:".7rem",color:"#4a6a5a",marginTop:3},}, "📧 Usá un mail real y activo — es la única vía de contacto en caso de ganar un premio.")
+          )
+          , React.createElement('div', { className: "pf",}, React.createElement('label', null, isReg?"Contraseña · Cuenta 1 *":"Contraseña *" ), React.createElement('input', { type: "password", value: f.password, onChange: e=>set("password",e.target.value), placeholder: "••••••••",}))
+
+          /* ── DATOS ADICIONALES REGISTRO ── */
           , isReg&&React.createElement(React.Fragment, null
             , React.createElement('div', { className: "ps-row2",}
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "País *" ), React.createElement('select', { value: f.pais, onChange: e=>set("pais",e.target.value),}, PAISES_RES.map(p=>React.createElement('option', { key: p,}, p))))
@@ -18518,21 +18684,38 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
               )
             )
             , React.createElement('div', { className: "pf", style: {maxWidth:140},}, React.createElement('label', null, "Edad *" ), React.createElement('input', { type: "number", min: 10, max: 100, value: f.edad, onChange: e=>set("edad",e.target.value), placeholder: "25",}))
-            , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Comunidad / Club *"   )
+
+            /* ── COMUNIDAD ── */
+            , React.createElement('div', { className: "pf",}
+              , React.createElement('label', null, "Comunidad / Club *")
               , React.createElement('select', { value: f.comunidad, onChange: e=>set("comunidad",e.target.value),}
-                , COMMUNITIES.map(c=>React.createElement('option', { key: c,}, c))
+                , comunidades.map(c=>React.createElement('option', { key: c, value: c,}, c))
+                , React.createElement('option', { value: "__otra__",}, "➕ Otra (escribila)")
               )
+              , f.comunidad==="__otra__"&&React.createElement('input', { value: f.comunidadCustom, onChange: e=>set("comunidadCustom",e.target.value), placeholder: "Escribí el nombre de tu comunidad", style: {marginTop:6},})
+              , React.createElement('div', { style: {fontSize:".7rem",color:"#4a6a5a",marginTop:4},}, "ℹ️ Las comunidades de la lista fueron escritas por otros participantes. Si la tuya no aparece, seleccioná \"Otra\" y escribila — aparecerá para todos luego.")
             )
             , React.createElement('div', { className: "ps-row2",}
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Dirección de la comunidad"   ), React.createElement('input', { value: f.comunidadDir, onChange: e=>set("comunidadDir",e.target.value), placeholder: "Av. Corrientes 1234"  ,}))
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Contacto director/a" ), React.createElement('input', { value: f.comunidadContacto, onChange: e=>set("comunidadContacto",e.target.value), placeholder: "director@comunidad.com",}))
             )
           )
+
+          /* ── CUENTAS EXTRA ── */
+          , isReg&&extras.length>0&&React.createElement('div', { style: {borderTop:"1px solid rgba(74,222,128,.15)",paddingTop:14,display:"flex",flexDirection:"column",gap:14},}
+            , React.createElement('div', { style: {fontSize:".72rem",letterSpacing:1,color:"#4a6a5a",textTransform:"uppercase",fontWeight:600},}, "Cuentas adicionales (mismo DNI)")
+            , extras.map((ex,i)=>React.createElement('div', { key: i, style: {background:"rgba(255,255,255,.03)",border:"1px solid rgba(74,222,128,.1)",borderRadius:8,padding:12,display:"flex",flexDirection:"column",gap:8},}
+              , React.createElement('div', { style: {fontSize:".75rem",color:"#4ade80",fontWeight:700,marginBottom:4},}, `Cuenta ${i+2}`)
+              , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Nombre del equipo · Cuenta ${i+2} *`), React.createElement('input', { value: ex.equipo, onChange: e=>setExtra(i,"equipo",e.target.value), placeholder: "Mi Segundo Equipo",}))
+              , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Email · Cuenta ${i+2} *`), React.createElement('input', { type: "email", value: ex.email, onChange: e=>setExtra(i,"email",e.target.value), placeholder: "otro@email.com",}))
+              , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Contraseña · Cuenta ${i+2} *`), React.createElement('input', { type: "password", value: ex.password, onChange: e=>setExtra(i,"password",e.target.value), placeholder: "••••••••",}))
+            ))
+          )
         )
 
         , err&&React.createElement('div', { className: "auth-err",}, "⚠ " , err)
         , React.createElement('button', { className: "btn-save", onClick: submit, disabled: loading, style: {width:"100%",marginTop:8},}
-          , loading?"...":(isReg?`Registrarse · ${fmtARS(ACCOUNT_PRICE)}`:"Ingresar")
+          , loading?"...":(isReg?`Registrarse · ${fmtARS(totalPrecio)}`:"Ingresar")
         )
         , React.createElement('button', { className: "auth-switch", onClick: onSwitch,}
           , isReg?"¿Ya tenés cuenta? Ingresá":"¿No tenés cuenta? Registrate"
@@ -19985,7 +20168,7 @@ function GranMoishe() {
   const handleRegister = async (data) => {
     const r=await Auth.register(data);
     if(r.error) return r;
-    return {ok:true};
+    return {ok:true, user: r.user};
   };
 
   // Toasts
