@@ -91,22 +91,22 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .ad-banner{cursor:pointer;background:#0a1525;border:1px solid #1a2d40;border-radius:0;overflow:hidden;}
 .top-banner{height:60px;display:flex;align-items:center;justify-content:center;}
 .bottom-banner{height:60px;display:flex;align-items:center;justify-content:center;margin-top:auto;}
-.ad-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:8px;text-align:center;}
+.ad-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;padding:10px;text-align:center;background:#080f18;}
 .ad-tier-label{font-size:.6rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
 .ad-name{font-size:.78rem;font-weight:600;color:#e2e8f0;margin-top:3px;}
 .ad-cta{font-size:.65rem;color:#4a6a5a;margin-top:2px;}
 
 /* SIDEBAR ADS */
-.sidebar-ads{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:8px 10px;align-self:stretch;}
-.sba-label{font-size:.55rem;letter-spacing:2px;color:#3a5a4a;text-transform:uppercase;text-align:center;padding-bottom:4px;flex-shrink:0;}
-.sba-item{border-radius:10px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:120px;}
+.sidebar-ads{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:6px 8px;height:calc(100vh - 58px);position:sticky;top:58px;overflow:hidden;}
+.sba-label{display:none;}
+.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;}
 .sba-item:hover{border-color:#2a4a38;transform:scale(1.01);}
 .sba-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .ad-placeholder{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a1622;padding:16px;text-align:center;}
 
 /* APP LAYOUT */
-.app-layout{display:flex;max-width:1400px;margin:0 auto;}
-.main{flex:1;padding:14px;min-width:0;}
+.app-layout{display:flex;width:100%;}
+.main{flex:1;padding:10px 12px;min-width:0;overflow-x:hidden;}
 
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0a1b2a,#071a10);border-bottom:2px solid #1a3a20;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:200;}
