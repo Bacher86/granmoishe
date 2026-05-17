@@ -18267,7 +18267,7 @@ function AdBanner({ ads, slot, className="" }) {
   return (
     React.createElement('div', { className: `ad-banner ${className}`, onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
       , ad.img
-        ?React.createElement('img', { src: ad.img, alt: ad.nombre, style: {width:"100%",height:"100%",objectFit:"cover"},})
+        ?React.createElement('img', { src: ad.img, alt: ad.nombre, style: {width:"100%",height:"100%",objectFit:"cover",display:"block"}, onError:function(e){e.target.style.display='none';}})
         :React.createElement('div', { className: "ad-placeholder",}, React.createElement('span', { className: "ad-tier-label", style: {color:_optionalChain([AD_TIERS, 'access', _9 => _9[ad.tier], 'optionalAccess', _10 => _10.color])},}, _optionalChain([AD_TIERS, 'access', _11 => _11[ad.tier], 'optionalAccess', _12 => _12.name])), React.createElement('div', { className: "ad-cta",}, "Publicidad · Click para más info"     ))
     )
   );
@@ -18302,7 +18302,7 @@ function AdCarousel({ ads }) {
       onClick: function(){ if(ad){ DB.trackAdClick(ad.id); if(ad.url) window.open(ad.url,"_blank"); } }
     },
       ad && ad.img
-        ? React.createElement('img', { src: ad.img, alt: "", className: "adc-img" })
+        ? React.createElement('img', { src: ad.img, alt: "", className: "adc-img", onError:function(e){e.target.style.display='none';} })
         : React.createElement('div', { className: "adc-no-img" }, "Publicidad"),
       slotAds.length > 1 ? React.createElement('div', { className: "adc-dots" },
         slotAds.map(function(_, i) {
@@ -18337,7 +18337,7 @@ function FullScreenAd({ ad, onClose }) {
       , React.createElement('div', { className: "fullad-content", onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
         , React.createElement('div', { className: "fullad-inner",}
           , ad.img
-            ? React.createElement('img',{src:ad.img,alt:"",style:{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:10,display:"block"}})
+            ? React.createElement('img',{src:ad.img,alt:"",style:{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:10,display:"block"},onError:function(e){e.target.style.display='none';}})
             : React.createElement('div',{style:{height:200,display:"flex",alignItems:"center",justifyContent:"center"}},
                 React.createElement('div',{style:{fontSize:"3rem",opacity:.15}}, "📢")
               )
@@ -18376,7 +18376,8 @@ function SidebarAds({ ads, side }) {
             onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
             , a.img
               ? React.createElement('img', {src:a.img, alt:a.nombre,
-                  style:{width:"100%",height:"100%",objectFit:"cover",display:"block"}})
+                  style:{width:"100%",height:"100%",objectFit:"cover",display:"block"},
+                  onError:function(e){e.target.style.display='none';}})
               : React.createElement('div', { className: "ad-placeholder"}
                   , React.createElement('div', {style:{fontSize:"2rem",opacity:.12}}, "📢")
                 )
@@ -18765,7 +18766,7 @@ function PitchView({ xi, subs, formation, capitan, ads, onPlayerClick }) {
     const a = pitchAds[idx % pitchAds.length];
     return React.createElement('div', { className: "pitch-ad-side", onClick: ()=>{if(a){DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");}}, style:{minHeight:240}}
       , a.img
-        ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:"100%",objectFit:"contain",background:"#000",borderRadius:7}})
+        ? React.createElement('img', {src:a.img, alt:a.nombre, style:{width:"100%",height:"100%",objectFit:"contain",background:"#000",borderRadius:7},onError:function(e){e.target.style.display='none';}})
         : React.createElement('div', { className: "ad-placeholder", style: {height:"100%"}}
           , React.createElement('div', {style:{fontSize:"2rem",opacity:.12}}, "📢")
         )
