@@ -44,19 +44,9 @@
     .btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
     .btn-gold { background: linear-gradient(135deg, var(--dorado), var(--dorado-clr)); color: var(--oscuro); }
 
-    /* AD STRIP */
-    .ad-strip { position: fixed; top: 64px; left: 0; right: 0; z-index: 90; background: rgba(27,58,107,.95); backdrop-filter: blur(8px); border-bottom: 2px solid rgba(74,124,201,.3); padding: 12px 24px; display: flex; align-items: center; justify-content: center; gap: 16px; min-height: 64px; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
-    .ad-strip-label { font-size: .7rem; letter-spacing: 2px; color: var(--celeste); text-transform: uppercase; opacity: .7; flex-shrink: 0; }
-    .ad-strip-slide { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .ad-tier-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-    .ad-strip-name { font-weight: 700; font-size: 1.1rem; }
-    .ad-strip-cta  { font-size: .85rem; color: var(--celeste); }
-    .ad-strip-dots { display: flex; gap: 5px; }
-    .ad-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.15); border: none; cursor: pointer; transition: .2s; }
-    .ad-dot.active { background: var(--celeste); }
 
     /* HERO */
-    .hero { min-height: 100vh; padding-top: 134px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 20% 50%, rgba(27,58,107,.5) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(42,82,152,.3) 0%, transparent 50%), var(--fondo); }
+    .hero { min-height: 100vh; padding-top: 80px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 20% 50%, rgba(27,58,107,.5) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(42,82,152,.3) 0%, transparent 50%), var(--fondo); }
 
     .hero-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: .035; }
     .hero-bg::before { content: ''; position: absolute; font-size: 60vw; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--celeste); }
@@ -192,7 +182,6 @@
       .cta-main, .cta-sec { padding: 12px 20px; font-size: .95rem; }
       .pay-box { padding: 20px 16px; }
       .modal { padding: 20px 16px; }
-      .ad-strip { padding: 6px 12px; }
       .wrap { padding: 48px 16px; }
     }
     @media (max-width:380px) {
@@ -227,17 +216,6 @@
   </div>
 </nav>
 
-<div class="ad-strip" id="adStrip" style="display:none;">
-  <div class="ad-strip-label">Sponsors</div>
-  <div class="ad-strip-slide" id="adSlide" onclick="adClick()">
-    <div class="ad-tier-dot" id="adDot"></div>
-    <div>
-      <div class="ad-strip-name" id="adName"></div>
-      <div class="ad-strip-cta"  id="adCta"></div>
-    </div>
-  </div>
-  <div class="ad-strip-dots" id="adDots"></div>
-</div>
 
 <section class="hero">
   <div class="hero-bg"></div>
@@ -489,11 +467,7 @@ function showFullAd(onDone) {
     var adLabel = document.createElement('div');
     adLabel.style.cssText = 'font-size:.65rem;letter-spacing:2px;color:#fbbf24;font-weight:700;margin-bottom:6px;';
     adLabel.textContent = '⭐ PUBLICIDAD';
-    var adName = document.createElement('div');
-    adName.style.cssText = 'font-size:1.4rem;font-weight:900;color:#e2e8f0;margin-bottom:4px;';
-    adName.textContent = ad.nombre;
     adBox.appendChild(adLabel);
-    adBox.appendChild(adName);
     if (ad.descripcion) {
       var adDesc = document.createElement('div');
       adDesc.style.cssText = 'font-size:.82rem;color:#8a9ab0;';
@@ -577,18 +551,661 @@ let adIdx=0, adTimer=null, adsData=[];
 function loadAds() {
   adsData = getLS('gm_ads',[]).filter(a=>a.active && (a.tier==='resto' || a.tier==='todo'));
   if (!adsData.length) return;
-  document.getElementById('adStrip').style.display='flex';
   renderAd(); renderDots();
   adTimer = setInterval(()=>{ adIdx=(adIdx+1)%adsData.length; renderAd(); renderDots(); },4000);
 }
 function renderAd() {
   const a=adsData[adIdx]; if(!a) return;
-  document.getElementById('adDot').style.background = TIER_COLORS[a.tier]||'#60a5fa';
-  document.getElementById('adName').textContent = a.nombre;
-  document.getElementById('adCta').textContent  = a.descripcion||'Ver más';
 }
 function renderDots() {
-  document.getElementById('adDots').innerHTML = adsData.map((_,i)=>`<button class="ad-dot${i===adIdx?' active':''}" onclick="goAd(${i})"></button>`).join('');
+}
+function goAd(i){ adIdx=i; renderAd(); renderDots(); clearInterval(adTimer); adTimer=setInterval(()=>{adIdx=(adIdx+1)%adsData.length;renderAd();renderDots();},4000); }
+function closeModal(){ document.getElementById('authOverlay').style.display='none'; }
+function closeContact(){ document.getElementById('contactOverlay').style.display='none'; }
+function toggleMode(){ authMode=authMode==='login'?'register':'login'; renderForm(); document.getElementById('authErr').style.display='none'; }
+
+function getComs() {
+  const base=['Macabi','Cisaab','Hacoaj','Círculo','Hebraica','ORT','Bet El','Olami Almagro','Olami Belgrano','Olami Urquiza','Olami Villa Crespo','Olami Palermo','Benei Akiva','Habonim Dror','Hashomer','Bamidbar','Tzofim'];
+  const fromUsers=getLS('gm_users',[]).map(u=>u.comunidad).filter(Boolean);
+  const fromSaved=getLS('gm_comunidades',[]);
+  return [...new Set([...base,...fromUsers,...fromSaved])].sort((a,b)=>{
+    if(a==='Otra / Independiente') return 1;
+    if(b==='Otra / Independiente') return -1;
+    return a.localeCompare(b);
+  });
+}
+
+function renderForm() {
+  const isReg = authMode==='register';
+  document.getElementById('modalTitle').textContent = isReg?'Crear cuenta':'Ingresar';
+  document.getElementById('modalPrice').style.display = isReg?'block':'none';
+  document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + (window._cantidad||1)*6000) : 'Ingresar';
+  document.getElementById('btnSwitch').textContent = isReg?'¿Ya tenés cuenta? Ingresá':'¿No tenés cuenta? Registrate';
+  const coms = getComs();
+  document.getElementById('modalForm').innerHTML = isReg ? `
+    <div class="field" style="background:rgba(27,58,107,.3);border:1px solid rgba(74,124,201,.25);border-radius:10px;padding:14px;">
+      <label>¿Cuántas cuentas querés crear ahora?</label>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;">
+          ${[1,2,3,4,5].map(n=>`<button type="button" onclick="setCantidad(${n})" id="qty_${n}" style="width:38px;height:38px;border-radius:8px;border:1.5px solid rgba(74,124,201,${n===1?'.9':'.25'});background:${n===1?'rgba(74,124,201,.25)':'transparent'};color:var(--blanco);font-family:Assistant,sans-serif;font-size:1rem;font-weight:700;cursor:pointer;">${n}</button>`).join('')}
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <div style="font-size:.75rem;color:var(--gris);">Total a pagar:</div>
+          <div id="precioTotal" style="font-family:Assistant,sans-serif;font-size:1.5rem;font-weight:800;color:var(--celeste);">$6.000</div>
+        </div>
+      </div>
+      <div id="cuentasExtra" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(74,124,201,.15);">
+        <div style="font-size:.75rem;color:var(--gris);margin-bottom:8px;">Datos para las cuentas adicionales:</div>
+        <div id="extraAccountsForm"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Nombre *</label><input id="f_nombre" placeholder="Lionel"/></div>
+      <div class="field"><label>Apellido *</label><input id="f_apellido" placeholder="Moishe"/></div>
+    </div>
+    <div class="field"><label>DNI *</label><input id="f_dni" placeholder="30123456" maxlength="10"/>
+      <div class="field-hint">🪪 Ingresá tu <strong>DNI real</strong> — será requerido para verificar tu identidad en caso de ganar un premio.</div></div>
+    <div class="field"><label>Nombre del equipo *</label><input id="f_equipo" placeholder="Mi Equipo FC" maxlength="40"/></div>
+    <div class="field"><label>Email *</label><input id="f_email" type="email" placeholder="tu@email.com"/>
+      <div class="field-hint">📧 Usá un <strong>mail real y activo</strong> — es la única vía de contacto en caso de ganar un premio. No podremos comunicarnos si el mail es incorrecto.</div>
+    </div>
+    <div class="field"><label>Contraseña *</label><input id="f_password" type="password" placeholder="••••••••"/></div>
+    <div class="row2">
+      <div class="field"><label>País *</label><select id="f_pais" onchange="onPaisChange()">${PAISES.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <div class="field"><label>Provincia *</label><select id="f_provincia">${PROVS_AR.map(p=>`<option>${p}</option>`).join('')}</select></div>
+    </div>
+    <div class="field" style="max-width:140px;"><label>Edad *</label><input id="f_edad" type="number" min="10" max="100" placeholder="25"/></div>
+    <div class="field">
+      <label>Comunidad / Club *</label>
+      <select id="f_comunidad" onchange="onComChange()">${coms.map(c=>`<option value="${c}">${c}</option>`).join('')}<option value="__otra__">➕ Otra (escribila)</option></select>
+      <div id="comCustomWrap" style="display:none;margin-top:6px;"><input id="f_comCustom" placeholder="Escribí el nombre de tu comunidad"/></div>
+      <div class="field-hint">Las comunidades de la lista fueron escritas por otros participantes. Si la tuya no aparece, seleccioná "Otra" y escribila.</div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Dirección de la comunidad</label><input id="f_comDir" placeholder="Av. Corrientes 1234"/></div>
+      <div class="field"><label>Contacto director/a</label><input id="f_comContacto" placeholder="director@comunidad.com"/></div>
+    </div>
+  ` : `
+    <div class="field"><label>Email *</label><input id="f_email" type="email" placeholder="tu@email.com"/></div>
+    <div class="field"><label>Contraseña *</label><input id="f_password" type="password" placeholder="••••••••"/></div>
+  `;
+}
+
+function renderFormLogo() {
+  // Make sure logo is visible and using correct URL
+  const logo = document.querySelector('.modal-logo img');
+  if (logo) {
+    logo.src = 'almagro.jpg';
+    logo.onerror = function() { this.src='https://bacher86.github.io/granmoishe/almagro.jpg'; this.onerror=null; };
+  }
+}
+function onPaisChange(){
+  const p=document.getElementById('f_pais')?.value, pr=document.getElementById('f_provincia');
+  if(!pr) return;
+  if(p==='Argentina') pr.innerHTML=PROVS_AR.map(x=>`<option>${x}</option>`).join('');
+  else pr.outerHTML='<input id="f_provincia" class="field" placeholder="Región/Estado"/>';
+}
+function onComChange(){ const v=document.getElementById('f_comunidad')?.value, w=document.getElementById('comCustomWrap'); if(w) w.style.display=v==='__otra__'?'block':'none'; }
+function setCantidad(n) {
+  window._cantidad = n;
+  const PRICE = 6000;
+  [1,2,3,4,5].forEach(i => {
+    const b = document.getElementById('qty_'+i);
+    if(!b) return;
+    b.style.border = `1.5px solid rgba(74,124,201,${i===n?'.9':'.25'})`;
+    b.style.background = i===n?'rgba(74,124,201,.25)':'transparent';
+  });
+  const total = document.getElementById('precioTotal');
+  if(total) total.textContent = '$' + (n * PRICE).toLocaleString('es-AR');
+  const btn2 = document.getElementById('btnSubmit');
+  if(btn2) btn2.textContent = 'Registrarse · $' + (n * PRICE).toLocaleString('es-AR');
+  const extra = document.getElementById('cuentasExtra');
+  const extraForm = document.getElementById('extraAccountsForm');
+  if(extra && extraForm) {
+    if(n > 1) {
+      extra.style.display = 'block';
+      let html = '';
+      for(let i=2;i<=n;i++) html += '<div style="margin:6px 0;padding:10px;background:rgba(27,58,107,.2);border-radius:8px;"><div style="font-size:.78rem;color:var(--celeste);font-weight:700;margin-bottom:6px;">⚽ Equipo '+i+'</div><input id="ex_equipo_'+i+'" placeholder="Nombre del equipo '+i+'" maxlength="40" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(74,124,201,.3);background:#0D1B35;color:#F5F7FA;font-size:.9rem;"/><div style="font-size:.68rem;color:var(--gris);margin-top:4px;">Usa el mismo email y contraseña para ingresar</div></div>';
+      extraForm.innerHTML = html;
+    } else {
+      extra.style.display = 'none';
+      extraForm.innerHTML = '';
+    }
+  }
+}
+function gv(id){ return document.getElementById(id)?.value?.trim()||''; }
+function showErr(m){ const e=document.getElementById('authErr'); e.textContent='⚠ '+m; e.style.display='block'; }
+async function submitAuth(){
+  const btn=document.getElementById('btnSubmit'); btn.disabled=true;
+  document.getElementById('authErr').style.display='none';
+  const email=gv('f_email'), pw=gv('f_password');
+  if(!email||!pw){showErr('Completá email y contraseña');btn.disabled=false;return;}
+
+  if(authMode==='login'){
+    const allU=getLS('gm_users',[]);
+    const u=allU.find(u=>u.email===email&&(!u.password||u.password===pw));
+    if(!u){showErr('Email o contraseña incorrectos');btn.disabled=false;return;}
+    setLS('gm_session',u);
+    closeModal();
+    showFullAd(() => { window.location.href='juego.html'; });
+    return;
+  }
+
+  const nombre=gv('f_nombre'),apellido=gv('f_apellido'),dni=gv('f_dni'),equipo=gv('f_equipo');
+  const pais=gv('f_pais'),provincia=gv('f_provincia'),edad=gv('f_edad');
+  let com=gv('f_comunidad'); if(com==='__otra__') com=gv('f_comCustom')||'Otra';
+  if(!nombre){showErr('Completá tu nombre');btn.disabled=false;return;}
+  if(!apellido){showErr('Completá tu apellido');btn.disabled=false;return;}
+  if(!dni){showErr('El DNI es obligatorio');btn.disabled=false;return;}
+  if(!equipo){showErr('Poné el nombre de tu equipo');btn.disabled=false;return;}
+  if(!edad){showErr('Ingresá tu edad');btn.disabled=false;return;}
+  const users=getLS('gm_users',[]);
+  if(users.filter(u=>u.dni===dni).length>=5){showErr('Ya hay 5 cuentas con ese DNI');btn.disabled=false;return;}
+  if(users.find(u=>u.email===email&&u.dni!==dni)){showErr('Email ya registrado con otro DNI');btn.disabled=false;return;}
+  const cantidad = window._cantidad||1;
+  const newUsers = [];
+  // Un solo playerId por usuario (compartido por todas sus cuentas)
+  const sharedPlayerId='GM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Date.now().toString(36).slice(-4).toUpperCase();
+  for(let i=1;i<=cantidad;i++){
+    const uid='u_'+Math.random().toString(36).slice(2)+(i>1?'_'+i:'');
+    const eqp = i===1 ? equipo : (gv('ex_equipo_'+i)||equipo+' '+i);
+    if(i>1 && !gv('ex_equipo_'+i)){showErr('Ponele nombre al equipo '+i);btn.disabled=false;return;}
+    // Mismo formato exacto que Auth.register de juego.html
+    const comDir = (document.getElementById('f_comDir')?.value||'').trim();
+    const comContacto = (document.getElementById('f_comContacto')?.value||'').trim();
+    newUsers.push({
+      uid, playerId:sharedPlayerId, email, password:pw, dni, nombre, apellido,
+      comunidad:com, comunidadDir:comDir, comunidadContacto:comContacto,
+      pais, provincia, edad:parseInt(edad)||0,
+      equipo:eqp, admin:false, pts:0, profileComplete:true,
+      liga:null, pagado:false, bloqueado:false, cuentaExtra:i>1
+    });
+  }
+  if(email===ADMIN_EMAIL){ newUsers[0].admin=true; newUsers[0].pagado=true; }
+  setLS('gm_users',[...users,...newUsers]);
+  // Guardar comunidad personalizada para que aparezca en futuros registros
+  if(com && com !== 'Otra'){
+    const savedComs=getLS('gm_comunidades',[]);
+    if(!savedComs.includes(com)) setLS('gm_comunidades',[...savedComs,com]);
+  }
+  window._cantidad=1;
+  closeModal();
+  document.getElementById('payId').textContent=sharedPlayerId;
+  document.getElementById('paySubject').textContent=`Comprobante Gran Moishe · ${sharedPlayerId}`;
+  // Show elite ad before pay modal
+  showFullAd(() => {
+    document.getElementById('payModal').style.display='flex';
+  });
+  btn.disabled=false;
+}
+
+function closePayModal(){ document.getElementById('payModal').style.display='none'; openModal('login'); }
+renderForm();
+
+// ── MERCADO PAGO ──────────────────────────────────────────────────────────
+function pagarMP() {
+  if (MP_ALIAS) {
+    // Si hay alias, abrir el link de MP
+    window.open('https://mpago.la/pay/' + MP_ALIAS, '_blank');
+  }
+  // Siempre mostrar también el alias como fallback
+  if (MP_ALIAS) {
+    document.getElementById('mpAlias').style.display = 'block';
+    document.getElementById('mpAliasText').textContent = MP_ALIAS;
+  }
+}
+
+// Mostrar sección MP solo si hay alias configurado o siempre (para preparar la UI)
+function initMP() {
+  if (!MP_ALIAS) {
+    // Sin alias configurado: mostrar igual el botón pero deshabilitado con mensaje
+    document.getElementById('btnMP').style.opacity = '0.5';
+    document.getElementById('btnMP').style.cursor = 'not-allowed';
+    document.getElementById('btnMP').title = 'Link de pago próximamente disponible';
+    document.getElementById('btnMP').onclick = function(){ alert('El link de pago estará disponible pronto. Por ahora realizá la transferencia y enviá el comprobante al mail.'); };
+  }
+}
+initMP();
+
+// ── SPONSORS CAROUSEL ──────────────────────────────────────────────────────
+const TIER_COLORS_SP = {elite:'#a855f7',diamante:'#60a5fa',oro:'#fbbf24',plata:'#94a3b8',bronce:'#c8793a'};
+const DEFAULT_SPONSORS = [
+  {nombre:'Tu sponsor acá',descripcion:'Espacio disponible para tu marca',tier:'oro',url:''},
+  {nombre:'Publicitate con nosotros',descripcion:'Llega a toda la comunidad de Gran Moishe 2026',tier:'plata',url:''},
+];
+
+let spIdx = 0, spTimer = null, spList = [];
+
+const PER_PAGE = 3;
+
+function initSponsors() {
+  const saved = getLS('gm_ads', []).filter(a => a.active && (a.tier === 'resto' || a.tier === 'todo'));
+  spList = saved.length ? saved : DEFAULT_SPONSORS;
+  spIdx = 0;
+  renderSponsors();
+  startSpTimer();
+}
+
+function getPage() {
+  // Return indices for current page of 3
+  const start = spIdx * PER_PAGE;
+  return [0,1,2].map(i => spList[(start + i) % spList.length]);
+}
+
+function totalPages() {
+  return Math.max(1, Math.ceil(spList.length / PER_PAGE));
+}
+
+function renderSponsors() {
+  const track = document.getElementById('spTrack');
+  const dots  = document.getElementById('spDots');
+  if(!track) return;
+
+  const page = getPage();
+  track.innerHTML = page.map((sp, i) => {
+    if(!sp) return '<div class="sponsor-slide"></div>';
+    const col = TIER_COLORS_SP[sp.tier] || '#4ade80';
+    const img = sp.img ? `<img src="${sp.img}" alt="${sp.nombre}" style="width:64px;height:64px;object-fit:contain;background:#000;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:48px;height:48px;border-radius:8px;background:${col}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">📢</div>`;
+    return `<div class="sponsor-slide" onclick="spClickDirect('${sp.url||''}','${sp.id||''}')">
+      ${img}
+      <div class="sp-info" style="flex:1;min-width:0;">
+        <div class="sp-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sp.nombre}</div>
+        <div class="sp-desc" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${sp.descripcion||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if(dots) {
+    const pages = totalPages();
+    dots.innerHTML = pages > 1 ? Array.from({length:pages},(_,i) =>
+      `<button class="sp-dot${i===spIdx?' active':''}" onclick="goSp(${i})"></button>`
+    ).join('') : '';
+  }
+}
+
+function goSp(i) {
+  spIdx = i % totalPages();
+  renderSponsors();
+  clearInterval(spTimer);
+  startSpTimer();
+}
+function spNext() { goSp((spIdx + 1) % totalPages()); }
+function spPrev() { goSp((spIdx - 1 + totalPages()) % totalPages()); }
+function startSpTimer() { spTimer = setInterval(spNext, 5000); }
+function spClickDirect(url, id) {
+  if(id) {
+    const ads = getLS('gm_ads',[]);
+    const i = ads.findIndex(a=>a.id===id);
+    if(i>=0){ads[i].clicks=(ads[i].clicks||0)+1;localStorage.setItem('gm_ads',JSON.stringify(ads));}
+  }
+  if(url) window.open(url,'_blank');
+}
+
+initSponsors();
+// Track views for visible sponsor ads
+setTimeout(() => {
+  if(!spList.length) return;
+  const ads = getLS('gm_ads',[]);
+  getPage().forEach(sp => {
+    if(!sp || !sp.id) return;
+    const i = ads.findIndex(a => a.id===sp.id);
+    if(i>=0){ ads[i].views=(ads[i].views||0)+1; }
+  });
+  localStorage.setItem('gm_ads', JSON.stringify(ads));
+}, 2000);
+
+</script>
+<script>
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="olami-badge"><div class="ob-dot"></div><div class="ob-text">Olami Almagro · Buenos Aires</div></div>
+    <div class="hero-logo">
+      <img src="https://bacher86.github.io/granmoishe/almagro.jpg" alt="Olami Almagro" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid rgba(74,124,201,.5);box-shadow:0 0 32px rgba(74,124,201,.35);flex-shrink:0;" onerror="this.style.display='none'"/>
+      <div class="hero-title-wrap">
+        <div class="hero-title">Gran<br><span>Moishe</span></div>
+      </div>
+    </div>
+    <p class="hero-tagline">Armá tu equipo, competí con tu <strong>comunidad</strong><br>y viví el Mundial como nunca antes</p>
+    <div class="hero-ctas">
+      <button class="cta-main" onclick="openModal('register')">⚽ Sumate al torneo</button>
+      <button class="cta-sec"  onclick="openModal('login')">Ya tengo cuenta</button>
+    </div>
+    <div class="features">
+      <div class="feat"><div class="feat-icon">🌍</div><div class="feat-title">200+ Jugadores</div><div class="feat-desc">De las 48 selecciones del Mundial</div></div>
+      <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">Puntos en vivo</div><div class="feat-desc">Sistema triple de puntuación</div></div>
+      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">Hast 4.000.000 en premios</div><div class="feat-desc">Fechas + campeón final</div></div>
+      <div class="feat"><div class="feat-icon">⚙️</div><div class="feat-title">Tu formación</div><div class="feat-desc">Elegí táctica y armá el XI ideal</div></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- SPONSORS CAROUSEL -->
+<div class="sponsors-section" id="sponsorsSection">
+  <div class="sponsors-header">
+    <div class="sponsors-label">✦ Sponsors del torneo</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="sp-arrow">
+        <button class="sp-arr-btn" onclick="spPrev()">&#8592;</button>
+        <button class="sp-arr-btn" onclick="spNext()">&#8594;</button>
+      </div>
+      <div class="sponsors-dots" id="spDots"></div>
+    </div>
+  </div>
+  <div class="sponsors-track-wrap">
+    <div class="sponsors-track-3" id="spTrack"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="sec-label">Cómo funciona</div>
+  <div class="sec-title">Tres pasos para <span>competir</span></div>
+  <div class="steps">
+    <div class="step" data-n="01"><div class="step-icon">📝</div><div class="step-title">Registrate</div><div class="step-desc">Creá tu cuenta, recibís tu ID único y enviás el comprobante de pago para activarla.</div></div>
+    <div class="step" data-n="02"><div class="step-icon">🛒</div><div class="step-title">Armá tu equipo</div><div class="step-desc">Elegí 15 jugadores de 48 selecciones. Definí tu capitán y formación táctica.</div></div>
+    <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido y escalá en el ranking de la comunidad.</div></div>
+    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios por cada fecha (hasta cuartos de final) y $4.000.000 para el campeón final de la comunidad.</div></div>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:0;">
+  <div class="sec-label">Sistema de puntos</div>
+  <div class="sec-title">¿Cómo se <span>puntúa</span>?</div>
+  <div class="scoring-grid">
+    <div class="score-card">
+      <div class="sc-title">⚽ Goles por posición</div>
+      <div class="sc-row"><span>Gol de Delantero</span><span class="green">+4 pts</span></div>
+      <div class="sc-row"><span>Gol de Mediocampista</span><span class="green">+5 pts</span></div>
+      <div class="sc-row"><span>Gol de Defensor</span><span class="green">+6 pts</span></div>
+      <div class="sc-row"><span>Gol de Arquero</span><span class="green">+7 pts</span></div>
+      <div class="sc-row"><span>Autogol / Gol en contra</span><span class="red">-2 pts</span></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-title">🏃 Equipo y partido</div>
+      <div class="sc-row"><span>Equipo ganó</span><span class="green">+5 pts</span></div>
+      <div class="sc-row"><span>Empate</span><span class="green">+3 pts</span></div>
+      <div class="sc-row"><span>Derrota</span><span class="green">+1 pt</span></div>
+      <div class="sc-row"><span>Asistencia</span><span class="green">+2 pts</span></div>
+      <div class="sc-row"><span>Hat-trick (bonus)</span><span class="blue">+4 pts extra</span></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-title">🛡 Vallas y tarjetas</div>
+      <div class="sc-row"><span>Valla invicta (GK)</span><span class="green">+4 pts</span></div>
+      <div class="sc-row"><span>Valla invicta (DEF)</span><span class="green">+2 pts</span></div>
+      <div class="sc-row"><span>Tarjeta amarilla</span><span class="red">-1 pt</span></div>
+      <div class="sc-row"><span>Tarjeta roja</span><span class="red">-3 pts</span></div>
+      <div class="sc-row"><span>Capitán (bonus)</span><span class="blue">+25% de sus pts ↑</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" style="padding-top:0;">
+  <div class="sec-label">Prode</div>
+  <div class="sec-title">Pronosticá cada <span>partido</span></div>
+  <p style="color:var(--gris);font-size:.92rem;line-height:1.7;max-width:600px;margin-bottom:28px;">
+    Además de tu equipo fantasy, podés pronosticar el resultado de cada partido del Mundial antes de que empiece. El prode <strong style="color:var(--celeste);">suma puntos a tu puntaje total</strong> y sirve como <strong style="color:var(--dorado-clr);">desempate</strong> en caso de igualdad en el ranking.
+  </p>
+  <div class="scoring-grid" style="max-width:600px;">
+    <div class="score-card" style="border-color:rgba(74,222,128,.2);">
+      <div class="sc-title" style="color:#4ade80;">🎯 Resultado exacto</div>
+      <div class="sc-row"><span>Acertás el marcador exacto</span><span class="green">+3 pts</span></div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 2-1 y termina 2-1</div>
+    </div>
+    <div class="score-card" style="border-color:rgba(96,165,250,.2);">
+      <div class="sc-title" style="color:#60a5fa;">✅ Ganador correcto</div>
+      <div class="sc-row"><span>Acertás quién gana (o empate)</span><span class="blue">+1 pt</span></div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 1-0 y termina 3-0</div>
+    </div>
+    <div class="score-card" style="border-color:rgba(239,68,68,.15);">
+      <div class="sc-title" style="color:#ef4444;">❌ Sin acierto</div>
+      <div class="sc-row"><span>No acertás el resultado</span><span class="red">+0 pts</span></div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Los pronósticos cierran 10 min antes del partido</div>
+    </div>
+  </div>
+  <div style="margin-top:20px;background:rgba(200,151,58,.08);border:1px solid rgba(200,151,58,.2);border-radius:12px;padding:16px 20px;max-width:600px;display:flex;align-items:flex-start;gap:12px;">
+    <span style="font-size:1.4rem;">⚖️</span>
+    <div>
+      <div style="font-weight:700;color:var(--dorado-clr);margin-bottom:4px;font-size:.9rem;">Desempate por Prode</div>
+      <div style="font-size:.8rem;color:var(--gris);line-height:1.6;">En caso de igualdad de puntos en el ranking, el prode decide. Más puntos de prode = mejor posición.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PREMIOS -->
+<div class="wrap" style="padding-top:0;">
+  <div class="sec-label">Premios</div>
+  <div class="sec-title">¿Qué podés <span>ganar</span>?</div>
+
+  <!-- Premio grande -->
+  <div style="background:linear-gradient(135deg,rgba(200,151,58,.15),rgba(232,184,75,.08));border:2px solid var(--dorado);border-radius:20px;padding:32px 28px;text-align:center;margin-bottom:28px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-20px;right:-20px;font-size:8rem;opacity:.06;line-height:1;">🏆</div>
+    <div style="font-size:.68rem;letter-spacing:4px;color:var(--dorado);text-transform:uppercase;font-weight:700;margin-bottom:12px;">Premio mayor · Campeón del torneo hasta</div>
+    <div style="font-family:'Assistant',sans-serif;font-size:clamp(2.8rem,8vw,4.5rem);font-weight:900;color:var(--dorado-clr);line-height:1;margin-bottom:8px;">$4.000.000</div>
+    <div style="font-size:1rem;color:var(--gris);margin-bottom:16px;">para la comunidad con más puntos al final del torneo</div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,151,58,.12);border:1px solid rgba(200,151,58,.3);border-radius:20px;padding:6px 16px;font-size:.78rem;color:var(--dorado-clr);font-weight:600;">
+      🏆 El gran premio del Gran Moishe 2026
+    </div>
+  </div>
+
+ 
+ 
+<footer>
+  <div class="footer-sub">Fantasy Fútbol · Olami Almagro · Buenos Aires</div>
+  <div class="footer-links">
+    <span class="footer-link" onclick="openModal('login')">Ingresar</span>
+    <span class="footer-link" onclick="openModal('register')">Registrarse</span>
+    <a class="footer-link" href="https://www.instagram.com/olami_almagro?igsh=MWptbTMxOWZkemNmbA==" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;">📸 Instagram</a>
+  </div>
+  <div class="footer-copy">© 2026 Gran Moishe · Olami Almagro · Buenos Aires</div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div class="overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo"><img src="data:image/jpeg;base64,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" alt="Olami Almagro" style="width:56px;height:56px;object-fit:cover;border-radius:12px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
+    <div class="modal-title" id="modalTitle">Ingresar</div>
+    <div class="modal-price" id="modalPrice" style="display:none;">
+    Precio por cuenta: <strong style="color:var(--celeste)">$6.000</strong> · Máx. 5 cuentas por DNI
+  </div>
+    <div class="mf" id="modalForm"></div>
+    <div class="auth-err" id="authErr" style="display:none;"></div>
+    <button class="btn-submit" id="btnSubmit" onclick="submitAuth()">Ingresar</button>
+    <button class="auth-switch" id="btnSwitch" onclick="toggleMode()"></button>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="pay-modal" id="payModal" style="display:none;">
+  <div class="pay-box">
+    <div class="pay-star"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxIHBhMTExQWFhUXGBgbGBUYFxYVFxcXGh0YGRgZFxYYHSggGBooHhkVLTEiJi0rLi4uFx81OjMtNygvLysBCgoKDg0OGxAQGisiICUrMC0rLS0rLS0tLS0tLS0wLS0tLS0tKy0tLS0tLS0tLS0tLS0tLSsrLS0tLSstLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAcAAEAAgMBAQEAAAAAAAAAAAAABgcEBQgDAQL/xABKEAACAQMBBQQECAsHAgcAAAAAAQIDBBEFBgcSITETQXGRIlFhoRQVMjZzgbGyFiM1QlJTcoKis8EmM2KDk8LRJJIlN0NUY7TS/8QAGAEBAAMBAAAAAAAAAAAAAAAAAAECAwT/xAAnEQEBAAICAQMDBAMAAAAAAAAAAQIRAxIhEzFhIkFCQ3GBkSMyUf/aAAwDAQACEQMRAD8Ar0AFnEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWZsBu3+MKMbm8TVN4cKPNOa7pVGuai+6K5vv8AU62yLY43K6iu7Kxq6hU4aNKpVa6qnCU2vHhTwbZ7GaioZ+CVsfs5flnJ0TaWtOyt1CnCMILpGKUYrwSPYz9RvOCfeuWLq1qWdXhqwnTl+jOMoS8pJM8TqPUdPpanbOnWpxqQf5skmvFep+1FNbwd3z0GDuLbilb/AJ8XzlS9ufzoe3qu/PVWxzlUz4rj5QajbTrp8EJSx14YuWPHCP1Oyq04Nyp1El1bhJJeLaLY3Gfk27+kh91ks3iP+xF39H/VC5+dE4t49tudAAaMXrRt5188EJSx14YuWM9M4XLvPT4vrfqqv+nP/gt/clZ9js9Wq99SrhP1xhFJfxSmWLkyvJq6b48O5vblOS4ZYfJruPSjbTrp8EJSx14YyljxwjebwbL4BtpdxxhOpxr/ADEqj98n5E/3GP8A8LuvpIfdL3LU2zxw3lpVHxfW/VVf9Of/AAeE4OnNppprqmsNeKOq8nP+9Wz+B7cV33VFCovriov+KEvMrjnurcnF1m0ZpWdWrDMac5L1qEmvNI/XxfW/VVf9Of8AwdCbvrf4JsVZx6ZpRn/qZqf7iQN8iPUXnBub25YpWlStHMac5L1xjKS80j7Us6tKGZU5xXrcJJebRdm5p/2Qf09T/aZu9Z/2DuPGl/Npk9/OlfS+nttz+ADRiAAAAAAAAAACWbs9nltBtIuNZpUV2k13SecQg/Y3zfrUWu86BK23H2yhoVxU75VuHPshCLXvnIlm3GpS0jZO5qweJqGIv1Sm1CL+pyT+owz85adfHOuG0Q223nfF13KhZxjOcXidaXOEZLrGEV8prvbeE10ZCI7xdUjW4vhOf8Lp0eHwxwZx9ZFQazGRz3kyt9127Cbxo67cK3uIxp1n8iUcqnUfqw23GXsy0/cT6pBVabjJJpppp800+TTXejlaE3TmpRbUotOLXVSXNNe1PB07oV98Z6JQrfrKUJtepyim/ezLPHXmOjiz7eKjmweg/g5qN/RXyHUpzp/RyjLC+pqS/dM7eJ8yLv6P+sSQqKU28c2ks+xZx9r8yPbxPmRd/R/1iVl3V7NY2OdQD90aLua0YR6zkorxk1Fe9nS4XQ+7uy+AbFWscYbhxvxqN1P9xvqFeNdyx+bJxfisN/aj7b0Vb0IwXSKUV4JYX2ES3c6o9SlqGXnF7Vcf2JYUfus5r53XdLrUQbfZZ9jtJRq91Sjj66cnn3Tgb3cZ+S7r6SH3T1332fa6HQqpf3dVxfsjOL/rCPmeW4z8l3X0kPul9/Qxk1yrNKh352L+G2tWK5zhOn9cWpQX8cy0b+9+CXVvHl+NqOHP2UqtRY9v4s0m3mk/Gtvaf/Hd28n+y5cMvvLyKY3Va8k7Y2JFZ0Fa2kKa6QjGK8IpL+h6voYl/e/Bbm3jy/G1XDn7KdWpy9v4sy30IXQbc380H9PU+yJmb1vmHceNL+bTMPc380H9PU+yJmb1vmHceNL+bTLfmz/T/hQAAOhxgAAAAAAAAAAuLcddKWkXNLPONVTx7JxUV76bJltjpb1nZi4oR5ylD0V65xanBf8AdFFI7vdols5tHGc3ilNcFX2RbWJ/utJ+HEdDRkpRTTyn0a5pr1pmGc1duvisyx05Uaw8NNPvT5NPvTXcz4Xdtru1p65cyr281SrS5yi0+zqP1vHOEvW1nPqzzITHdVqLqYxQS/S7V8Pujn3GkzlYZcWUqF29CVzXjCEXKc2oxiurk3hLzOnNGsVpekUaCeeypwhn18MUs+4i+xG76ls3VVapLta+HiWMQp55PgT55xy4n3dyyyYXNeFrbynOSjCKcpSfJKK5tszzy37N+LDrN1+lUTqOOeaSbXseUvuvyI/vE+ZF39H/AFia3d3rj2ivr+vzUXVpxpxfWNOMWorxfNv2yZudt7Spf7J3NOnFznKGIxXVvK5LJXWqvvtjbHNxId31n8O20tI4ylU437OzTqL3xXmPwH1L/wBpV/g//RKNz2kzobW3DqRcZUKTjKL6xnOS649kJ+ZvlfDkxxvabW/czdO2m4ptqLaS6tpPCXtK43P6TeaRc3KuaNSmqkabTklhzi58XR9fS9xY9zcwtKLnUnGEV1lKSjFZ5LLfIxrfWLa5rKEK9Gcn0jGpCUn38knl8kzCXxp12S5StNvKs/huxF0u+EFUX+W1N+6L8yM7jPyXdfSQ+6WPeW6u7SdOXScZRfhJNP7Sudx9N0dPu4y+VGrFPxUWn7yZ/rVcp/klSDeDd/AIWFT9G+o5/ZlGrGXukyVyipdUnzzz581zT8Sv99mVsnTa6/CIY8eCrgnGm3SvtNpVV0qQhNfvRT/qRZ4i0v1WI5tLd4230mj653FR/VRlFfekSt9Ct9Xu+3312cM8qdNr96VOtN+5xLIfQX7Ixu9/ug25v5oP6ep9kTM3rfMO48aX82mYe5v5oP6ep9kTM3rfMO48aX82mT+aP0/4UAADocYAAAAAAAAAABPtgt4ktCpxoXKlOguUJLnOkvVj86Hs6ruzyRAQRZKtjlcbuOoNK1ahrFDjoVYVI/4Xlr2Sj1i/Y0jNwcqU5ulUUotxkujTaa8GuZmPWrpxx8JuMert6uPLiM/SbTn+HRuta9baHR4rirCHqi3mcv2YL0pfUimNu9vam0rdKmnTtk/kv5dRro6mOSXqivF55YhknxTbfNvq3zb8X3nwtjhIpny3Lwt3cfUUNOustL8ZDq0vzWWZ28P0o+aOVZRUuqTPnZR9S8kRePd2nHmuM1p1X28P0o+aIrsZQjR1bU6rcU6l3JLmucYRWPfORz92UfUvJB00+5eQ9P5Tea270uzfRfRjstCmmn2laKeGnyjGUvtUSr9irlWW11pPpitBN+yfoP3SZpIxUeiR9LTHU0zyz3lt1T28P0o+aIhsRQjp+u6rDKSdyprmsYqQ7Tl/3e4oPso+peSHZprovIr6fyvebd3pdu+ipGeylPDT/wCoh0af5lU2+7TUI3OxFtmSTjGVNptf+nKUF/Co+Zz5GCi+SSPjgpPml5Dp40j1b27aWNpl6rzfY6meXbVo5zyxTpTprn+6XI68MfKj5o5Wayj52cfUvJC4bMeW4/ZeW52rGGyLy0vx9Tq0v0TN3qVYy2EuEpJvNLkmv1tMoGUFLqkfIwUXyS8h087PV+nrp+gAaMgAAAAAAAAAAAAAAAAAACSbu9Ljq+19CnOKnTXHKcZLKcYxeE13ri4SNlibnIK2ub27l8mhQ6+OZy91JeZXK+F8JvKG97QqGl1LWpb0qdOE1OMlTioxclwuLwuTbTlz9h57YaTb2m7bTq1OjThVqdjx1IxSnPNGcnxSXN5aT+oydWm9b3M29aXOdCouJ+E5Uuf1Tiz97c/+VGleND+RUKy+y9k834YO6DSqGq6rcRr0qdVRpxaU4qST4sZSfeajeJoy0zbKrRowUYz7OVKEVhLjSjhJdFxqRIdyf5Vu/oV9422o2X4R6/oV3jKqwi6j9TpJV0n9fGhvWRMd4R+95WzNppGxblSoUoVIypR7SMIqb5pPMks8+88d1GzVre7OOrc0aVWVStJQdSMZPhiksRz7VU8jJ3gah8ZbuKtTu+FSiv2adxOmn5RR5fDPwb0XQaTfC51YzmvZOLjPPsTuPcV3eq1k77+2kI0PZf4x27lZyyoQq1ePHJ9nTb6Puz6Kz/iJxbVtJ1HaippisKUUuOEayUVN1IJuaUkuNNYl6XE3mPtMvTbH4HvpuH+stXUX1yowfvhLzIXo9heVtvruvZ0o1J29zXbU5RjH8ZOtBZzJN/ndPUTvasmv7SDY7Zy20+31RXNCnXdrUlwupCMpOEYOaw2vR4lh/WfnT9N03b3Sa6trZWtxSSa4cJZafDlR9GUW4tPKyjc7LUbnUaWsQrQhTuKklGUE8wjKVuox5pvlhxb69Wa/Z/Spbs9Eubm6kpVKijGEKSnOOVxcKlNxWMykubwljvbI2tr2/wCNVoOnWmzWwsNQureNxVrSSp05pOKTb4UlJNL0Yyk5Yb7jx2y0m11PY+jqdpSVDMuGrSiko85Om/RSxlTSWUllSM3btY3U6Z/kfyJn3TY8W4ytnulP3V0yfn5Rr8fhVwANWAAAAAAAAAAAAAAAAAAABaWxV6tmd2Ne7cI1O0rYUJclJZhR4W8PllVH0KtNtcbRXFxs/Ts249hB8UYqKTzmT5y7+cpMrlNrY5a8rQ0XW1ttsdqFGNCnRlGD4YQeYtyjJwl8lYfFD3Gq2vtql5uq0tU4Tm/xDahGU2l2FRZainy5rzILs7tJcbN1Zyt5RTmkpcUVJNRy1yfi/M2un7xL/TrGnRpypqFOKjFdmniMVhLPgV62Xw07yzykW5u0qWmrXSqU5wborCnCUM+l3cSWTc7s9VhDdv2s+bs+35vqsRdRfwzwQWW8bUJXnacdPi4HD+7jjhb4unryaSw1yvp+kVranJKlWxxrGW8cuT7srkxcbUTOT2+U9pW0tQ3M21LL4qtzGGe/M7mcc+OWbfb3baOzusxt1aUq/BTjJSm8OLbeIr0XjlGL+sriw2wu7DTKVvCUOzpT44JwTampOabff6TbNbrOq1da1KVes05yxlpcK9FKKwu7kkOvnyd9TwvOvWjLbDTrpYxcW1Wkn7WqdemvJVSF6DpF1a72qiSqxpdtWqzkuONOdOXHKHE16M+c4pLnzz6mQ652qurnS7eg5pQt3CVJxiozg4Jxi+Nc+SZs7veRqN1axg6sVhxblGCjKXC01xPphtLKSWenTkR1qbnjVkJ4qa/4L/6kSM7tKktT2K1K3nJyioNxTbfDx059M9OcE/EiX4b3mbn0of8AU/3voLn6Cp+j+j6KRh7PbSXGzvadg4pVUlNSipJqPFjr0+VLzJmN0epNpzrsJa3uesp0k5ui6amopya4Izoy5Ln1cX4PIuoy0XcpGnUThOtPlCSxLEqrqLKfNehFshWze1d3s0pK3mlCXN05R4oN9M46p4701nlnOEee0O0lztHXjK4nxcOeGKSjCOeuIrvfreWT1qO89/vrTUAAuyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/9k=" alt="Olami Almagro" style="width:64px;height:64px;object-fit:cover;border-radius:14px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
+    <div class="pay-title">¡Registro exitoso!</div>
+    <div class="pay-sub" style="font-size:.92rem;color:#a0b0c0;line-height:1.8;">
+      ¡Bienvenido/a al Gran Moishe 2026! 🎉<br><br>
+      Para activar tu cuenta completá el pago y envianos el comprobante.<br><br>
+      <span style="color:#fbbf24;font-size:.82rem;">⚠ En caso de no confirmarse el pago, la sesión puede ser suspendida temporalmente hasta regularizarlo.</span>
+    </div>
+    <div class="pay-id-box">
+      <div class="pay-id-label">Tu ID de participante</div>
+      <div class="pay-id-value" id="payId">—</div>
+    </div>
+
+    <!-- BOTÓN MERCADO PAGO -->
+    <div id="mpSection" style="margin:16px 0;">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 1 · Realizá el pago</div>
+      <!-- Alias arriba para quien no usa MP -->
+      <div style="background:rgba(0,158,227,.07);border:1px solid rgba(0,158,227,.25);border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:10px;">
+        <div style="font-size:.75rem;color:var(--gris);margin-bottom:6px;">Pagá al siguiente alias de Mercado Pago:</div>
+        <div style="font-family:'Assistant',sans-serif;font-size:1.5rem;font-weight:900;color:#009EE3;letter-spacing:3px;">uriel.bacher</div>
+      </div>
+      <button id="btnMP" onclick="pagarMP()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#009EE3;color:#fff;font-family:'Assistant',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.18c-.144.658-.528.818-1.07.508l-2.96-2.18-1.428 1.374c-.158.158-.29.29-.595.29l.212-3.005 5.476-4.948c.238-.212-.052-.33-.368-.118L6.12 13.884l-2.9-.906c-.63-.196-.642-.63.132-.932l11.336-4.37c.524-.19.982.128.874.572z"/></svg>
+        Pagar con Mercado Pago
+      </button>
+    </div>
+
+    <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 2 · Enviá el comprobante</div>
+    <div class="pay-info">
+      <strong>📧 Enviá el comprobante a:</strong><br>
+      <span style="color:var(--celeste);font-weight:700;font-size:1rem;">granmoisheolamialmagro@gmail.com</span><br><br>
+      <strong>Asunto:</strong> <span style="color:var(--dorado-clr);" id="paySubject">—</span><br>
+      <strong>Adjuntá:</strong> foto o captura del comprobante de transferencia
+    </div>
+    <div class="pay-warn">⚠ Tu acceso puede ser removido si no se confirma el pago</div>
+    <button class="pay-btn" onclick="closePayModal()">Entendido, voy a enviar el comprobante ✓</button>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="overlay" id="contactOverlay" style="display:none;" onclick="if(event.target===this)closeContact()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;">
+    <button class="modal-close" onclick="closeContact()">✕</button>
+    <div class="modal-logo">✉️</div>
+    <div class="modal-title">Contacto</div>
+    <div style="margin-top:16px;font-size:.88rem;color:var(--gris);line-height:1.9;">
+      <p>Para publicidad, consultas o soporte:</p><br>
+      <p>📧 <a href="mailto:granmoisheolamialmagro@gmail.com" style="color:var(--celeste);">granmoisheolamialmagro@gmail.com</a></p><br>
+      <p>📸 <a href="https://www.instagram.com/olami_almagro" target="_blank" style="color:var(--celeste);">@olami_almagro</a></p><br>
+      <p style="font-size:.75rem;">Para activar tu cuenta enviá el comprobante con tu ID al mail de arriba.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const getLS = (k,d) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;} };
+const setLS = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
+const setLS2 = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+// ── Full Screen Ad ─────────────────────────────────────────────
+let _adTimer = null;
+function showFullAd(onDone) {
+  // Siempre mostrar el splash primero, luego el ad si hay
+  var LOGO = "data:image/jpeg;base64,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";
+  var ads = getLS('gm_ads', []);
+  var loginAds = ads.filter(function(a){ return a.active && (a.tier==='login'||a.tier==='todo'); });
+  var ad = loginAds.length ? loginAds[Math.floor(Math.random()*loginAds.length)] : null;
+
+  // Crear overlay
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(7,17,30,.98);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:sans-serif;';
+  document.body.appendChild(ov);
+
+  if (ad) {
+    // Mostrar publicidad real
+    var adBox = document.createElement('div');
+    adBox.style.cssText = 'max-width:440px;width:90%;text-align:center;padding:28px;background:#0d1b2a;border:1px solid rgba(251,191,36,.4);border-radius:16px;cursor:pointer;';
+    if (ad.img) {
+      var adImg = document.createElement('img');
+      adImg.src = ad.img;
+      adImg.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:contain;';
+      adBox.appendChild(adImg);
+    }
+    var adLabel = document.createElement('div');
+    adLabel.style.cssText = 'font-size:.65rem;letter-spacing:2px;color:#fbbf24;font-weight:700;margin-bottom:6px;';
+    adLabel.textContent = '⭐ PUBLICIDAD';
+    adBox.appendChild(adLabel);
+    if (ad.descripcion) {
+      var adDesc = document.createElement('div');
+      adDesc.style.cssText = 'font-size:.82rem;color:#8a9ab0;';
+      adDesc.textContent = ad.descripcion;
+      adBox.appendChild(adDesc);
+    }
+    adBox.onclick = function() { if(ad.url) window.open(ad.url,'_blank'); };
+    ov.appendChild(adBox);
+    var secs = ad.seconds || 8;
+    var timer = document.createElement('div');
+    timer.style.cssText = 'display:flex;align-items:center;gap:14px;margin-top:8px;';
+    var countdown = document.createElement('span');
+    countdown.style.cssText = 'font-size:1.2rem;font-weight:700;color:#e2e8f0;min-width:40px;text-align:center;';
+    countdown.textContent = secs + 's';
+    var skipBtn = document.createElement('span');
+    skipBtn.style.cssText = 'display:none;padding:8px 20px;background:#4ade80;color:#07111e;border-radius:8px;font-weight:700;cursor:pointer;font-size:.88rem;';
+    skipBtn.textContent = 'Continuar →';
+    skipBtn.onclick = function(){ clearInterval(iv); ov.remove(); onDone&&onDone(); };
+    timer.appendChild(countdown);
+    timer.appendChild(skipBtn);
+    ov.appendChild(timer);
+    var rem = secs;
+    var iv = setInterval(function(){
+      rem--;
+      countdown.textContent = rem + 's';
+      if (rem <= Math.max(1, secs-3)) skipBtn.style.display = 'inline-block';
+      if (rem <= 0) { clearInterval(iv); ov.remove(); onDone&&onDone(); }
+    }, 1000);
+  } else {
+    // Splash Gran Moishe
+    var logo = document.createElement('img');
+    logo.src = LOGO;
+    logo.style.cssText = 'width:100px;height:100px;border-radius:16px;object-fit:cover;border:3px solid rgba(74,124,201,.5);box-shadow:0 0 40px rgba(74,124,201,.3);';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:2rem;font-weight:900;color:#e2e8f0;letter-spacing:3px;margin-top:4px;';
+    title.textContent = 'GRAN MOISHE';
+    var sub = document.createElement('div');
+    sub.style.cssText = 'font-size:.85rem;color:#4a7a5a;letter-spacing:1px;';
+    sub.textContent = 'EL DT DEL MUNDIAL 2026';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'width:140px;height:3px;background:linear-gradient(90deg,transparent,#4ade80,transparent);border-radius:2px;margin-top:8px;';
+    ov.appendChild(logo);
+    ov.appendChild(title);
+    ov.appendChild(sub);
+    ov.appendChild(bar);
+    setTimeout(function(){ ov.remove(); onDone&&onDone(); }, 2800);
+  }
+}
+
+const PAISES = ["Argentina","Uruguay","Brasil","Chile","Bolivia","Paraguay","Perú","Colombia","México","Estados Unidos","Israel","España","Francia","Alemania","Otro"];
+const PROVS_AR = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
+const ADMIN_EMAIL = 'jajapepe423@gmail.com';
+const PAYMENT_EMAIL = 'granmoisheolamialmagro@gmail.com';
+// ── MERCADO PAGO ── Completá el alias cuando lo tengas
+const MP_ALIAS = 'uriel.bacher';
+
+// Marcar gm_init=true para que juego.html NO sobreescriba los usuarios con datos de prueba
+if (!getLS('gm_init', false)) {
+  const adminUser = { uid:"admin1", email:ADMIN_EMAIL, password:"", dni:"00000000", nombre:"Admin", apellido:"Moishe", equipo:"Gran Moishe FC", pais:"Argentina", provincia:"CABA", edad:35, comunidad:"Olami Almagro", admin:true, pts:0, profileComplete:true, liga:null, pagado:true, playerId:"GM-ADMIN-0001" };
+  setLS('gm_users', [adminUser]);
+  setLS('gm_leagues', []);
+  setLS('gm_ads', []);
+  setLS('gm_init', true);
+}
+
+// Session check
+const session = getLS('gm_session', null);
+if (session) {
+  const na = document.getElementById('navActions');
+  if (na) na.innerHTML = `
+    <a href="https://www.instagram.com/olami_almagro?igsh=MWptbTMxOWZkemNmbA==" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;font-family:'Assistant',sans-serif;white-space:nowrap;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Instagram
+    </a>
+    <a href="juego.html" class="btn btn-primary" style="text-decoration:none;">⚽ Ir al juego</a>`;
+}
+
+// Ads
+const TIER_COLORS = {elite:'#a855f7',diamante:'#60a5fa',oro:'#fbbf24',plata:'#94a3b8',bronce:'#c8793a'};
+let adIdx=0, adTimer=null, adsData=[];
+function loadAds() {
+  adsData = getLS('gm_ads',[]).filter(a=>a.active && (a.tier==='resto' || a.tier==='todo'));
+  if (!adsData.length) return;
+  renderAd(); renderDots();
+  adTimer = setInterval(()=>{ adIdx=(adIdx+1)%adsData.length; renderAd(); renderDots(); },4000);
+}
+function renderAd() {
+  const a=adsData[adIdx]; if(!a) return;
+}
+function renderDots() {
 }
 function goAd(i){ adIdx=i; renderAd(); renderDots(); clearInterval(adTimer); adTimer=setInterval(()=>{adIdx=(adIdx+1)%adsData.length;renderAd();renderDots();},4000); }
 function adClick(){ const a=adsData[adIdx]; if(a?.url) window.open(a.url,'_blank'); }
