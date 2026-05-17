@@ -213,238 +213,12 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
       Instagram
     </a>
+    <button id="pwaInstallBtn" onclick="triggerInstall()" style="display:none;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;border:1px solid rgba(74,222,128,.5);background:rgba(74,222,128,.12);color:#4ade80;font-weight:700;font-size:.8rem;cursor:pointer;white-space:nowrap;">📲 Instalar</button>
     <button class="btn btn-outline" onclick="openModal('login')">Ingresar</button>
     <button class="btn btn-primary" onclick="openModal('register')">⚽ Registrarse</button>
   </div>
 </nav>
 
-
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-grid"></div>
-  <div class="hero-content">
-    <div class="olami-badge"><div class="ob-dot"></div><div class="ob-text">Olami Almagro · Buenos Aires</div></div>
-    <div class="hero-logo">
-      <img src="https://bacher86.github.io/granmoishe/almagro.jpg" alt="Olami Almagro" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid rgba(74,124,201,.5);box-shadow:0 0 32px rgba(74,124,201,.35);flex-shrink:0;" onerror="this.style.display='none'"/>
-      <div class="hero-title-wrap">
-        <div class="hero-title">Gran<br><span>Moishe</span></div>
-      </div>
-    </div>
-    <p class="hero-tagline">Armá tu equipo, competí con tu <strong>comunidad</strong><br>y viví el Mundial como nunca antes</p>
-    <div class="hero-ctas">
-      <button class="cta-main" onclick="openModal('register')">⚽ Sumate al torneo</button>
-      <button class="cta-sec"  onclick="openModal('login')">Ya tengo cuenta</button>
-    </div>
-    <div class="features">
-      <div class="feat"><div class="feat-icon">🌍</div><div class="feat-title">200+ Jugadores</div><div class="feat-desc">De las 48 selecciones del Mundial</div></div>
-      <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">Puntos en vivo</div><div class="feat-desc">Sistema triple de puntuación</div></div>
-      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">Hast 4.000.000 en premios</div><div class="feat-desc">Fechas + campeón final</div></div>
-      <div class="feat"><div class="feat-icon">⚙️</div><div class="feat-title">Tu formación</div><div class="feat-desc">Elegí táctica y armá el XI ideal</div></div>
-    </div>
-  </div>
-</section>
-
-
-<!-- SPONSORS CAROUSEL -->
-<div class="sponsors-section" id="sponsorsSection">
-  <div class="sponsors-header">
-    <div class="sponsors-label">✦ Sponsors del torneo</div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="sp-arrow">
-        <button class="sp-arr-btn" onclick="spPrev()">&#8592;</button>
-        <button class="sp-arr-btn" onclick="spNext()">&#8594;</button>
-      </div>
-      <div class="sponsors-dots" id="spDots"></div>
-    </div>
-  </div>
-  <div class="sponsors-track-wrap">
-    <div class="sponsors-track-3" id="spTrack"></div>
-  </div>
-</div>
-
-<div class="wrap">
-  <div class="sec-label">Cómo funciona</div>
-  <div class="sec-title">Tres pasos para <span>competir</span></div>
-  <div class="steps">
-    <div class="step" data-n="01"><div class="step-icon">📝</div><div class="step-title">Registrate</div><div class="step-desc">Creá tu cuenta, recibís tu ID único y enviás el comprobante de pago para activarla.</div></div>
-    <div class="step" data-n="02"><div class="step-icon">🛒</div><div class="step-title">Armá tu equipo</div><div class="step-desc">Elegí 15 jugadores de 48 selecciones. Definí tu capitán y formación táctica.</div></div>
-    <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido y escalá en el ranking de la comunidad.</div></div>
-    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios por cada fecha (hasta cuartos de final) y $4.000.000 para el campeón final de la comunidad.</div></div>
-  </div>
-</div>
-
-<div class="wrap" style="padding-top:0;">
-  <div class="sec-label">Sistema de puntos</div>
-  <div class="sec-title">¿Cómo se <span>puntúa</span>?</div>
-  <div class="scoring-grid">
-    <div class="score-card">
-      <div class="sc-title">⚽ Goles por posición</div>
-      <div class="sc-row"><span>Gol de Delantero</span><span class="green">+4 pts</span></div>
-      <div class="sc-row"><span>Gol de Mediocampista</span><span class="green">+5 pts</span></div>
-      <div class="sc-row"><span>Gol de Defensor</span><span class="green">+6 pts</span></div>
-      <div class="sc-row"><span>Gol de Arquero</span><span class="green">+7 pts</span></div>
-      <div class="sc-row"><span>Autogol / Gol en contra</span><span class="red">-2 pts</span></div>
-    </div>
-    <div class="score-card">
-      <div class="sc-title">🏃 Equipo y partido</div>
-      <div class="sc-row"><span>Equipo ganó</span><span class="green">+5 pts</span></div>
-      <div class="sc-row"><span>Empate</span><span class="green">+3 pts</span></div>
-      <div class="sc-row"><span>Derrota</span><span class="green">+1 pt</span></div>
-      <div class="sc-row"><span>Asistencia</span><span class="green">+2 pts</span></div>
-      <div class="sc-row"><span>Hat-trick (bonus)</span><span class="blue">+4 pts extra</span></div>
-    </div>
-    <div class="score-card">
-      <div class="sc-title">🛡 Vallas y tarjetas</div>
-      <div class="sc-row"><span>Valla invicta (GK)</span><span class="green">+4 pts</span></div>
-      <div class="sc-row"><span>Valla invicta (DEF)</span><span class="green">+2 pts</span></div>
-      <div class="sc-row"><span>Tarjeta amarilla</span><span class="red">-1 pt</span></div>
-      <div class="sc-row"><span>Tarjeta roja</span><span class="red">-3 pts</span></div>
-      <div class="sc-row"><span>Capitán (bonus)</span><span class="blue">+25% de sus pts ↑</span></div>
-    </div>
-  </div>
-</div>
-
-<div class="wrap" style="padding-top:0;">
-  <div class="sec-label">Prode</div>
-  <div class="sec-title">Pronosticá cada <span>partido</span></div>
-  <p style="color:var(--gris);font-size:.92rem;line-height:1.7;max-width:600px;margin-bottom:28px;">
-    Además de tu equipo fantasy, podés pronosticar el resultado de cada partido del Mundial antes de que empiece. El prode <strong style="color:var(--celeste);">suma puntos a tu puntaje total</strong> y sirve como <strong style="color:var(--dorado-clr);">desempate</strong> en caso de igualdad en el ranking.
-  </p>
-  <div class="scoring-grid" style="max-width:600px;">
-    <div class="score-card" style="border-color:rgba(74,222,128,.2);">
-      <div class="sc-title" style="color:#4ade80;">🎯 Resultado exacto</div>
-      <div class="sc-row"><span>Acertás el marcador exacto</span><span class="green">+3 pts</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 2-1 y termina 2-1</div>
-    </div>
-    <div class="score-card" style="border-color:rgba(96,165,250,.2);">
-      <div class="sc-title" style="color:#60a5fa;">✅ Ganador correcto</div>
-      <div class="sc-row"><span>Acertás quién gana (o empate)</span><span class="blue">+1 pt</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 1-0 y termina 3-0</div>
-    </div>
-    <div class="score-card" style="border-color:rgba(239,68,68,.15);">
-      <div class="sc-title" style="color:#ef4444;">❌ Sin acierto</div>
-      <div class="sc-row"><span>No acertás el resultado</span><span class="red">+0 pts</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Los pronósticos cierran 10 min antes del partido</div>
-    </div>
-  </div>
-  <div style="margin-top:20px;background:rgba(200,151,58,.08);border:1px solid rgba(200,151,58,.2);border-radius:12px;padding:16px 20px;max-width:600px;display:flex;align-items:flex-start;gap:12px;">
-    <span style="font-size:1.4rem;">⚖️</span>
-    <div>
-      <div style="font-weight:700;color:var(--dorado-clr);margin-bottom:4px;font-size:.9rem;">Desempate por Prode</div>
-      <div style="font-size:.8rem;color:var(--gris);line-height:1.6;">En caso de igualdad de puntos en el ranking, el prode decide. Más puntos de prode = mejor posición.</div>
-    </div>
-  </div>
-</div>
-
-
-<!-- PREMIOS -->
-<div class="wrap" style="padding-top:0;">
-  <div class="sec-label">Premios</div>
-  <div class="sec-title">¿Qué podés <span>ganar</span>?</div>
-
-  <!-- Premio grande -->
-  <div style="background:linear-gradient(135deg,rgba(200,151,58,.15),rgba(232,184,75,.08));border:2px solid var(--dorado);border-radius:20px;padding:32px 28px;text-align:center;margin-bottom:28px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:-20px;right:-20px;font-size:8rem;opacity:.06;line-height:1;">🏆</div>
-    <div style="font-size:.68rem;letter-spacing:4px;color:var(--dorado);text-transform:uppercase;font-weight:700;margin-bottom:12px;">Premio mayor · Campeón del torneo hasta</div>
-    <div style="font-family:'Assistant',sans-serif;font-size:clamp(2.8rem,8vw,4.5rem);font-weight:900;color:var(--dorado-clr);line-height:1;margin-bottom:8px;">$4.000.000</div>
-    <div style="font-size:1rem;color:var(--gris);margin-bottom:16px;">para la comunidad con más puntos al final del torneo</div>
-    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,151,58,.12);border:1px solid rgba(200,151,58,.3);border-radius:20px;padding:6px 16px;font-size:.78rem;color:var(--dorado-clr);font-weight:600;">
-      🏆 El gran premio del Gran Moishe 2026
-    </div>
-  </div>
-
- 
- 
-<footer>
-  <div class="footer-sub">Fantasy Fútbol · Olami Almagro · Buenos Aires</div>
-  <div class="footer-links">
-    <span class="footer-link" onclick="openModal('login')">Ingresar</span>
-    <span class="footer-link" onclick="openModal('register')">Registrarse</span>
-    <a class="footer-link" href="https://www.instagram.com/olami_almagro?igsh=MWptbTMxOWZkemNmbA==" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;">📸 Instagram</a>
-  </div>
-  <div class="footer-copy">© 2026 Gran Moishe · Olami Almagro · Buenos Aires</div>
-</footer>
-
-<!-- AUTH MODAL -->
-<div class="overlay" id="authOverlay" style="display:none;" onclick="if(event.target===this)closeModal()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-logo"><img src="data:image/jpeg;base64,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" alt="Olami Almagro" style="width:56px;height:56px;object-fit:cover;border-radius:12px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
-    <div class="modal-title" id="modalTitle">Ingresar</div>
-    <div class="modal-price" id="modalPrice" style="display:none;">
-    Precio por cuenta: <strong style="color:var(--celeste)">$6.000</strong> · Máx. 5 cuentas por DNI
-  </div>
-    <div class="mf" id="modalForm"></div>
-    <div class="auth-err" id="authErr" style="display:none;"></div>
-    <button class="btn-submit" id="btnSubmit" onclick="submitAuth()">Ingresar</button>
-    <button class="auth-switch" id="btnSwitch" onclick="toggleMode()"></button>
-  </div>
-</div>
-
-<!-- PAYMENT MODAL -->
-<div class="pay-modal" id="payModal" style="display:none;">
-  <div class="pay-box">
-    <div class="pay-star"><img src="data:image/jpeg;base64,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" alt="Olami Almagro" style="width:64px;height:64px;object-fit:cover;border-radius:14px;display:block;margin:0 auto;" onerror="this.src='https://bacher86.github.io/granmoishe/almagro.jpg';this.onerror=null;"/></div>
-    <div class="pay-title">¡Registro exitoso!</div>
-    <div class="pay-sub" style="font-size:.92rem;color:#a0b0c0;line-height:1.8;">
-      ¡Bienvenido/a al Gran Moishe 2026! 🎉<br><br>
-      Para activar tu cuenta completá el pago y envianos el comprobante.<br><br>
-      <span style="color:#fbbf24;font-size:.82rem;">⚠ En caso de no confirmarse el pago, la sesión puede ser suspendida temporalmente hasta regularizarlo.</span>
-    </div>
-    <div class="pay-id-box">
-      <div class="pay-id-label">Tu ID de participante</div>
-      <div class="pay-id-value" id="payId">—</div>
-    </div>
-
-    <!-- BOTÓN MERCADO PAGO -->
-    <div id="mpSection" style="margin:16px 0;">
-      <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 1 · Realizá el pago</div>
-      <!-- Alias arriba para quien no usa MP -->
-      <div style="background:rgba(0,158,227,.07);border:1px solid rgba(0,158,227,.25);border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:10px;">
-        <div style="font-size:.75rem;color:var(--gris);margin-bottom:6px;">Pagá al siguiente alias de Mercado Pago:</div>
-        <div style="font-family:'Assistant',sans-serif;font-size:1.5rem;font-weight:900;color:#009EE3;letter-spacing:3px;">uriel.bacher</div>
-      </div>
-      <button id="btnMP" onclick="pagarMP()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#009EE3;color:#fff;font-family:'Assistant',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.18c-.144.658-.528.818-1.07.508l-2.96-2.18-1.428 1.374c-.158.158-.29.29-.595.29l.212-3.005 5.476-4.948c.238-.212-.052-.33-.368-.118L6.12 13.884l-2.9-.906c-.63-.196-.642-.63.132-.932l11.336-4.37c.524-.19.982.128.874.572z"/></svg>
-        Pagar con Mercado Pago
-      </button>
-    </div>
-
-    <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 2 · Enviá el comprobante</div>
-    <div class="pay-info">
-      <strong>📧 Enviá el comprobante a:</strong><br>
-      <span style="color:var(--celeste);font-weight:700;font-size:1rem;">granmoisheolamialmagro@gmail.com</span><br><br>
-      <strong>Asunto:</strong> <span style="color:var(--dorado-clr);" id="paySubject">—</span><br>
-      <strong>Adjuntá:</strong> foto o captura del comprobante de transferencia
-    </div>
-    <div class="pay-warn">⚠ Tu acceso puede ser removido si no se confirma el pago</div>
-    <button class="pay-btn" onclick="closePayModal()">Entendido, voy a enviar el comprobante ✓</button>
-  </div>
-</div>
-
-<!-- CONTACT MODAL -->
-<div class="overlay" id="contactOverlay" style="display:none;" onclick="if(event.target===this)closeContact()">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;">
-    <button class="modal-close" onclick="closeContact()">✕</button>
-    <div class="modal-logo">✉️</div>
-    <div class="modal-title">Contacto</div>
-    <div style="margin-top:16px;font-size:.88rem;color:var(--gris);line-height:1.9;">
-      <p>Para publicidad, consultas o soporte:</p><br>
-      <p>📧 <a href="mailto:granmoisheolamialmagro@gmail.com" style="color:var(--celeste);">granmoisheolamialmagro@gmail.com</a></p><br>
-      <p>📸 <a href="https://www.instagram.com/olami_almagro" target="_blank" style="color:var(--celeste);">@olami_almagro</a></p><br>
-      <p style="font-size:.75rem;">Para activar tu cuenta enviá el comprobante con tu ID al mail de arriba.</p>
-    </div>
-  </div>
-</div>
-
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  });
-}
-</script>
-</body>
 
 <section class="hero">
   <div class="hero-bg"></div>
@@ -1188,6 +962,34 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
+}
+
+// ── PWA INSTALL ──────────────────────────────────────────────────────────────
+var _installPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _installPrompt = e;
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', function() {
+  var btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  _installPrompt = null;
+});
+function triggerInstall() {
+  if (_installPrompt) {
+    _installPrompt.prompt();
+    _installPrompt.userChoice.then(function(r) {
+      _installPrompt = null;
+      if (r.outcome === 'accepted') {
+        var btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.style.display = 'none';
+      }
+    });
+  } else {
+    alert('En iOS: tocá Compartir (□↑) y luego "Agregar a pantalla de inicio"');
+  }
 }
 </script>
 </body>
