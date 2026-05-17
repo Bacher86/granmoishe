@@ -78,7 +78,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 /* FULL SCREEN AD */
 .fullad-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:5000;display:flex;flex-direction:column;}
 .fullad-content{flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.fullad-inner{text-align:center;padding:40px;}
+.fullad-inner{text-align:center;padding:24px;overflow-y:auto;max-height:80vh;}
 .fullad-tier{font-size:.9rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
 .fullad-name{font-family:'Oswald',sans-serif;font-size:3rem;font-weight:900;color:#fff;margin-bottom:12px;}
 .fullad-hint{font-size:.85rem;color:#5a7a6a;}
@@ -18219,9 +18219,12 @@ function FullScreenAd({ ad, onClose }) {
     React.createElement('div', { className: "fullad-overlay",}
       , React.createElement('div', { className: "fullad-content", onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
         , React.createElement('div', { className: "fullad-inner",}
+          , ad.img&&React.createElement('img',{src:ad.img,alt:ad.nombre,style:{width:"100%",maxHeight:"52vh",objectFit:"contain",borderRadius:10,marginBottom:14,display:"block"}})
           , React.createElement('div', { className: "fullad-tier", style: {color:_optionalChain([AD_TIERS, 'access', _16 => _16[ad.tier], 'optionalAccess', _17 => _17.color])},}, _optionalChain([AD_TIERS, 'access', _18 => _18[ad.tier], 'optionalAccess', _19 => _19.name]), " · Publicidad"  )
           , React.createElement('div', { className: "fullad-name",}, ad.nombre)
+          , ad.descripcion&&React.createElement('div',{style:{fontSize:".82rem",color:"#8a9ab0",marginTop:4,textAlign:"center",lineHeight:1.4}},ad.descripcion)
           , React.createElement('div', { className: "fullad-hint",}, "Tocá para más información"   )
+        )
         )
       )
       , React.createElement('div', { className: "fullad-bar",}
