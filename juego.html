@@ -105,16 +105,16 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .ad-cta{font-size:.65rem;color:#4a6a5a;margin-top:2px;}
 
 /* SIDEBAR ADS */
-.sidebar-ads{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:6px 8px;height:calc(100vh - 58px);position:sticky;top:58px;overflow:hidden;}
+.sidebar-ads{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:8px;height:calc(100vh - 58px);position:sticky;top:58px;overflow:hidden;}
 .sba-label{display:none;}
-.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;}
+.sba-item{border-radius:8px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;margin-bottom:2px;}
 .sba-item:hover{border-color:#2a4a38;transform:scale(1.01);}
 .sba-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .ad-placeholder{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a1622;padding:16px;text-align:center;}
 
 /* APP LAYOUT */
 .app-layout{display:flex;width:100%;}
-.main{flex:1;padding:10px 12px 88px;min-width:0;overflow-x:hidden;}
+.main{flex:1;padding:10px 12px 14px;min-width:0;overflow-x:hidden;}
 
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0a1b2a,#071a10);border-bottom:2px solid #1a3a20;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:200;}
@@ -17726,7 +17726,7 @@ if (document.readyState === 'loading') {
 
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────
-const BUDGET = 150000000;
+const BUDGET = 120000000;
 const MAX_SQUAD = 15; // 11 + 4 subs
 const MAX_XI = 11;
 const MAX_SUBS = 4;
@@ -19318,7 +19318,7 @@ function RulesView() {
       , React.createElement('h2', { className: "rv-title",}, "📋 Reglamento — Gran Moishe 2026"     )
       , React.createElement('div', { className: "rv-grid",}
         , [
-          ["💰","Presupuesto","Cada DT dispone de <strong>$100 millones</strong> para armar su equipo de 15 jugadores (11 titulares + 4 suplentes)."],
+          ["💰","Presupuesto","Cada DT dispone de <strong>$120 millones</strong> para armar su equipo de 15 jugadores (11 titulares + 4 suplentes)."],
           ["⚽","XI + Suplentes","Los <strong>11 titulares y los 4 suplentes</strong> suman puntos. El equipo no tiene banco ocioso."],
           ["🌍","Límite por País","Máximo <strong>3 jugadores</strong> de la misma selección en toda la plantilla."],
           ["👑","Capitán","<strong>1 capitán por equipo.</strong> Suma el 25% más de sus puntos totales (redondeado hacia arriba). Solo 1 por equipo."],
@@ -20101,7 +20101,7 @@ function GranMoishe() {
     }
   },[ads]);
 
-  const budget=useMemo(()=>BUDGET-squad.reduce((s,p)=>s+p.valor,0),[squad]);
+  const budget=useMemo(()=>BUDGET+(user&&user.extraBudget||0)-squad.reduce((s,p)=>s+p.valor,0),[squad,user]);
   const countryCounts=useMemo(()=>{const m={};squad.forEach(p=>{m[p.pais]=(m[p.pais]||0)+1;});return m;},[squad]);
 
   const canAddFn=useCallback(function(player){
@@ -20310,7 +20310,6 @@ function GranMoishe() {
         ))
       )
 
-      , React.createElement(AdCarousel, { ads: ads })
       , React.createElement('div', { className: "app-layout",}
         , showSidebar&&React.createElement(SidebarAds, { ads: ads, side:"left",})
         , React.createElement('main', { className: "main",}
