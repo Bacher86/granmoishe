@@ -401,16 +401,13 @@
     <div id="mpSection" style="margin:16px 0;">
       <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 1 · Realizá el pago</div>
       <!-- Alias arriba para quien no usa MP -->
-      <div style="background:rgba(0,158,227,.07);border:1px solid rgba(0,158,227,.25);border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:10px;">
-        <div style="font-size:.75rem;color:var(--gris);margin-bottom:6px;">Pagá al siguiente alias de Mercado Pago:</div>
-        <div style="font-family:'Assistant',sans-serif;font-size:1.5rem;font-weight:900;color:#009EE3;letter-spacing:3px;">uriel.bacher</div>
-      </div>
-      <button id="btnMP" onclick="pagarMP()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#009EE3;color:#fff;font-family:'Assistant',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.18c-.144.658-.528.818-1.07.508l-2.96-2.18-1.428 1.374c-.158.158-.29.29-.595.29l.212-3.005 5.476-4.948c.238-.212-.052-.33-.368-.118L6.12 13.884l-2.9-.906c-.63-.196-.642-.63.132-.932l11.336-4.37c.524-.19.982.128.874.572z"/></svg>
-        Pagar con Mercado Pago
-      </button>
     </div>
 
+    <div style="background:rgba(0,158,227,.07);border:1px solid rgba(0,158,227,.25);border-radius:10px;padding:14px 16px;text-align:center;margin-bottom:14px;">
+      <div style="font-size:.75rem;color:var(--gris);margin-bottom:6px;">Transferí al siguiente alias de Mercado Pago:</div>
+      <div style="font-family:'Assistant',sans-serif;font-size:1.6rem;font-weight:900;color:#009EE3;letter-spacing:3px;margin-bottom:4px;">uriel.bacher</div>
+      <div style="font-size:.7rem;color:var(--gris);">Copiá el alias y pegalo en tu app de MP</div>
+    </div>
     <div style="font-size:.72rem;letter-spacing:2px;color:var(--azul-claro);text-transform:uppercase;font-weight:600;margin-bottom:10px;text-align:center;">Paso 2 · Enviá el comprobante</div>
     <div class="pay-info">
       <strong>📧 Enviá el comprobante a:</strong><br>
@@ -557,11 +554,13 @@ function showFullAd(onDone) {
     if (ad.img) {
       var adImg = document.createElement('img');
       adImg.src = ad.img;
-      adImg.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:contain;display:block;';
-      adImg.onerror = function(){ this.style.display='none'; };
+      adImg.style.cssText = 'width:100%;border-radius:10px;margin-bottom:14px;max-height:220px;object-fit:contain;';
       adBox.appendChild(adImg);
     }
-
+    var adLabel = document.createElement('div');
+    adLabel.style.cssText = 'font-size:.65rem;letter-spacing:2px;color:#fbbf24;font-weight:700;margin-bottom:6px;';
+    adLabel.textContent = '⭐ PUBLICIDAD';
+    adBox.appendChild(adLabel);
     adBox.onclick = function() { if(ad.url) window.open(ad.url,'_blank'); };
     ov.appendChild(adBox);
     var secs = ad.seconds || 8;
@@ -800,9 +799,7 @@ function onComChange() {
 }
 
 // ── PAGAR MP ─────────────────────────────────────────────────────────────────
-function pagarMP() {
-  window.open('https://www.mercadopago.com.ar','_blank');
-}
+
 
 // ── CLOSE PAY MODAL ──────────────────────────────────────────────────────────
 function closePayModal() {
