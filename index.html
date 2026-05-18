@@ -688,15 +688,14 @@ function renderForm() {
     </div>
     <div class="field"><label>DNI *</label><input id="f_dni" placeholder="30123456" maxlength="10"/>
       <div class="field-hint">🪪 Ingresá tu <strong>DNI real</strong> — será requerido para verificar tu identidad en caso de ganar un premio.</div></div>
+    <div class="field" style="max-width:220px;"><label>Celular / WhatsApp *</label><input id="f_celular" type="tel" placeholder="+54 11 1234-5678"/>
+      <div class="field-hint">📱 Incluí el código de país. Ej: +54 11 1234-5678</div></div>
     <div class="field"><label>Nombre del equipo *</label><input id="f_equipo" placeholder="Mi Equipo FC" maxlength="40"/></div>
     <div class="field"><label>Email *</label><input id="f_email" type="email" placeholder="tu@email.com"/>
       <div class="field-hint">📧 Usá un <strong>mail real y activo</strong> — es la única vía de contacto en caso de ganar un premio. No podremos comunicarnos si el mail es incorrecto.</div>
     </div>
     <div class="field"><label>Contraseña *</label><input id="f_password" type="password" placeholder="••••••••"/></div>
-    <div class="row2">
-      <div class="field"><label>País *</label><select id="f_pais" onchange="onPaisChange()">${PAISES.map(p=>`<option>${p}</option>`).join('')}</select></div>
-      <div class="field"><label>Provincia *</label><select id="f_provincia">${PROVS_AR.map(p=>`<option>${p}</option>`).join('')}</select></div>
-    </div>
+    <div class="field" style="max-width:240px;"><label>País *</label><select id="f_pais" onchange="onPaisChange()">${PAISES.map(p=>`<option>${p}</option>`).join('')}</select></div>
     <div class="field" style="max-width:180px;"><label>Fecha de nacimiento *</label><input id="f_fecha_nac" type="date" max="2010-01-01"/></div>
     <div class="field">
       <label>Comunidad / Club *</label>
@@ -765,16 +764,7 @@ function setCantidad(n) {
 }
 
 // ── PAÍS / PROVINCIA ─────────────────────────────────────────────────────────
-function onPaisChange() {
-  const pais = document.getElementById('f_pais')?.value;
-  const provSel = document.getElementById('f_provincia');
-  if (!provSel) return;
-  if (pais === 'Argentina') {
-    provSel.outerHTML = `<select id="f_provincia">${PROVS_AR.map(p=>`<option>${p}</option>`).join('')}</select>`;
-  } else {
-    provSel.outerHTML = `<input id="f_provincia" placeholder="Región / Provincia"/>`;
-  }
-}
+function onPaisChange() { /* provincia removida */ }
 
 // ── COMUNIDAD CUSTOM ─────────────────────────────────────────────────────────
 function onComChange() {
@@ -819,7 +809,7 @@ async function submitAuth() {
   const email    = document.getElementById('f_email')?.value.trim();
   const pass     = document.getElementById('f_password')?.value;
   const pais     = document.getElementById('f_pais')?.value || 'Argentina';
-  const prov     = document.getElementById('f_provincia')?.value || '';
+  const celular  = document.getElementById('f_celular')?.value || '';
   const fecha_nac = document.getElementById('f_fecha_nac')?.value || '';
   const comSel   = document.getElementById('f_comunidad')?.value;
   const comCustom= document.getElementById('f_comCustom')?.value.trim();
@@ -830,6 +820,7 @@ async function submitAuth() {
   if (!nombre || !apellido) { showErr('Completá nombre y apellido'); return; }
   if (!dni)    { showErr('El DNI es obligatorio'); return; }
   if (!fecha_nac) { showErr('La fecha de nacimiento es obligatoria'); return; }
+  if (!celular)    { showErr('El celular es obligatorio'); return; }
   if (!equipo) { showErr('Completá el nombre del equipo'); return; }
   if (!email || !pass) { showErr('Completá email y contraseña'); return; }
   if (comSel === '__otra__' && !comCustom) { showErr('Escribí el nombre de tu comunidad'); return; }
@@ -858,7 +849,7 @@ async function submitAuth() {
   // Registrar cuenta principal
   const uid1 = 'u_' + Math.random().toString(36).slice(2);
   const pid1 = 'GM-' + String(users.length + 1).padStart(4,'0');
-  const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, provincia:prov, fecha_nac, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1 };
+  const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, celular, fecha_nac, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1 };
   registeredUsers.push(user1);
   let allUsers = [...users, user1];
 
@@ -868,7 +859,7 @@ async function submitAuth() {
     if (allUsers.find(u=>u.email===ex.email)) { showErr(`El email ${ex.email} ya está registrado`); btn.disabled=false; renderForm(); return; }
     const uid2 = 'u_' + Math.random().toString(36).slice(2);
     const pid2 = 'GM-' + String(allUsers.length + 1).padStart(4,'0');
-    const u2 = { uid:uid2, email:ex.email, password:ex.password, dni, nombre, apellido, equipo:ex.equipo, comunidad, pais, provincia:prov, fecha_nac, admin:false, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid2 };
+    const u2 = { uid:uid2, email:ex.email, password:ex.password, dni, nombre, apellido, equipo:ex.equipo, comunidad, pais, celular, fecha_nac, admin:false, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid2 };
     registeredUsers.push(u2);
     allUsers.push(u2);
   }
