@@ -293,19 +293,7 @@ function AdManager({ toast }) {
           </div>
           <div className="ps-row2">
             <div className="pf"><label>URL de destino (click)</label><input value={form.url} onChange={e=>setForm(p=>({...p,url:e.target.value}))} placeholder="https://sitio.com"/></div>
-            <div className="pf">
-              <label>Imagen (subí archivo o pegá URL)</label>
-              <input type="file" accept="image/*" onChange={e=>{
-                const file=e.target.files[0];
-                if(!file)return;
-                if(file.size>500*1024){alert("La imagen no puede superar 500KB para funcionar con Firebase. Comprimila primero.");return;}
-                const reader=new FileReader();
-                reader.onload=ev=>setForm(p=>({...p,img:ev.target.result}));
-                reader.readAsDataURL(file);
-              }} style={{display:"block",marginBottom:6}}/>
-              <input value={form.img} onChange={e=>setForm(p=>({...p,img:e.target.value}))} placeholder="O pegá una URL: https://imagen.jpg"/>
-              {form.img&&<img src={form.img} alt="" style={{marginTop:6,width:"100%",maxHeight:120,objectFit:"contain",borderRadius:6,background:"#080f18"}} onError={e=>e.target.style.display="none"}/>}
-            </div>
+            <div className="pf"><label>URL de imagen (opcional)</label><input value={form.img} onChange={e=>setForm(p=>({...p,img:e.target.value}))} placeholder="https://imagen.jpg"/></div>
           </div>
           {form.img&&<div style={{ textAlign:"center" }}><img src={form.img} alt="preview" style={{ maxHeight:80,maxWidth:"100%",borderRadius:6,border:"1px solid #1a2d40",objectFit:"contain" }} onError={e=>e.target.style.display="none"}/></div>}
           <div className="ps-row2">
@@ -358,6 +346,7 @@ function ScoreManager({ toast }) {
   const [selected, setSelected]= useState("");
   const [pts,      setPts]     = useState("");
   const [reason,   setReason]  = useState("");
+  const [budgetAdd, setBudgetAdd] = useState("");
   const [log,      setLog]     = useState(()=>getLS("gm_score_log",[]));
 
   const apply = () => {
@@ -370,6 +359,17 @@ function ScoreManager({ toast }) {
     const u=updated.find(x=>x.uid===selected);
     toast(`${n>0?"+":""}${n} pts a ${u?.nombre} ${u?.apellido}`,"success");
     setPts(""); setReason("");
+  };
+
+  const applyBudget = () => {
+    if(!selected||!budgetAdd) return toast("Seleccioná usuario y monto","warn");
+    const monto=parseInt(budgetAdd)*1000000; if(isNaN(monto)||monto===0) return toast("Número inválido","warn");
+    const updated=users.map(u=>u.uid===selected?{...u,extraBudget:(u.extraBudget||0)+monto}:u);
+    setUsers(updated); setLS("gm_users",updated);
+    const u=updated.find(x=>x.uid===selected);
+    const total=((u&&u.extraBudget||0)/1000000).toFixed(0);
+    toast("+$"+(monto/1000000).toFixed(0)+"M de presupuesto a "+(u&&u.nombre||"")+" "+(u&&u.apellido||"")+" (total extra: $"+total+"M)","success");
+    setBudgetAdd("");
   };
 
   return (
@@ -390,6 +390,25 @@ function ScoreManager({ toast }) {
             <div className="pf"><label>Motivo</label><input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Ej: Gol de Messi vs PSG" maxLength={80}/></div>
           </div>
           <button className="btn-save" style={{ alignSelf:"flex-start" }} onClick={apply}>Aplicar puntos</button>
+        </div>
+      </div>
+
+      <div className="ap-card">
+        <div className="apc-t">💰 Presupuesto Extra</div>
+        <p style={{ fontSize:".82rem",color:"#5a7a8a",marginBottom:14,lineHeight:1.5 }}>Asigná presupuesto adicional para comprar jugadores a usuarios específicos. El presupuesto base es $100M.</p>
+        <div className="ps-form">
+          <div className="pf">
+            <label>Usuario</label>
+            <select value={selected} onChange={e=>setSelected(e.target.value)}>
+              <option value="">Seleccioná...</option>
+              {users.filter(u=>!u.admin).map(u=><option key={u.uid} value={u.uid}>{u.nombre} {u.apellido} — {u.equipo} (extra: ${((u.extraBudget||0)/1000000).toFixed(0)}M)</option>)}
+            </select>
+          </div>
+          <div className="pf">
+            <label>Millones a agregar (ej: 10 = $10M)</label>
+            <input type="number" min="1" max="500" value={budgetAdd} onChange={e=>setBudgetAdd(e.target.value)} placeholder="Ej: 50"/>
+          </div>
+          <button className="btn-save" style={{ alignSelf:"flex-start",background:"#f59e0b" }} onClick={applyBudget}>Agregar presupuesto</button>
         </div>
       </div>
       {log.length>0&&(
@@ -18367,30 +18386,7 @@ function AdManager({ toast }) {
         fld("Nombre del sponsor *", inp("nombre","Ej: Hebraica BA")),
         fld("Descripción", inp("descripcion","Texto que aparece debajo del nombre")),
         fld("URL (al hacer click)", inp("url","https://...")),
-        React.createElement("div", {style:{marginBottom:14}},
-          React.createElement("label", {style:{display:"block",fontSize:".78rem",fontWeight:700,color:"#a0b0c0",marginBottom:6}}, "Imagen (subí archivo o pegá URL)"),
-          React.createElement("input", {type:"file", accept:"image/*",
-            onChange: function(e) {
-              var file = e.target.files[0];
-              if(!file) return;
-              if(file.size > 500*1024) { alert("La imagen no puede superar 500KB para funcionar con Firebase. Comprimila primero."); return; }
-              var reader = new FileReader();
-              reader.onload = function(ev) { setForm(function(f){ return Object.assign({},f,{img:ev.target.result}); }); };
-              reader.readAsDataURL(file);
-            },
-            style:{display:"block",marginBottom:8,fontSize:".82rem",color:"#a0b0c0",width:"100%"}
-          }),
-          React.createElement("input", {
-            value:form.img,
-            onChange:function(e){setForm(function(f){return Object.assign({},f,{img:e.target.value});});},
-            placeholder:"O pegá URL: https://imagen.jpg",
-            style:{width:"100%",padding:"8px 10px",borderRadius:6,border:"1px solid #2a3a4a",background:"#0d1b2a",color:"#e2e8f0",fontSize:".85rem",boxSizing:"border-box",display:"block"}
-          }),
-          form.img ? React.createElement("img", {src:form.img, alt:"",
-            style:{marginTop:8,width:"100%",maxHeight:120,objectFit:"contain",borderRadius:6,background:"#080f18",display:"block"},
-            onError:function(e){e.target.style.display="none";}
-          }) : null
-        ),
+        fld("Imagen URL (opcional)", inp("img","https://... .jpg")),
         React.createElement("div", {style:{display:"flex",gap:10,alignItems:"center"}},
           React.createElement("label", {style:{display:"flex",alignItems:"center",gap:6,fontSize:".85rem",color:"#a0b0c0",cursor:"pointer"}},
             React.createElement("input", {type:"checkbox",checked:form.active,onChange:e=>setForm(f=>({...f,active:e.target.checked}))}),
@@ -18464,6 +18460,8 @@ function ScoreManager({ toast }) {
   const [reason,   setReason]  = useState("");
   const [log,      setLog]     = useState(()=>getLS("gm_score_log",[]));
 
+  const [budgetAdd, setBudgetAdd] = useState("");
+
   const apply = () => {
     if(!selected||!pts) return toast("Seleccioná usuario y puntos","warn");
     const n=parseInt(pts); if(isNaN(n)) return toast("Número inválido","warn");
@@ -18474,6 +18472,16 @@ function ScoreManager({ toast }) {
     const u=updated.find(x=>x.uid===selected);
     toast(`${n>0?"+":""}${n} pts a ${_optionalChain([u, 'optionalAccess', _35 => _35.nombre])} ${_optionalChain([u, 'optionalAccess', _36 => _36.apellido])}`,"success");
     setPts(""); setReason("");
+  };
+
+  const applyBudget = () => {
+    if(!selected||!budgetAdd) return toast("Seleccioná usuario y monto","warn");
+    const monto=parseInt(budgetAdd)*1000000; if(isNaN(monto)||monto===0) return toast("Número inválido","warn");
+    const updated=users.map(u=>u.uid===selected?{...u,extraBudget:(u.extraBudget||0)+monto}:u);
+    setUsers(updated); setLS("gm_users",updated);
+    const u=updated.find(x=>x.uid===selected);
+    toast("+$"+(monto/1000000).toFixed(0)+"M a "+(u&&u.nombre)+" "+(u&&u.apellido)+" (extra total: $"+((u&&(u.extraBudget||0))/1000000).toFixed(0)+"M)","success");
+    setBudgetAdd("");
   };
 
   return (
@@ -18494,6 +18502,26 @@ function ScoreManager({ toast }) {
             , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Motivo"), React.createElement('input', { value: reason, onChange: e=>setReason(e.target.value), placeholder: "Ej: Gol de Messi vs PSG"     , maxLength: 80,}))
           )
           , React.createElement('button', { className: "btn-save", style: { alignSelf:"flex-start" }, onClick: apply,}, "Aplicar puntos" )
+        )
+      )
+      , React.createElement('div', { className: "ap-card",}
+        , React.createElement('div', { className: "apc-t",}, "💰 Presupuesto Extra")
+        , React.createElement('p', {style:{fontSize:".82rem",color:"#5a7a8a",marginBottom:14,lineHeight:1.5}}, "Asigná presupuesto adicional para comprar jugadores. El base es $100M.")
+        , React.createElement('div', { className: "ps-form",}
+          , React.createElement('div', { className: "pf",}
+            , React.createElement('label', null, "Usuario")
+            , React.createElement('select', {value:selected, onChange:e=>setSelected(e.target.value)}
+              , React.createElement('option', {value:""}, "Seleccioná...")
+              , users.filter(u=>!u.admin).map(u=>React.createElement('option',{key:u.uid,value:u.uid},
+                  u.nombre+" "+u.apellido+" — "+u.equipo+" (extra: $"+((u.extraBudget||0)/1000000).toFixed(0)+"M)"
+                ))
+            )
+          )
+          , React.createElement('div', { className: "pf",}
+            , React.createElement('label', null, "Millones a agregar (ej: 10 = $10M)")
+            , React.createElement('input', {type:"number",min:1,max:500,value:budgetAdd,onChange:e=>setBudgetAdd(e.target.value),placeholder:"Ej: 50"})
+          )
+          , React.createElement('button', {className:"btn-save",style:{alignSelf:"flex-start",background:"#f59e0b"},onClick:applyBudget}, "Agregar presupuesto")
         )
       )
       , log.length>0&&(
