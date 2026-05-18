@@ -19340,6 +19340,7 @@ function ApiPanel({ toast }) {
   const [prodePublished,  setProdePublished]  = useState(()=>getProdePublished());
   const [openMatch,  setOpenMatch]   = useState(null);
   const [showConfig, setShowConfig]  = useState(false);
+  const [marketOpen,  setMarketOpen]  = useState(()=>getLS("gm_market_open", true));
   const [fdKeyInput, setFdKeyInput]  = useState(()=>getLS("gm_fd_key","1c2a17791d6b4dbfb5e0cb8d293045a0"));
   const [showManual, setShowManual]  = useState(false);
   const [manualJson, setManualJson]  = useState("");
@@ -19537,6 +19538,36 @@ function ApiPanel({ toast }) {
     toast("🎯 Puntos prode publicados para " + match.home + " vs " + match.away,"success");
   };
 
+  // ── Habilitar / Deshabilitar mercado ──────────────────────
+  const toggleMarket = () => {
+    const next = !marketOpen;
+    setMarketOpen(next);
+    setLS("gm_market_open", next);
+    toast(next ? "✅ Mercado habilitado" : "🔒 Mercado deshabilitado", next ? "success" : "error");
+  };
+
+  // ── Exportar usuarios ──────────────────────────────────────
+  const exportarUsuarios = () => {
+    const all = getLS("gm_users", []).filter(u => !u.admin);
+    if (!all.length) { toast("No hay usuarios registrados", "error"); return; }
+    const rows = ["Nombre,Apellido,DNI,Email,Celular,Pais,Equipo,ID,Pagado,Fecha nac"];
+    all.forEach(u => {
+      rows.push([
+        u.nombre||"", u.apellido||"", u.dni||"", u.email||"",
+        u.celular||"", u.pais||"",
+        (u.equipo||"").replace(/,/g,";"),
+        u.playerId||"", u.pagado?"Si":"No", u.fecha_nac||""
+      ].join(","));
+    });
+    const csv = rows.join("\n");
+    const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "usuarios_gran_moishe.csv";
+    a.click(); URL.revokeObjectURL(url);
+    toast("✅ CSV descargado con "+all.length+" usuarios", "success");
+  };
+
   const reiniciar = () => {
     if(!window.confirm("⚠️ Borra TODOS los puntos. ¿Confirmar?")) return;
     savePS({}); savePublished({}); saveMatchStats({}); saveProdePublished({});
@@ -19655,6 +19686,26 @@ function ApiPanel({ toast }) {
           })()
         )
       )
+    ),
+
+    // Mercado on/off
+    React.createElement("div", {style:{background:marketOpen?"rgba(74,222,128,.06)":"rgba(239,68,68,.06)",border:"1px solid "+(marketOpen?"rgba(74,222,128,.25)":"rgba(239,68,68,.25)"),borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+      React.createElement("div", null,
+        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:marketOpen?"#4ade80":"#ef4444",letterSpacing:1}}, marketOpen?"🛒 MERCADO HABILITADO":"🔒 MERCADO DESHABILITADO"),
+        React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, marketOpen?"Los usuarios pueden fichar jugadores.":"El mercado está cerrado. Los usuarios no pueden comprar.")
+      ),
+      React.createElement("button", {onClick:toggleMarket, style:{padding:"9px 18px",borderRadius:7,border:"1px solid "+(marketOpen?"#ef4444":"#4ade80"),background:marketOpen?"rgba(239,68,68,.12)":"rgba(74,222,128,.12)",color:marketOpen?"#ef4444":"#4ade80",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}},
+        marketOpen?"🔒 Deshabilitar mercado":"🛒 Habilitar mercado"
+      )
+    ),
+
+    // Exportar usuarios
+    React.createElement("div", {style:{background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+      React.createElement("div", null,
+        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#60a5fa",letterSpacing:1}}, "📋 EXPORTAR USUARIOS"),
+        React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Descarga CSV con nombre, apellido, DNI, email, celular, país, equipo e ID.")
+      ),
+      React.createElement("button", {onClick:exportarUsuarios, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #60a5fa",background:"rgba(96,165,250,.12)",color:"#60a5fa",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "📥 Descargar CSV")
     ),
 
     // Reiniciar + Borrar squads
