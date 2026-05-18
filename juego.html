@@ -20256,6 +20256,27 @@ function GranMoishe() {
         )
         , React.createElement('div', { className: "hdr-r",}
           , React.createElement('button', {
+              onClick: function(){
+                var shareData = {
+                  title: "Gran Moishe 2026",
+                  text: "Sumate al Fantasy del Mundial 2026 con tu comunidad!",
+                  url: "https://granmoisheolamialmagro.com"
+                };
+                if (navigator.share) {
+                  navigator.share(shareData).catch(function(){});
+                } else {
+                  navigator.clipboard.writeText("https://granmoisheolamialmagro.com")
+                    .then(function(){ alert("Link copiado! Compartilo con tus amigos."); })
+                    .catch(function(){ alert("Entra a: granmoisheolamialmagro.com"); });
+                }
+              },
+              style:{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",
+                background:"rgba(96,165,250,.12)",border:"1px solid rgba(96,165,250,.35)",
+                borderRadius:16,color:"#60a5fa",fontFamily:"Oswald,sans-serif",
+                fontWeight:700,fontSize:".72rem",cursor:"pointer",flexShrink:0}
+            }, "Compartir"
+          )
+          , React.createElement('button', {
               id: "pwaInstallBtn",
               onClick: function(){ if(typeof triggerInstall!=="undefined") triggerInstall(); },
               style: {display:"none",alignItems:"center",padding:"5px 10px",
