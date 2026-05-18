@@ -18323,6 +18323,83 @@ function UsersPanel() {
         )
       )
     )
+    , React.createElement("div", {className:"ap-card", style:{marginTop:16}},
+        React.createElement("div", {className:"apc-t"}, "Presupuesto Extra"),
+        React.createElement("p", {style:{fontSize:".82rem",color:"#5a7a8a",marginBottom:12}},
+            "Asigna presupuesto adicional para comprar jugadores. Base: $120M."),
+        React.createElement(BudgetPanel, {users:users, setUsers:setUsers})
+      )
+  );
+}
+
+function BudgetPanel({users, setUsers}) {
+  var toastHook = useToast(); var toast = toastHook.add;
+  var selState = useState(""); var selUid = selState[0], setSelUid = selState[1];
+  var addState = useState(""); var addAmt = addState[0], setAddAmt = addState[1];
+
+  var apply = function() {
+    if(!selUid) return toast("Seleccioná un usuario","warn");
+    var monto = parseInt(addAmt);
+    if(isNaN(monto)||monto===0) return toast("Ingresá los millones a agregar (ej: 50)","warn");
+    var montoFull = monto * 1000000;
+    var updated = users.map(function(u) {
+      return u.uid===selUid ? Object.assign({},u,{extraBudget:(u.extraBudget||0)+montoFull}) : u;
+    });
+    setUsers(updated);
+    setLS("gm_users", updated);
+    var u = updated.find(function(x){return x.uid===selUid;});
+    var totalExtra = ((u&&u.extraBudget||0)/1000000).toFixed(0);
+    toast("+$"+monto+"M a "+(u&&u.nombre||"")+" "+(u&&u.apellido||"")+" · total extra: $"+totalExtra+"M","success");
+    setAddAmt("");
+  };
+
+  var reset = function() {
+    if(!selUid) return toast("Seleccioná un usuario","warn");
+    if(!window.confirm("¿Resetear el presupuesto extra de este usuario a $0?")) return;
+    var updated = users.map(function(u) {
+      return u.uid===selUid ? Object.assign({},u,{extraBudget:0}) : u;
+    });
+    setUsers(updated);
+    setLS("gm_users", updated);
+    var u = updated.find(function(x){return x.uid===selUid;});
+    toast("Presupuesto extra reseteado para "+(u&&u.nombre||""),"info");
+  };
+
+  return React.createElement('div', {className:"ps-form"},
+    React.createElement('div', {className:"pf"},
+      React.createElement('label', null, "Usuario"),
+      React.createElement('select', {value:selUid, onChange:function(e){setSelUid(e.target.value);}},
+        React.createElement('option', {value:""}, "Seleccioná un usuario..."),
+        users.filter(function(u){return !u.admin;}).map(function(u) {
+          var extra = ((u.extraBudget||0)/1000000).toFixed(0);
+          var total = (120 + parseInt(extra)).toFixed(0);
+          return React.createElement('option', {key:u.uid, value:u.uid},
+            u.nombre+" "+u.apellido+" — "+u.equipo+" | Budget: $"+total+"M (base $120M + extra $"+extra+"M)"
+          );
+        })
+      )
+    ),
+    React.createElement('div', {className:"pf", style:{maxWidth:200}},
+      React.createElement('label', null, "Millones a agregar"),
+      React.createElement('input', {
+        type:"number", min:1, max:1000,
+        value:addAmt,
+        onChange:function(e){setAddAmt(e.target.value);},
+        placeholder:"Ej: 50  →  +$50M"
+      })
+    ),
+    React.createElement('div', {style:{display:"flex",gap:8,alignItems:"flex-end"}},
+      React.createElement('button', {
+        className:"btn-save",
+        style:{background:"#f59e0b",color:"#07111e"},
+        onClick:apply
+      }, "➕ Agregar presupuesto"),
+      React.createElement('button', {
+        className:"btn-save",
+        style:{background:"rgba(239,68,68,.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,.3)"},
+        onClick:reset
+      }, "Reset $0")
+    )
   );
 }
 
