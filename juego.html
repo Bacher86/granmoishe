@@ -105,9 +105,9 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .ad-cta{font-size:.65rem;color:#4a6a5a;margin-top:2px;}
 
 /* SIDEBAR ADS */
-.sidebar-ads{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;padding:12px;height:calc(100vh - 58px);position:sticky;top:58px;overflow:hidden;}
-.sba-label{display:none;}
-.sba-item{border-radius:10px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;}
+.sidebar-ads{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:10px 10px 10px 12px;height:calc(100vh - 58px);position:sticky;top:58px;overflow:hidden;border-left:1px solid #1a2d40;}
+.sba-label{display:block;font-size:.55rem;letter-spacing:2px;color:#1a3a28;text-transform:uppercase;text-align:center;font-weight:700;margin-bottom:2px;padding-bottom:6px;border-bottom:1px solid #0f2a18;}
+.sba-item{border-radius:10px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;background:#080f18;}
 .sba-item:hover{border-color:#2a4a38;transform:scale(1.01);}
 .sba-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .ad-placeholder{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a1622;padding:16px;text-align:center;}
@@ -18354,7 +18354,7 @@ function FullScreenAd({ ad, onClose }) {
   );
 }
 
-function SidebarAds({ ads, side }) {
+function SidebarAds({ ads }) {
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -18363,12 +18363,10 @@ function SidebarAds({ ads, side }) {
     return()=>clearInterval(t);
   },[slotAds]);
 
+  // 5 slots para tener más opciones rotativas
   const slots = [0,1,2,3,4].map(i => slotAds.length ? slotAds[(idx+i)%slotAds.length] : null);
-  const padStyle = side==="left"
-    ? {paddingLeft:0, paddingRight:10}
-    : {paddingLeft:10, paddingRight:0};
 
-  return React.createElement('div', { className: "sidebar-ads", style: padStyle}
+  return React.createElement('div', { className: "sidebar-ads"}
     , React.createElement('div', { className: "sba-label"}, "PUBLICIDAD")
     , slots.map((a, i) =>
       a
@@ -18378,14 +18376,16 @@ function SidebarAds({ ads, side }) {
               ? React.createElement('img', {src:a.img, alt:a.nombre,
                   style:{width:"100%",height:"100%",objectFit:"cover",display:"block"},
                   onError:function(e){e.target.style.display='none';}})
-              : React.createElement('div', { className: "ad-placeholder"}
-                  , React.createElement('div', {style:{fontSize:"2rem",opacity:.12}}, "📢")
+              : React.createElement('div', { className: "ad-placeholder",
+                  style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:6}}
+                  , React.createElement('div', {style:{fontSize:"1.8rem",opacity:.1}}, "📢")
+                  , React.createElement('span', {style:{fontSize:".55rem",color:"#1a3a28",letterSpacing:1,textTransform:"uppercase"}}, a.nombre||"Publicidad")
                 )
           )
         : React.createElement('div', { key: "empty"+i, className: "sba-item",
-            style:{border:"1px dashed #1a2d40",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6}}
-            , React.createElement('div', {style:{fontSize:"1.5rem",opacity:.15}}, "📢")
-            , React.createElement('span', {style:{fontSize:".6rem",color:"#1a3a28",letterSpacing:1}}, "PUBLICIDAD")
+            style:{border:"1px dashed rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6,background:"transparent"}}
+            , React.createElement('div', {style:{fontSize:"1.4rem",opacity:.08}}, "📢")
+            , React.createElement('span', {style:{fontSize:".55rem",color:"#0f2a18",letterSpacing:1}}, "ESPACIO DISPONIBLE")
           )
     )
   );
@@ -20362,7 +20362,7 @@ function GranMoishe() {
       )
 
       , React.createElement('div', { className: "app-layout",}
-        , showSidebar&&React.createElement(SidebarAds, { ads: ads, side:"left",})
+        
         , React.createElement('main', { className: "main",}
           /* ── EQUIPO ── */
           , tab==="equipo"&&React.createElement(EquipoListView,{xi:xi,subs:subs,squad:squad,capitan:capitan,formation:formation,setXi:setXi,setSubs:setSubs,setTab:setTab,toast:toast,autoXI:autoXI})
@@ -20391,7 +20391,7 @@ function GranMoishe() {
         )
 
         /* SIDEBAR ADS (all tabs except cancha) */
-        , showSidebar&&React.createElement(SidebarAds, { ads: ads,})
+        , showSidebar&&React.createElement(SidebarAds, { ads: ads})
       )
     )
   );
