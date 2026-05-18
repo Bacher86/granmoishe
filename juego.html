@@ -20059,6 +20059,36 @@ function GranMoishe() {
 
   useEffect(()=>{ Auth.onAuthStateChanged(u=>{ setUser(u); setAuthLoading(false); }); },[]);
 
+  // Sync user data from Firebase when admin updates (e.g. extraBudget)
+  useEffect(()=>{
+    if(!user) return;
+    const onStorage = function(e) {
+      if (e.key === 'gm_users') {
+        const users = getLS('gm_users', []);
+        const fresh = users.find(function(u){ return u.uid === user.uid; });
+        if (fresh && (fresh.extraBudget !== user.extraBudget || fresh.pts !== user.pts)) {
+          const updated = Object.assign({}, user, {
+            extraBudget: fresh.extraBudget || 0,
+            pts: fresh.pts || 0,
+            pagado: fresh.pagado,
+            bloqueado: fresh.bloqueado
+          });
+          notifyAuth(updated);
+        }
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    // Also poll every 15s in case storage event doesn't fire (same tab)
+    const iv = setInterval(function() {
+      const users = getLS('gm_users', []);
+      const fresh = users.find(function(u){ return u.uid === user.uid; });
+      if (fresh && (fresh.extraBudget||0) !== (user.extraBudget||0)) {
+        notifyAuth(Object.assign({}, user, {extraBudget: fresh.extraBudget||0}));
+      }
+    }, 15000);
+    return function(){ window.removeEventListener('storage', onStorage); clearInterval(iv); };
+  },[user]);
+
   useEffect(()=>{
     if(!user) return;
     setSquad(getLS(squadKey,[]));
