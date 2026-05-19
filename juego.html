@@ -8,8 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="Gran Moishe">
   <meta name="theme-color" content="#07111e">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="almagro.jpg">
-  <title>Gran Moishe 2026 — Fantasy Fútbol</title>
+<title>Gran Moishe 2026 — Fantasy Fútbol</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -17747,9 +17746,7 @@ const SCORING = {
 const COMMUNITIES = [
   "Macabi","Cisaab","Hacoaj","Círculo","Venado","Mi Refugio","Kadima","Barkojba",
   "Lambtroh Hakol","Hebraica","Or Jadash","Dor Jadash","Jai (Bialik)","Iona",
-  "Amijai","Betam del Oeste","Bet El","Bet Hilel","Juventud Sión","Tfilat Shalom",
-  "Pardes","Olami Almagro","Olami Belgrano","Olami Urquiza","Olami Villa Crespo",
-  "Olami Palermo","Otra / Independiente"
+  "Amijai","Betam del Oeste","Bet El","Bet Hilel","Juventud Sión","Tfilat Shalom","Otra / Independiente"
 ];
 
 const PAISES_RES = ["Argentina","Brasil","Chile","Colombia","Ecuador","México","Uruguay","España","Israel","Estados Unidos","Otro"];
@@ -18551,7 +18548,7 @@ function IndexPage({ onLogin, onRegister, ads }) {
         )
         , React.createElement('div',{className:"idx-hdr-actions"}
           , React.createElement('a',{
-              href:"https://www.instagram.com/olami_almagro",
+              href:"https://www.instagram.com/granmoishe2026",
               target:"_blank",rel:"noopener",
               className:"idx-hdr-ig"
             },
@@ -18632,7 +18629,7 @@ function PayModal({ users, onClose }) {
     React.createElement('div', { style: {position:"fixed",inset:0,background:"rgba(0,0,0,.95)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"},}
       , React.createElement('div', { style: {background:"#0d1b2a",border:"2px solid #4ade80",borderRadius:18,padding:28,maxWidth:460,width:"100%",textAlign:"center",maxHeight:"90vh",overflowY:"auto"},}
         , React.createElement('div', { style: {textAlign:"center",marginBottom:10},}
-          , React.createElement('img', { src: "almagro.jpg", alt: "Olami Almagro", style: {width:64,height:64,objectFit:"cover",borderRadius:14,display:"inline-block",border:"2px solid rgba(74,222,128,.4)",boxShadow:"0 0 16px rgba(74,222,128,.25)"}, onError: e=>{e.target.style.display="none";} })
+          
         )
         , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.5rem",fontWeight:900,letterSpacing:2,marginBottom:6,color:"#4ade80"},}, "¡Registro exitoso!")
         , React.createElement('div', { style: {fontSize:".88rem",color:"#8a9ab0",lineHeight:1.8,marginBottom:16},}
@@ -18664,7 +18661,7 @@ function PayModal({ users, onClose }) {
         , React.createElement('div', { style: {background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:10,padding:14,marginBottom:16,fontSize:".82rem",color:"#8a9ab0",lineHeight:1.8,textAlign:"left"},}
           , React.createElement('strong', null, "📧 Enviá el comprobante a:")
           , React.createElement('br', null)
-          , React.createElement('span', { style: {color:"#60a5fa",fontWeight:700},}, "granmoisheolamialmagro@gmail.com")
+          , React.createElement('span', { style: {color:"#60a5fa",fontWeight:700},}, "granmoishe2026@gmail.com")
           , React.createElement('br', null)
           , React.createElement('br', null)
           , React.createElement('strong', null, "Asunto: ")
@@ -18685,8 +18682,7 @@ function PayModal({ users, onClose }) {
 function getCommunities() {
   const base = ["Macabi","Cisaab","Hacoaj","Círculo","Venado","Mi Refugio","Kadima","Barkojba",
     "Lambtroh Hakol","Hebraica","Or Jadash","Dor Jadash","Jai (Bialik)","Iona",
-    "Amijai","Betam del Oeste","Bet El","Bet Hilel","Juventud Sión","Tfilat Shalom",
-    "Pardes","Olami Almagro","Olami Belgrano","Olami Urquiza","Olami Villa Crespo","Olami Palermo"];
+    "Amijai","Betam del Oeste","Bet El","Bet Hilel","Juventud Sión","Tfilat Shalom"];
   const fromUsers = getLS("gm_users",[]).map(u=>u.comunidad).filter(c=>c&&c!=="Otra / Independiente");
   const fromSaved = getLS("gm_comunidades",[]);
   return [...new Set([...base,...fromUsers,...fromSaved])].sort((a,b)=>a.localeCompare(b));
@@ -18774,7 +18770,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
       , React.createElement('div', { className: "auth-modal", onClick: e=>e.stopPropagation(),}
         , React.createElement('button', { className: "auth-close", onClick: onClose,}, "✕")
         , React.createElement('div', { style: {textAlign:"center",marginBottom:8},}
-          , React.createElement('img', { src: "almagro.jpg", alt: "Olami Almagro", style: {width:64,height:64,objectFit:"cover",borderRadius:14,display:"inline-block",border:"2px solid rgba(74,222,128,.4)",boxShadow:"0 0 16px rgba(74,222,128,.25)"}, onError: e=>{e.target.style.display="none";} })
+          
         )
         , React.createElement('div', { className: "auth-title",}, isReg?"Crear cuenta":"Ingresar")
         , isReg&&React.createElement('div', { className: "auth-price",}, "1 cuenta: $10.000 · 2: $16.000 · 3: $24.000 · 4: $28.000 · 5: $30.000")
@@ -20441,14 +20437,14 @@ function GranMoishe() {
                 var shareData = {
                   title: "Gran Moishe 2026",
                   text: "Sumate al Fantasy del Mundial 2026 con tu comunidad!",
-                  url: "https://granmoisheolamialmagro.com"
+                  url: "https://granmoishe.com"
                 };
                 if (navigator.share) {
                   navigator.share(shareData).catch(function(){});
                 } else {
-                  navigator.clipboard.writeText("https://granmoisheolamialmagro.com")
+                  navigator.clipboard.writeText("https://granmoishe.com")
                     .then(function(){ alert("Link copiado! Compartilo con tus amigos."); })
-                    .catch(function(){ alert("Entra a: granmoisheolamialmagro.com"); });
+                    .catch(function(){ alert("Entra a: granmoishe.com"); });
                 }
               },
               style:{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",
