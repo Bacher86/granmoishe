@@ -18500,7 +18500,7 @@ function FullScreenAd({ ad, onClose }) {
 
 function SidebarAds({ ads }) {
   const adsOn = getLS("gm_ads_enabled", true);
-  if (!adsOn) return React.createElement('div', {style:{width:280,flexShrink:0,borderLeft:"1px solid #1a2d40",background:"#000"}});
+  if (!adsOn) return null;
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -20250,7 +20250,7 @@ function GranMoishe() {
     // show login ad
     var freshAds=DB.getAds();setAds(freshAds);
     var loginAds=freshAds.filter(function(a){return a.active&&(a.tier==="login"||a.tier==="todo");});
-    if(loginAds.length>0)setTimeout(function(){setFullAd(loginAds[Math.floor(Math.random()*loginAds.length)]);},800);
+    if(loginAds.length>0&&getLS("gm_ads_enabled",true))setTimeout(function(){setFullAd(loginAds[Math.floor(Math.random()*loginAds.length)]);},800);
   },[_optionalChain([user, 'optionalAccess', _72 => _72.uid])]);
 
   useEffect(()=>{ if(user){setLS(squadKey,squad);} },[squad]);
@@ -20278,7 +20278,7 @@ function GranMoishe() {
     if(actionCount.current>=3){
       actionCount.current=0;
       const diamAds=ads.filter(a=>a.active&&(a.tier==="todo"));
-      if(diamAds.length>0) setFullAd(diamAds[Math.floor(Math.random()*diamAds.length)]);
+      if(diamAds.length>0&&getLS("gm_ads_enabled",true)) setFullAd(diamAds[Math.floor(Math.random()*diamAds.length)]);
     }
   },[ads]);
 
