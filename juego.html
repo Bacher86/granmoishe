@@ -20599,6 +20599,7 @@ function triggerInstall() {
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
   var isAndroid = /Android/.test(navigator.userAgent);
   var ov = document.createElement('div');
+  ov.id = 'gm-install-modal';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
   var box = document.createElement('div');
@@ -20610,7 +20611,7 @@ function triggerInstall() {
     + '<div style="font-family:Oswald,sans-serif;font-size:1.3rem;font-weight:700;color:#e2e8f0;letter-spacing:2px;">INSTALAR APP</div>'
     + '<div style="font-size:.75rem;color:#4a6a5a;margin-top:4px;">Gran Moishe · El DT del Mundial</div>'
     + steps
-    + '<button onclick="this.parentElement.parentElement.parentElement.remove()" style="margin-top:8px;padding:10px 28px;border-radius:8px;border:none;background:#4ade80;color:#07111e;font-family:Oswald,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;">Entendido</button>';
+    + '<button onclick="var m=document.getElementById(\'gm-install-modal\');if(m)m.remove();" style="margin-top:8px;padding:10px 28px;border-radius:8px;border:none;background:#4ade80;color:#07111e;font-family:Oswald,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;">Entendido</button>';
   ov.appendChild(box);
   document.body.appendChild(ov);
 }
