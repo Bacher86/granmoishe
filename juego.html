@@ -18395,6 +18395,8 @@ function useToast() {
 // AD SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 function AdBanner({ ads, slot, className="" }) {
+  const adsOn = getLS("gm_ads_enabled", true);
+  if (!adsOn) return null;
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&_optionalChain([AD_TIERS, 'access', _3 => _3[a.tier], 'optionalAccess', _4 => _4.slot])===slot),[ads,slot]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -18497,6 +18499,8 @@ function FullScreenAd({ ad, onClose }) {
 }
 
 function SidebarAds({ ads }) {
+  const adsOn = getLS("gm_ads_enabled", true);
+  if (!adsOn) return React.createElement('div', {style:{width:280,flexShrink:0,borderLeft:"1px solid #1a2d40",background:"#000"}});
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -19469,6 +19473,7 @@ function RulesView() {
           ["🌍","Límite por País","Máximo <strong>3 jugadores</strong> de la misma selección en toda la plantilla."],
           ["👑","Capitán","<strong>1 capitán por equipo.</strong> Suma el 25% más de sus puntos totales (redondeado hacia arriba). Solo 1 por equipo."],
           ["❌","Jugador Eliminado","Si su selección queda eliminada, su valor cae al 50%. Podés reemplazarlo sin importar el precio del nuevo."],
+          ["🚫","No Convocado","Si un jugador <strong>no es convocado</strong> para un partido, <strong>no suma ningún punto</strong> en esa fecha — ni resultado, ni valla, ni ningún concepto. Solo suman los que están en cancha o banco."],
           ["🔄","Reemplazos","Durante la fase activa: reemplazos ilimitados por eliminación. Solo cambiás lo necesario."],
           ["🏟","Formaciones","7 formaciones: 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 5-3-2, 4-1-4-1, 3-4-3. La formación se guarda automáticamente."],
           ["📅","Mundial 2026","11 junio – 19 julio 2026 · USA · CANADA · MEXICO · 48 selecciones · 104 partidos."],
@@ -19477,7 +19482,7 @@ function RulesView() {
       , React.createElement('div', { style: {background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:16,marginTop:8},}
         , React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:".85rem",fontWeight:700,letterSpacing:1.5,color:"#4ade80",textTransform:"uppercase",marginBottom:12},}, "⚡ Tabla de puntos"   )
         , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr auto",gap:6},}
-          , [["✅ Equipo ganó","+5"],["🤝 Empate","+3"],["❌ Derrota","+1"],["⚽ Gol (DEL)","+4"],["⚽ Gol (MID)","+5"],["⚽ Gol (DEF)","+6"],["⚽ Gol (GK)","+7"],["🔴 Autogol","-2"],["🅰 Asistencia","+2"],["🧤 Valla invicta (GK)","+4"],["🛡 Valla invicta (DEF)","+2"],["🟨 Amarilla","-1"],["🟥 Roja","-3"],["👑 Capitán","+25% total↑"]].map(([a,b])=>(
+          , [["✅ Equipo ganó","+5"],["🤝 Empate","+3"],["❌ Derrota","+1"],["⚽ Gol (DEL)","+4"],["⚽ Gol (MID)","+5"],["⚽ Gol (DEF)","+6"],["⚽ Gol (GK)","+7"],["🔴 Autogol","-2"],["🅰 Asistencia","+2"],["🧤 Valla invicta (GK)","+4"],["🛡 Valla invicta (DEF)","+2"],["🟨 Amarilla","-1"],["🟥 Roja","-3"],["🚫 No convocado","0 pts"],["👑 Capitán","+25% total↑"]].map(([a,b])=>(
             React.createElement('div', { key: a, style: {display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",fontSize:".83rem",color:"#a0b0c0"},}, React.createElement('span', null, a), React.createElement('span', { style: {fontWeight:700,color:b.startsWith("-")?"#ef4444":"#4ade80"},}, b))
           ))
         )
