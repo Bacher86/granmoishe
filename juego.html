@@ -20334,7 +20334,9 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
     setGenerated(true);
   }, [user, xi, subs, capitan, myPos, totalPlayers]);
 
-  useEffect(() => { drawCard(activeAd?.id||null); }, [drawCard, activeAd]);
+  useEffect(() => {
+    try { drawCard(activeAd?.id||null); } catch(e){ console.warn('drawCard error:',e); }
+  }, [drawCard, activeAd]);
 
   const handleShare = async () => {
     const canvas = canvasRef.current;
