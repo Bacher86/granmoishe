@@ -17775,11 +17775,11 @@ const TIER = {
 
 // Ad tiers
 const AD_TIERS = {
-  elite:    { name:"Elite",    price:1000000, color:"#FFD700", desc:"Login screen (10s)", slot:"login_full" },
-  diamante: { name:"Diamante", price:750000,  color:"#b9f2ff", desc:"Tras 3 acciones (10s)", slot:"action_full" },
-  oro:      { name:"Oro",      price:500000,  color:"#FFA500", desc:"Al costado de la cancha (15s)", slot:"pitch_side" },
-  plata:    { name:"Plata",    price:300000,  color:"#C0C0C0", desc:"Carrousel debajo del login", slot:"index_carousel" },
-  bronce:   { name:"Bronce",   price:100000,  color:"#CD7F32", desc:"Panel lateral rotativo (8s)", slot:"sidebar" },
+  elite:    { name:"Elite",    price:1000000, color:"#FFD700", desc:"Pantalla completa login (10s)", slot:"login_full" },
+  push:     { name:"Push",     price:1500000, color:"#f97316", desc:"Popup al 3er click del usuario (8s)", slot:"push" },
+  bronce:   { name:"Bronce",   price:700000,  color:"#60a5fa", desc:"Banner lateral todas las pantallas (8s)", slot:"sidebar" },
+  plata:    { name:"Plata",    price:500000,  color:"#C0C0C0", desc:"Banner pantalla principal index (8s)", slot:"index_banner" },
+  carrusel: { name:"Carrusel", price:300000,  color:"#a78bfa", desc:"Carrusel inferior granmoishe.com", slot:"index_carousel" },
 };
 
 const FLAGS = {
@@ -17817,6 +17817,7 @@ const initMock = () => {
     { id:"ad1", tier:"elite",    nombre:"Banco Nacional", url:"https://example.com", img:"", active:true, seconds:10, views:234, clicks:12, createdAt:Date.now()-3600000 },
     { id:"ad2", tier:"plata",    nombre:"Supermercado Jumbo", url:"https://example.com", img:"", active:true, seconds:8, views:1203, clicks:88, createdAt:Date.now()-7200000 },
     { id:"ad3", tier:"bronce",   nombre:"Pizzería Don Pepe", url:"https://example.com", img:"", active:true, seconds:8, views:567, clicks:29, createdAt:Date.now()-10800000 },
+    { id:"ad5", tier:"push",     nombre:"Sponsor Push Demo", url:"https://example.com", img:"", active:true, seconds:8, views:120, clicks:18, createdAt:Date.now()-1800000 },
     { id:"ad4", tier:"oro",      nombre:"Viajes Israel", url:"https://example.com", img:"", active:false, seconds:15, views:89, clicks:5, createdAt:Date.now()-14400000 },
   ];
   setLS("gm_users", users);
@@ -18510,6 +18511,43 @@ function AdCarousel({ ads }) {
           });
         })
       ) : null
+    )
+  );
+}
+
+
+function PushAd({ ad, onClose }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(()=>{
+    if(!ad) return;
+    DB.trackAdView(ad.id);
+  },[ad]);
+  if(!visible||!ad) return null;
+  const close = () => { setVisible(false); onClose(); };
+  return React.createElement('div', {
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',zIndex:4500,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}
+  },
+    React.createElement('div', {style:{background:'#0d1b2a',border:'1px solid #f97316',borderRadius:14,padding:24,maxWidth:340,width:'100%',position:'relative',boxShadow:'0 0 30px rgba(249,115,22,.25)'}},
+      React.createElement('div', {style:{textAlign:'center',marginBottom:12}},
+        React.createElement('div', {style:{fontSize:'.65rem',letterSpacing:2,color:'#f97316',fontWeight:700,textTransform:'uppercase',marginBottom:6}}, 'PUBLICIDAD'),
+        ad.img
+          ? React.createElement('img', {src:ad.img,alt:ad.nombre,style:{width:'100%',maxHeight:160,objectFit:'contain',borderRadius:8,marginBottom:8},onError:e=>e.target.style.display='none'})
+          : React.createElement('div', {style:{height:100,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,115,22,.08)',borderRadius:8,marginBottom:8}},
+              React.createElement('span', {style:{fontSize:'2rem',opacity:.3}}, '📢')
+            ),
+        React.createElement('div', {style:{fontWeight:700,fontSize:'1rem',color:'#e2e8f0',marginBottom:4}}, ad.nombre),
+        ad.descripcion && React.createElement('div', {style:{fontSize:'.8rem',color:'#7a8ba8',marginBottom:12}}, ad.descripcion)
+      ),
+      React.createElement('div', {style:{display:'flex',gap:8}},
+        ad.url && React.createElement('button', {
+          onClick:()=>{ DB.trackAdClick(ad.id); window.open(ad.url,'_blank'); close(); },
+          style:{flex:1,background:'#f97316',color:'#fff',border:'none',padding:'10px 0',borderRadius:8,fontFamily:'Oswald,sans-serif',fontWeight:700,fontSize:'1rem',cursor:'pointer',letterSpacing:.5}
+        }, 'VER MÁS'),
+        React.createElement('button', {
+          onClick:close,
+          style:{padding:'10px 16px',borderRadius:8,border:'1px solid #2a3a4a',background:'transparent',color:'#5a7a8a',cursor:'pointer',fontSize:'.85rem'}
+        }, 'Cerrar')
+      )
     )
   );
 }
@@ -20227,6 +20265,8 @@ function GranMoishe() {
   const [tab,setTab]=useState("equipo");
   const [modal,setModal]=useState(null);
   const [fullAd,setFullAd]=useState(null);
+  const [pushAd,setPushAd]=useState(null);
+  const clickCountRef=useRef(0);
   const [showAcctMenu,setShowAcctMenu]=useState(false);
   const {toasts,add:toast}=useToast();
   const actionCount=useRef(0);
@@ -20286,7 +20326,7 @@ function GranMoishe() {
     setCapitan(getLS(capKey,null));
     // show login ad
     var freshAds=DB.getAds();setAds(freshAds);
-    var loginAds=freshAds.filter(function(a){return a.active&&(a.tier==="login"||a.tier==="todo");});
+    var loginAds=freshAds.filter(function(a){return a.active&&a.tier==="elite";});
     if(loginAds.length>0&&getLS("gm_ads_enabled",true))setTimeout(function(){setFullAd(loginAds[Math.floor(Math.random()*loginAds.length)]);},800);
   },[_optionalChain([user, 'optionalAccess', _72 => _72.uid])]);
 
@@ -20315,7 +20355,14 @@ function GranMoishe() {
     if(actionCount.current>=3){
       actionCount.current=0;
       const diamAds=ads.filter(a=>a.active&&(a.tier==="todo"));
-      if(diamAds.length>0&&getLS("gm_ads_enabled",true)) setFullAd(diamAds[Math.floor(Math.random()*diamAds.length)]);
+      // Push ad al 3er click
+      clickCountRef.current = (clickCountRef.current||0) + 1;
+      if(clickCountRef.current % 3 === 0) {
+        const pushAds = ads.filter(a=>a.active&&a.tier==="push");
+        if(pushAds.length>0&&getLS("gm_ads_enabled",true)) {
+          setPushAd(pushAds[Math.floor(Math.random()*pushAds.length)]);
+        }
+      }
     }
   },[ads]);
 
@@ -20453,6 +20500,7 @@ function GranMoishe() {
       , React.createElement(Toasts, null)
 
       /* FULL SCREEN AD */
+      , pushAd&&React.createElement(PushAd, { ad: pushAd, onClose: ()=>{ setPushAd(null); clickCountRef.current=0; }})
       , fullAd&&React.createElement(FullScreenAd, { ad: fullAd, onClose: ()=>setFullAd(null),})
 
       /* MODAL */
