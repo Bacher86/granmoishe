@@ -19203,9 +19203,10 @@ function PlayerModal({ player, onClose, onAdd, onRemove, onSetCapitan, inSquad, 
 // ═══════════════════════════════════════════════════════════════════════════
 function MarketView({ squad, xi, addToSquad, removeFromSquad, setModal, budget, countryCounts, canAddFn, subs }) {
   const marketOpen = getLS("gm_market_open", true);
+  const firstCountry = ALL_COUNTRIES[0] || "ALL";
   const [search,setSearch]=useState("");
   const [filterPos,setFilterPos]=useState("GK");
-  const [filterCountry,setFilterCountry]=useState("ALL");
+  const [filterCountry,setFilterCountry]=useState(firstCountry);
   const [filterTier,setFilterTier]=useState("ALL");
   const [sortBy,setSortBy]=useState("puntos");
 
