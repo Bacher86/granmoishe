@@ -17827,6 +17827,8 @@ const AD_TIERS = {
               desc:"Banner en la pantalla de inicio/index. Primera impresión. $500 USD" },
   carrusel: { name:"Carrusel granmoishe.com",     price:300000,  color:"#a78bfa", seconds:8,
               desc:"Carrusel rotativo en el sitio web principal granmoishe.com. $300 USD" },
+  compartir: { name:"Foto Compartir Equipo",       price:200000,  color:"#f97316", seconds:0,
+               desc:"Sale como sponsor en la tarjeta cuando los usuarios comparten su equipo. $200 USD" },
 };
 
 const COMMUNITIES = [
@@ -18473,7 +18475,7 @@ function AdManager({ toast }) {
       ),
       React.createElement("div", {className:"ps-form"},
         React.createElement("div", {className:"ps-row2"},
-          fld("Espacio publicitario", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value,seconds:AD_TIERS[e.target.value]?.seconds||8}))},
+          fld("Espacio publicitario", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value,seconds:AD_TIERS[e.target.value]?.seconds||8,compartir:e.target.value==="compartir"?true:f.compartir}))},
             Object.entries(AD_TIERS).map(([k,v]) => React.createElement("option", {key:k, value:k}, v.name + " — " + v.desc.split(".")[0]))
           )),
           fld("Segundos visibles", inp("seconds","8","number"))
