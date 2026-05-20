@@ -108,7 +108,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .sba-label{display:block;font-size:.55rem;letter-spacing:2px;color:#1a3a28;text-transform:uppercase;text-align:center;font-weight:700;margin-bottom:2px;padding-bottom:6px;border-bottom:1px solid #0f2a18;}
 .sba-item{border-radius:10px;overflow:hidden;border:1px solid #1a2d40;cursor:pointer;transition:.2s;flex:1;min-height:0;background:#080f18;}
 .sba-item:hover{border-color:#2a4a38;transform:scale(1.01);}
-.sba-item img{width:100%;height:100%;object-fit:cover;display:block;}
+.sba-item img{width:100%;height:100%;object-fit:contain;object-position:center center;display:block;background:#080f18;}
 .ad-placeholder{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0a1622;padding:16px;text-align:center;}
 
 /* APP LAYOUT */
@@ -18571,7 +18571,7 @@ function SidebarAds({ ads }) {
           onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
           , a.img
             ? React.createElement('img', {src:a.img, alt:a.nombre,
-                style:{width:"100%",height:"100%",objectFit:"cover",display:"block"},
+                style:{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center center",display:"block",background:"#080f18"},
                 onError:function(e){e.target.style.display='none';}})
             : React.createElement('div', { className: "ad-placeholder",
                 style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:6}}
