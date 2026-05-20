@@ -18497,6 +18497,12 @@ const DB = {
     const a=ads.find(x=>x.id===adId);
     if(a){a.clicks=(a.clicks||0)+1;setLS("gm_ads",ads);}
   },
+  trackAdShare: (adId) => {
+    const ads=getLS("gm_ads",[]);
+    const a=ads.find(x=>x.id===adId);
+    if(a){a.shares=(a.shares||0)+1;setLS("gm_ads",ads);}
+  },
+  getShareAds: () => getLS("gm_ads",[]).filter(a=>a.active&&a.compartir),
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -20087,10 +20093,13 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
   const canvasRef = useRef(null);
   const [generated, setGenerated] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [selectedAdId, setSelectedAdId] = useState(null);
+  const shareAds = useMemo(()=>DB.getShareAds(),[]);
+  const activeAd = shareAds.find(a=>a.id===selectedAdId) || shareAds[0] || null;
 
   const posColor = { GK:"#F59E0B", DEF:"#10B981", MID:"#3B82F6", FWD:"#EF4444" };
 
-  const drawCard = useCallback(() => {
+  const drawCard = useCallback((activeAdId) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const W = 420, H = 600;
@@ -20191,44 +20200,85 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
     ctx.fillText(totalPts+" pts totales", W/2, yBot+25);
 
     // Sponsor strip
-    const sponsorY = H - 52;
+    const sponsorAd = DB.getShareAds().find(a=>a.id===activeAdId) || DB.getShareAds()[0] || null;
+    const sponsorY = H - 70;
+
     const grad2 = ctx.createLinearGradient(0, sponsorY, 0, H);
-    grad2.addColorStop(0, "rgba(22,101,52,.0)");
-    grad2.addColorStop(1, "rgba(22,101,52,.4)");
+    grad2.addColorStop(0, "rgba(10,10,20,.0)");
+    grad2.addColorStop(1, "rgba(10,10,20,.95)");
     ctx.fillStyle = grad2;
     ctx.fillRect(0, sponsorY, W, H - sponsorY);
 
-    ctx.fillStyle = "rgba(74,222,128,.3)";
-    ctx.fillRect(20, sponsorY + 4, W-40, 1);
+    ctx.fillStyle = "rgba(74,222,128,.25)";
+    ctx.fillRect(20, sponsorY + 6, W-40, 1);
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#4ade80";
-    ctx.font = "bold 14px 'Arial'";
-    ctx.fillText("GRAN MOISHE 2026", W/2, sponsorY + 22);
-
-    ctx.fillStyle = "#2a5a3a";
-    ctx.font = "9px 'Arial'";
-    ctx.fillText("granmoishe.com · Copa del Mundo 2026 · Fantasía Comunitaria", W/2, sponsorY + 38);
-
-    // Gran Moishe badge (esquina inferior izquierda)
-    ctx.fillStyle = "rgba(74,222,128,.15)";
-    ctx.beginPath();
-    ctx.roundRect(20, H-32, 80, 18, 4);
-    ctx.fill();
-    ctx.fillStyle = "#4ade80";
-    ctx.font = "bold 8px 'Arial'";
-    ctx.textAlign = "left";
-    ctx.fillText("✡ granmoishe.com", 26, H-20);
+    if (sponsorAd && sponsorAd.img) {
+      // Sponsor con imagen: dibujarla
+      const drawSponsorImg = () => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const maxH = 44, maxW = W - 80;
+          const ratio = Math.min(maxW/img.width, maxH/img.height);
+          const iw = img.width*ratio, ih = img.height*ratio;
+          ctx.globalAlpha = 0.92;
+          ctx.drawImage(img, W/2-iw/2, sponsorY+14, iw, ih);
+          ctx.globalAlpha = 1;
+          // "Auspiciado por" text
+          ctx.fillStyle = "#2a5a3a";
+          ctx.font = "8px 'Arial'";
+          ctx.textAlign = "center";
+          ctx.fillText("Auspiciado por: " + (sponsorAd.nombre||""), W/2, sponsorY+11);
+          // Gran Moishe small
+          ctx.fillStyle = "#1a3a2a";
+          ctx.font = "7px 'Arial'";
+          ctx.fillText("✡ granmoishe.com", W/2, H-6);
+        };
+        img.onerror = () => drawSponsorText();
+        img.src = sponsorAd.img;
+      };
+      drawSponsorImg();
+    } else {
+      const drawSponsorText = () => {
+        ctx.textAlign = "center";
+        if (sponsorAd) {
+          ctx.fillStyle = "#3a6a4a";
+          ctx.font = "8px 'Arial'";
+          ctx.fillText("Auspiciado por", W/2, sponsorY + 16);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.font = "bold 16px 'Arial'";
+          ctx.fillText(sponsorAd.nombre, W/2, sponsorY + 36);
+          if (sponsorAd.descripcion) {
+            ctx.fillStyle = "#5a7a6a";
+            ctx.font = "9px 'Arial'";
+            ctx.fillText(sponsorAd.descripcion, W/2, sponsorY + 50);
+          }
+        } else {
+          ctx.fillStyle = "#4ade80";
+          ctx.font = "bold 13px 'Arial'";
+          ctx.fillText("GRAN MOISHE 2026", W/2, sponsorY + 22);
+          ctx.fillStyle = "#2a5a3a";
+          ctx.font = "9px 'Arial'";
+          ctx.fillText("granmoishe.com · Copa del Mundo 2026", W/2, sponsorY + 38);
+        }
+        ctx.fillStyle = "#1a3a2a";
+        ctx.font = "7px 'Arial'";
+        ctx.fillText("✡ granmoishe.com", W/2, H-6);
+      };
+      drawSponsorText();
+    }
 
     setGenerated(true);
   }, [user, xi, subs, capitan, myPos, totalPlayers]);
 
-  useEffect(() => { drawCard(); }, [drawCard]);
+  useEffect(() => { drawCard(activeAd?.id||null); }, [drawCard, activeAd]);
 
   const handleShare = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setSharing(true);
+    // Track share
+    if (activeAd) DB.trackAdShare(activeAd.id);
     try {
       canvas.toBlob(async blob => {
         const file = new File([blob], "gran-moishe-equipo.png", {type:"image/png"});
@@ -20277,6 +20327,26 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
     // Canvas
     React.createElement('div', { className:"share-canvas-wrap" },
       React.createElement('canvas', { ref:canvasRef, style:{width:"100%",display:"block"} })
+    ),
+    // Selector de sponsor
+    shareAds.length > 0 && React.createElement('div', { style:{marginBottom:8} },
+      React.createElement('div', { style:{fontSize:".7rem",color:"#5a7a8a",marginBottom:5,letterSpacing:.5} }, "SPONSOR EN LA TARJETA"),
+      React.createElement('div', { style:{display:"flex",gap:6,flexWrap:"wrap"} },
+        shareAds.map(a =>
+          React.createElement('button', {
+            key:a.id,
+            onClick:()=>setSelectedAdId(a.id),
+            style:{padding:"6px 12px",borderRadius:7,border:"1px solid",
+              borderColor:(selectedAdId===a.id||(selectedAdId===null&&a===shareAds[0]))?"#f97316":"#1a2d40",
+              background:(selectedAdId===a.id||(selectedAdId===null&&a===shareAds[0]))?"rgba(249,115,22,.12)":"transparent",
+              color:(selectedAdId===a.id||(selectedAdId===null&&a===shareAds[0]))?"#f97316":"#5a7a8a",
+              fontSize:".8rem",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:600}
+          }, a.nombre)
+        )
+      )
+    ),
+    shareAds.length === 0 && React.createElement('div', { style:{fontSize:".72rem",color:"#3a5a6a",marginBottom:8,fontStyle:"italic"} },
+      "Sin sponsors configurados — el admin puede activar ads para compartir."
     ),
     // Botones
     React.createElement('div', { style:{display:"flex",gap:8} },
