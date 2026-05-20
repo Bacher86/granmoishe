@@ -18282,7 +18282,34 @@ const RAW = [
   ["Rafael Leão","Portugal","FWD","estrella"],
   ["Gonçalo Guedes","Portugal","FWD","titular"],
   ["Gonçalo Ramos","Portugal","FWD","titular"],
-  ["Cristiano Ronaldo","Portugal","FWD","estrella"]
+  ["Cristiano Ronaldo","Portugal","FWD","estrella"],
+  // Escocia
+  ["Craig Gordon","Escocia","GK","titular"],
+  ["Angus Gunn","Escocia","GK","titular"],
+  ["Liam Kelly","Escocia","GK","suplente"],
+  ["Grant Hanley","Escocia","DEF","titular"],
+  ["Jack Hendry","Escocia","DEF","titular"],
+  ["Aaron Hickey","Escocia","DEF","titular"],
+  ["Dom Hyam","Escocia","DEF","suplente"],
+  ["Scott McKenna","Escocia","DEF","titular"],
+  ["Nathan Patterson","Escocia","DEF","titular"],
+  ["Anthony Ralston","Escocia","DEF","suplente"],
+  ["Andy Robertson","Escocia","DEF","estrella"],
+  ["John Souttar","Escocia","DEF","titular"],
+  ["Kieran Tierney","Escocia","DEF","titular"],
+  ["Ryan Christie","Escocia","MID","titular"],
+  ["Findlay Curtis","Escocia","MID","suplente"],
+  ["Lewis Ferguson","Escocia","MID","titular"],
+  ["Ben Gannon-Doak","Escocia","MID","suplente"],
+  ["Billy Gilmour","Escocia","MID","titular"],
+  ["John McGinn","Escocia","MID","estrella"],
+  ["Kenny McLean","Escocia","MID","titular"],
+  ["Scott McTominay","Escocia","MID","estrella"],
+  ["Che Adams","Escocia","FWD","titular"],
+  ["Lyndon Dykes","Escocia","FWD","titular"],
+  ["George Hirst","Escocia","FWD","suplente"],
+  ["Lawrence Shankland","Escocia","FWD","titular"],
+  ["Ross Stewart","Escocia","FWD","titular"]
 ];
 
 let _pid = 1;
@@ -18535,31 +18562,27 @@ function SidebarAds({ ads }) {
     return()=>clearInterval(t);
   },[slotAds]);
 
-  // 5 slots para tener más opciones rotativas
-  const slots = [0,1,2,3,4].map(i => slotAds.length ? slotAds[(idx+i)%slotAds.length] : null);
+  const a = slotAds.length ? slotAds[idx % slotAds.length] : null;
 
   return React.createElement('div', { className: "sidebar-ads"}
     , React.createElement('div', { className: "sba-label"}, "PUBLICIDAD")
-    , slots.map((a, i) =>
-      a
-        ? React.createElement('div', { key: a.id+i, className: "sba-item",
-            onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
-            , a.img
-              ? React.createElement('img', {src:a.img, alt:a.nombre,
-                  style:{width:"100%",height:"100%",objectFit:"cover",display:"block"},
-                  onError:function(e){e.target.style.display='none';}})
-              : React.createElement('div', { className: "ad-placeholder",
-                  style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:6}}
-                  , React.createElement('div', {style:{fontSize:"1.8rem",opacity:.1}}, "📢")
-                  , React.createElement('span', {style:{fontSize:".55rem",color:"#1a3a28",letterSpacing:1,textTransform:"uppercase"}}, a.nombre||"Publicidad")
-                )
-          )
-        : React.createElement('div', { key: "empty"+i, className: "sba-item",
-            style:{border:"1px dashed rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6,background:"transparent"}}
-            , React.createElement('div', {style:{fontSize:"1.4rem",opacity:.08}}, "📢")
-            , React.createElement('span', {style:{fontSize:".55rem",color:"#0f2a18",letterSpacing:1}}, "ESPACIO DISPONIBLE")
-          )
-    )
+    , a
+      ? React.createElement('div', { className: "sba-item", style:{flex:1,minHeight:0},
+          onClick: ()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");},}
+          , a.img
+            ? React.createElement('img', {src:a.img, alt:a.nombre,
+                style:{width:"100%",height:"100%",objectFit:"cover",display:"block"},
+                onError:function(e){e.target.style.display='none';}})
+            : React.createElement('div', { className: "ad-placeholder",
+                style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:6}}
+                , React.createElement('div', {style:{fontSize:"2.5rem",opacity:.1}}, "📢")
+                , React.createElement('span', {style:{fontSize:".6rem",color:"#1a3a28",letterSpacing:1,textTransform:"uppercase"}}, a.nombre||"Publicidad")
+              )
+        )
+      : React.createElement('div', { className: "sba-item", style:{flex:1,minHeight:0,border:"1px dashed rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,background:"transparent"}}
+          , React.createElement('div', {style:{fontSize:"2rem",opacity:.08}}, "📢")
+          , React.createElement('span', {style:{fontSize:".55rem",color:"#0f2a18",letterSpacing:1}}, "ESPACIO DISPONIBLE")
+        )
   );
 }
 
