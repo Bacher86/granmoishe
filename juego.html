@@ -56,7 +56,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .idx-btn.primary:hover{background:#22c55e;transform:translateY(-2px);}
 .idx-btn.secondary{background:transparent;border:2px solid #4ade80;color:#4ade80;}
 .idx-btn.secondary:hover{background:rgba(74,222,128,.1);}
-.idx-features{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.idx-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:540px;margin:0 auto;width:100%;}
 .idx-feat{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;text-align:left;}
 .idx-feat-i{font-size:1.4rem;flex-shrink:0;}
 .idx-feat-t{font-weight:600;font-size:.85rem;color:#e2e8f0;}
@@ -425,7 +425,7 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   .ap-kpis{grid-template-columns:repeat(2,1fr);}
   .idx-title{font-size:3rem;}
   .idx-ctas{flex-direction:column;align-items:center;}
-  .idx-features{grid-template-columns:1fr 1fr;}
+  .idx-features{grid-template-columns:1fr 1fr;max-width:100%;}
 }
 .prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}</style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -18471,7 +18471,7 @@ function AdBanner({ ads, slot, className="" }) {
 }
 
 function AdCarousel({ ads }) {
-  var slotAds = useMemo(function(){return ads.filter(function(a){return a.active&&(a.tier==="resto"||a.tier==="todo");});}, [ads]);
+  var slotAds = useMemo(function(){return ads.filter(function(a){return a.active&&a.tier==="plata";});}, [ads]);
   var idxState = useState(0);
   var idx = idxState[0], setIdx = idxState[1];
   useEffect(function(){
@@ -18554,7 +18554,7 @@ function FullScreenAd({ ad, onClose }) {
 function SidebarAds({ ads }) {
   const adsOn = getLS("gm_ads_enabled", true);
   if (!adsOn) return null;
-  const slotAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
+  const slotAds = useMemo(()=>ads.filter(a=>a.active&&a.tier==="bronce"),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
     if(slotAds.length<2) return;
@@ -18620,7 +18620,6 @@ function IndexPage({ onLogin, onRegister, ads }) {
             , React.createElement('button', { className: "idx-btn secondary" , onClick: ()=>setMode("login"),}, "Ya tengo cuenta")
           )
           , React.createElement('div', { className: "idx-features",}
-            , React.createElement('div', { className: "idx-features",}
               , React.createElement('div', {className:"idx-feat"}
                 , React.createElement('span',{className:"idx-feat-i"},"⚽")
                 , React.createElement('div',null
@@ -18649,7 +18648,6 @@ function IndexPage({ onLogin, onRegister, ads }) {
                   , React.createElement('div',{className:"idx-feat-d"},"desde cuartos de final")
                 )
               )
-            )
           )
         )
       )
@@ -18936,7 +18934,7 @@ function PitchPlayer({ player, x, y, isCapitan, onClick, isSub=false }) {
 function PitchView({ xi, subs, formation, capitan, ads, onPlayerClick }) {
   const fm = FORMATIONS[formation] || FORMATIONS["4-3-3"];
   const byPos = { GK:xi.filter(p=>p.posicion==="GK"), DEF:xi.filter(p=>p.posicion==="DEF"), MID:xi.filter(p=>p.posicion==="MID"), FWD:xi.filter(p=>p.posicion==="FWD") };
-  const pitchAds = useMemo(()=>ads.filter(a=>a.active&&(a.tier==="resto"||a.tier==="todo")),[ads]);
+  const pitchAds = useMemo(()=>ads.filter(a=>a.active&&a.tier==="oro"),[ads]);
   const [adIdx,setAdIdx]=useState(0);
   useEffect(()=>{
     if(pitchAds.length<2) return;
