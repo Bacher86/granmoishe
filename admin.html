@@ -19525,12 +19525,22 @@ function ApiPanel({ toast }) {
       if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
     });
     setLS("gm_stats_by_name", statsByName);
+    // Guardar timestamp de publicación — el juego lo usa para validar elegibilidad
+    const publishedAt = Date.now();
+    localStorage.setItem("gm_stats_published_at", String(publishedAt));
     // Update user pts — squad stored in gm_squad_{uid} as [{id, nombre, pais, ...}]
     const users = DB.getUsers();
     users.forEach(u => {
       // Read squad from separate key (how juego.html stores it)
       const squad = JSON.parse(localStorage.getItem("gm_squad_" + u.uid) || "[]");
       if(!squad.length) return;
+      // Verificar elegibilidad: squad armado ANTES de esta publicación
+      const squadCreatedAt = parseInt(localStorage.getItem("gm_squad_created_" + u.uid) || "0");
+      const eligible = !squadCreatedAt || squadCreatedAt <= publishedAt;
+      if (!eligible) {
+        u.pts = 0; // Se unió después de la jornada empezada, suma desde la próxima
+        return;
+      }
       let pts = 0;
       squad.forEach(player => {
         // player.id is numeric id; match against ps by pid
