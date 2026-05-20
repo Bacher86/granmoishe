@@ -17817,12 +17817,16 @@ const FLAGS = { Argentina:"🇦🇷",Brasil:"🇧🇷",Chile:"🇨🇱",Colombia
 const flag = p => FLAGS[p] || "🌍";
 
 const AD_TIERS = {
-  login:   { name:"Pantalla de inicio", price:1000000, color:"#FFD700", seconds:10,
-             desc:"Aparece al iniciar sesión y al registrarse. Pantalla completa." },
-  resto:   { name:"El resto",           price:300000,  color:"#4ade80", seconds:8,
-             desc:"Rota en todos los demás espacios: sidebar, carrusel del index y costados de cancha." },
-  todo:    { name:"Todo",               price:1200000, color:"#a78bfa", seconds:10,
-             desc:"Pantalla de inicio (login y registro) + todos los demás espacios. Máxima exposición." },
+  elite:    { name:"Pantalla Completa (Login)",   price:1000000, color:"#FFD700", seconds:10,
+              desc:"Aparece al iniciar sesión. Pantalla completa, 10 seg garantizados. $1.000 USD" },
+  push:     { name:"Push (3er Click)",            price:1500000, color:"#f97316", seconds:8,
+              desc:"Popup que aparece luego del 3er click del usuario activo. $1.500 USD" },
+  bronce:   { name:"Banner Lateral (Sidebar)",    price:700000,  color:"#60a5fa", seconds:8,
+              desc:"Panel lateral en TODAS las pantallas del juego. Rota cada 8 seg. $700 USD" },
+  plata:    { name:"Banner Pantalla Principal",   price:500000,  color:"#C0C0C0", seconds:8,
+              desc:"Banner en la pantalla de inicio/index. Primera impresión. $500 USD" },
+  carrusel: { name:"Carrusel granmoishe.com",     price:300000,  color:"#a78bfa", seconds:8,
+              desc:"Carrusel rotativo en el sitio web principal granmoishe.com. $300 USD" },
 };
 
 const COMMUNITIES = [
@@ -18404,22 +18408,22 @@ function BudgetPanel({users, setUsers}) {
 function AdManager({ toast }) {
   const [ads,    setAds]  = useState(()=>DB.getAds());
   const [editId, setEdit] = useState(null);
-  const [form,   setForm] = useState({ tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true });
+  const [form,   setForm] = useState({ tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true });
   const save = u => { setAds(u); DB.saveAds(u); };
 
-  const TIER_COLORS = {elite:"#a855f7",diamante:"#60a5fa",oro:"#fbbf24",plata:"#94a3b8",bronce:"#c8793a"};
-  const TIER_PRICES = {elite:150000,diamante:80000,oro:40000,plata:20000,bronce:8000};
+  const TIER_COLORS = {elite:"#FFD700",push:"#f97316",bronce:"#60a5fa",plata:"#C0C0C0",carrusel:"#a78bfa"};
+  const TIER_PRICES = {elite:1000000,push:1500000,bronce:700000,plata:500000,carrusel:300000};
 
   const submit = () => {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
     else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Publicidad creada ✅","success"); }
-    setForm({tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true});
+    setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true});
   };
   const edit   = a => { setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,descripcion:a.descripcion||"",url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active!==false}); };
   const toggle = id => save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id => { if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","success"); };
-  const cancel = () => { setEdit(null); setForm({tier:"login",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true}); };
+  const cancel = () => { setEdit(null); setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true}); };
   const resetViews = id => { save(ads.map(a=>a.id===id?{...a,views:0,clicks:0}:a)); toast("Vistas reseteadas","success"); };
 
   const tv = ads.reduce((s,a)=>s+(a.views||0),0);
@@ -18449,11 +18453,18 @@ function AdManager({ toast }) {
     // Formulario
     React.createElement("div", {className:"ap-card"},
       React.createElement("div", {className:"apc-t"}, editId ? "✏️ Editar publicidad" : "➕ Nueva publicidad"),
+      React.createElement("div", {style:{background:"rgba(249,115,22,.06)",border:"1px solid rgba(249,115,22,.15)",borderRadius:8,padding:"10px 14px",marginBottom:8,fontSize:".78rem",color:"#8a9ab0",lineHeight:1.5}},
+        React.createElement("span", {style:{color:"#f97316",fontWeight:700}}, "Slots disponibles: "),
+        Object.entries(AD_TIERS).map(([k,v]) =>
+          React.createElement("span", {key:k, style:{display:"inline-block",margin:"2px 6px 2px 0"}},
+            React.createElement("span", {style:{color:v.color,fontWeight:600}}, v.name), ": ", v.desc
+          )
+        )
+      ),
       React.createElement("div", {className:"ps-form"},
         React.createElement("div", {className:"ps-row2"},
-          fld("Espacio publicitario", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value,seconds:e.target.value==="resto"?8:10}))},
-            [{v:"login",l:"Pantalla de inicio (login/registro — pantalla completa)"},{v:"resto",l:"Resto del juego (sidebar, carrusel, espacios internos)"},{v:"todo",l:"Ambas (máxima exposición)"}]
-            .map(t => React.createElement("option", {key:t.v, value:t.v}, t.l))
+          fld("Espacio publicitario", React.createElement("select", {value:form.tier, onChange:e=>setForm(f=>({...f,tier:e.target.value,seconds:AD_TIERS[e.target.value]?.seconds||8}))},
+            Object.entries(AD_TIERS).map(([k,v]) => React.createElement("option", {key:k, value:k}, v.name + " — " + v.desc.split(".")[0]))
           )),
           fld("Segundos visibles", inp("seconds","8","number"))
         ),
