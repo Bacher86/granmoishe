@@ -17840,6 +17840,12 @@ const DB = {
   getAds:     () => getLS("gm_ads",   []),
   saveAds:    ads => setLS("gm_ads", ads),
   getLeagues: () => getLS("gm_leagues", []),
+  getShareAds: () => getLS("gm_ads",[]).filter(a=>a.active&&a.compartir),
+  trackAdShare: id => {
+    const ads = getLS("gm_ads",[]);
+    const idx = ads.findIndex(a=>a.id===id);
+    if(idx!==-1){ ads[idx].shares=(ads[idx].shares||0)+1; setLS("gm_ads",ads); }
+  },
 };
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
@@ -18408,7 +18414,7 @@ function BudgetPanel({users, setUsers}) {
 function AdManager({ toast }) {
   const [ads,    setAds]  = useState(()=>DB.getAds());
   const [editId, setEdit] = useState(null);
-  const [form,   setForm] = useState({ tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true });
+  const [form,   setForm] = useState({ tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true,compartir:false });
   const save = u => { setAds(u); DB.saveAds(u); };
 
   const TIER_COLORS = {elite:"#FFD700",push:"#f97316",bronce:"#60a5fa",plata:"#C0C0C0",carrusel:"#a78bfa"};
@@ -18417,13 +18423,13 @@ function AdManager({ toast }) {
   const submit = () => {
     if(!form.nombre.trim()) return toast("Nombre obligatorio","warn");
     if(editId){ save(ads.map(a=>a.id===editId?{...a,...form}:a)); setEdit(null); toast("Actualizada ✅","success"); }
-    else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,createdAt:Date.now()}]); toast("Publicidad creada ✅","success"); }
-    setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true});
+    else { save([...ads,{...form,id:"ad"+Date.now(),views:0,clicks:0,shares:0,createdAt:Date.now()}]); toast("Publicidad creada ✅","success"); }
+    setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true,compartir:false});
   };
-  const edit   = a => { setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,descripcion:a.descripcion||"",url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active!==false}); };
+  const edit   = a => { setEdit(a.id); setForm({tier:a.tier,nombre:a.nombre,descripcion:a.descripcion||"",url:a.url||"",img:a.img||"",seconds:a.seconds||8,active:a.active!==false,compartir:a.compartir||false}); };
   const toggle = id => save(ads.map(a=>a.id===id?{...a,active:!a.active}:a));
   const del    = id => { if(!window.confirm("¿Eliminar?")) return; save(ads.filter(a=>a.id!==id)); toast("Eliminada","success"); };
-  const cancel = () => { setEdit(null); setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true}); };
+  const cancel = () => { setEdit(null); setForm({tier:"elite",nombre:"",descripcion:"",url:"",img:"",seconds:10,active:true,compartir:false}); };
   const resetViews = id => { save(ads.map(a=>a.id===id?{...a,views:0,clicks:0}:a)); toast("Vistas reseteadas","success"); };
 
   const tv = ads.reduce((s,a)=>s+(a.views||0),0);
@@ -18440,14 +18446,18 @@ function AdManager({ toast }) {
 
     // Totales
     React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}},
-      [["📢","Total",ads.length,"#4ade80"],["✅","Activas",ads.filter(a=>a.active).length,"#22c55e"],
-       ["👁","Vistas",tv,"#a78bfa"],["👆","Clicks",tc,"#60a5fa"]].map(([ic,lb,v,col]) =>
-        React.createElement("div", {key:lb, className:"ap-kpi", style:{borderColor:col+"44"}},
-          React.createElement("div", {style:{fontSize:"1rem"}}, ic),
-          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.5rem",fontWeight:700,color:col,margin:"3px 0"}}, v),
-          React.createElement("div", {style:{fontSize:".6rem",letterSpacing:1,color:"#4a6a7a",textTransform:"uppercase"}}, lb)
-        )
-      )
+      ...(()=>{
+        const ts = ads.reduce((s,a)=>s+(a.shares||0),0);
+        return [["📢","Total",ads.length,"#4ade80"],["✅","Activas",ads.filter(a=>a.active).length,"#22c55e"],
+         ["👁","Vistas",tv,"#a78bfa"],["👆","Clicks",tc,"#60a5fa"],
+         ["📤","Compartidos",ts,"#f97316"]].map(([ic,lb,v,col]) =>
+          React.createElement("div", {key:lb, className:"ap-kpi", style:{borderColor:col+"44"}},
+            React.createElement("div", {style:{fontSize:"1rem"}}, ic),
+            React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.5rem",fontWeight:700,color:col,margin:"3px 0"}}, v),
+            React.createElement("div", {style:{fontSize:".6rem",letterSpacing:1,color:"#4a6a7a",textTransform:"uppercase"}}, lb)
+          )
+        );
+      })()
     ),
 
     // Formulario
@@ -18476,6 +18486,10 @@ function AdManager({ toast }) {
           React.createElement("label", {style:{display:"flex",alignItems:"center",gap:6,fontSize:".85rem",color:"#a0b0c0",cursor:"pointer"}},
             React.createElement("input", {type:"checkbox",checked:form.active,onChange:e=>setForm(f=>({...f,active:e.target.checked}))}),
             "Activa"
+          ),
+          React.createElement("label", {style:{display:"flex",alignItems:"center",gap:6,fontSize:".85rem",color:"#f97316",cursor:"pointer",marginLeft:12}},
+            React.createElement("input", {type:"checkbox",checked:form.compartir||false,onChange:e=>setForm(f=>({...f,compartir:e.target.checked})),style:{accentColor:"#f97316"}}),
+            "📤 Aparece en compartir equipo"
           ),
           React.createElement("div", {style:{flex:1}}),
           editId && React.createElement("button", {onClick:cancel, style:{padding:"9px 16px",borderRadius:7,border:"1px solid #2a3a4a",background:"transparent",color:"#5a7a8a",cursor:"pointer",fontFamily:"Oswald,sans-serif",fontWeight:600}}, "Cancelar"),
@@ -18506,7 +18520,10 @@ function AdManager({ toast }) {
                       !a.active && React.createElement("span", {style:{fontSize:".65rem",background:"rgba(239,68,68,.15)",color:"#ef4444",borderRadius:4,padding:"1px 6px"}}, "PAUSADA")
                     ),
                     a.descripcion && React.createElement("div", {style:{fontSize:".75rem",color:"#5a7a8a",marginBottom:2}}, a.descripcion),
-                    React.createElement("div", {style:{fontSize:".65rem",color:col,letterSpacing:1,textTransform:"uppercase"}}, (AD_TIERS[a.tier]?.name||a.tier) + " · " + (a.seconds||8) + "s")
+                    React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
+                      React.createElement("div", {style:{fontSize:".65rem",color:col,letterSpacing:1,textTransform:"uppercase"}}, (AD_TIERS[a.tier]?.name||a.tier) + " · " + (a.seconds||8) + "s"),
+                      a.compartir && React.createElement("div", {style:{fontSize:".6rem",background:"rgba(249,115,22,.15)",color:"#f97316",borderRadius:4,padding:"1px 7px",letterSpacing:.5}}, "📤 COMPARTIR")
+                    )
                   ),
                   // Stats
                   React.createElement("div", {style:{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}},
@@ -18521,6 +18538,10 @@ function AdManager({ toast }) {
                     React.createElement("div", {style:{textAlign:"center"}},
                       React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.3rem",fontWeight:700,color:"#4ade80"}}, ctr+"%"),
                       React.createElement("div", {style:{fontSize:".6rem",color:"#4a6a7a",letterSpacing:1}}, "CTR")
+                    ),
+                    React.createElement("div", {style:{textAlign:"center"}},
+                      React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.3rem",fontWeight:700,color:"#f97316"}}, a.shares||0),
+                      React.createElement("div", {style:{fontSize:".6rem",color:"#4a6a7a",letterSpacing:1}}, "COMP.")
                     )
                   ),
                   // Buttons
