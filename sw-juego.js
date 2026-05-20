@@ -1,4 +1,4 @@
-const CACHE = 'granmoishe-juego-v1';
+const CACHE = 'granmoishe-juego-v2';
 const ASSETS = ['/juego.html', '/index.html', '/manifest.json', '/almagro.jpg'];
 
 self.addEventListener('install', e => {
