@@ -27,7 +27,7 @@
       --oscuro:    #0D1B35;
       --fondo:     #08111F;
     }
-    body { background: var(--fondo); font-family: 'Heebo', sans-serif; color: var(--blanco); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    body { padding-bottom:90px; background: var(--fondo); font-family: 'Heebo', sans-serif; color: var(--blanco); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
     /* NAV */
     .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(8,17,31,.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(74,124,201,.2); padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
@@ -186,6 +186,24 @@
       .hero-content { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     }
   @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+    /* ── AD BANNER PRINCIPAL (plata) ── */
+    #adBannerPrincipal { display:none; cursor:pointer; background:#0d1b2a; border:1px solid rgba(192,192,192,.25); border-radius:10px; overflow:hidden; margin: 0 auto 20px; max-width:720px; width:92%; }
+    .adBanner-inner { display:flex; align-items:center; justify-content:center; min-height:72px; max-height:90px; position:relative; }
+    .adBanner-inner img { width:100%; max-height:90px; object-fit:contain; display:block; }
+    .adBanner-placeholder { padding:14px 20px; font-size:.7rem; color:#3a5a6a; letter-spacing:2px; text-transform:uppercase; }
+    .adBanner-label { position:absolute; top:4px; right:8px; font-size:.55rem; color:#3a5a6a; letter-spacing:1px; }
+    .adBanner-timer { position:absolute; bottom:4px; right:8px; font-size:.6rem; color:#3a5a6a; }
+
+    /* ── AD CARRUSEL INFERIOR (carrusel) ── */
+    #adCarrusel { display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:#07111e; border-top:1px solid #1a2d40; }
+    .adc-inner { cursor:pointer; display:flex; align-items:center; justify-content:center; min-height:44px; max-height:80px; position:relative; }
+    .adc-inner img { width:100%; max-height:80px; object-fit:contain; display:block; }
+    .adc-no-img { padding:14px; font-size:.68rem; color:#2a4a3a; letter-spacing:2px; text-transform:uppercase; }
+    .adc-dots { position:absolute; bottom:5px; right:10px; display:flex; gap:5px; }
+    .adc-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.2); cursor:pointer; }
+    .adc-dot.active { background:#4ade80; }
+    .adc-label { font-size:.5rem; color:#1a3a28; letter-spacing:1.5px; text-transform:uppercase; text-align:center; padding:2px 0 0; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -227,6 +245,15 @@
     </div>
   </div>
 </section>
+
+<!-- Banner Principal (plata) -->
+<div id="adBannerPrincipal" onclick="adBannerClick()">
+  <div class="adc-label">PUBLICIDAD</div>
+  <div class="adBanner-inner" id="adBannerInner">
+    <div class="adBanner-placeholder">Espacio publicitario</div>
+  </div>
+  <div class="adBanner-timer" id="adBannerTimer"></div>
+</div>
 
 <div class="wrap">
   <div class="sec-label">Cómo funciona</div>
@@ -503,7 +530,7 @@ function showFullAd(onDone) {
   // Siempre mostrar el splash primero, luego el ad si hay
   var LOGO = "";
   var ads = getLS('gm_ads', []);
-  var loginAds = ads.filter(function(a){ return a.active && (a.tier==='login'||a.tier==='todo'); });
+  var loginAds = ads.filter(function(a){ return a.active && a.tier==='elite'; });
   var ad = loginAds.length ? loginAds[Math.floor(Math.random()*loginAds.length)] : null;
 
   // Crear overlay
@@ -589,23 +616,68 @@ if (session) {
     <a href="juego.html" class="btn btn-primary" style="text-decoration:none;">⚽ Ir al juego</a>`;
 }
 
-// Ads
-const TIER_COLORS = {elite:'#a855f7',diamante:'#60a5fa',oro:'#fbbf24',plata:'#94a3b8',bronce:'#c8793a'};
-let adIdx=0, adTimer=null, adsData=[];
-function loadAds() {
-  adsData = getLS('gm_ads',[]).filter(a=>a.active && (a.tier==='resto' || a.tier==='todo'));
-  if (!adsData.length) return;
-  renderAd(); renderDots();
-  adTimer = setInterval(()=>{ adIdx=(adIdx+1)%adsData.length; renderAd(); renderDots(); },4000);
+// ── Sistema de Publicidad ────────────────────────────────────────────
+const TIER_COLORS = {elite:'#FFD700',push:'#f97316',bronce:'#60a5fa',plata:'#C0C0C0',carrusel:'#a78bfa'};
+
+// ── Banner Principal (plata) ─────────────────────────────────────────
+let bannerAds=[], bannerIdx=0, bannerTimer=null, bannerSecs=8, bannerCountdown=null;
+function loadBannerAd() {
+  bannerAds = getLS('gm_ads',[]).filter(a=>a.active && a.tier==='plata');
+  if (!bannerAds.length) return;
+  const el = document.getElementById('adBannerPrincipal');
+  if(el) el.style.display='block';
+  renderBanner();
+  bannerTimer = setInterval(()=>{ bannerIdx=(bannerIdx+1)%bannerAds.length; renderBanner(); }, (bannerAds[0]?.seconds||8)*1000);
 }
-function renderAd() {
-  const a=adsData[adIdx]; if(!a) return;
+function renderBanner() {
+  const a = bannerAds[bannerIdx]; if(!a) return;
+  const inner = document.getElementById('adBannerInner');
+  const timerEl = document.getElementById('adBannerTimer');
+  if(!inner) return;
+  if(a.img) {
+    inner.innerHTML = '<img src="'+a.img+'" alt="'+a.nombre+'" onerror="this.style.display=\'none\'">';
+  } else {
+    inner.innerHTML = '<div class="adBanner-placeholder">'+a.nombre+'</div>';
+  }
+  // Countdown visual
+  if(bannerCountdown) clearInterval(bannerCountdown);
+  let secs = a.seconds||8;
+  if(timerEl) timerEl.textContent = secs+'s';
+  bannerCountdown = setInterval(()=>{ secs--; if(timerEl) timerEl.textContent=secs+'s'; if(secs<=0) clearInterval(bannerCountdown); },1000);
 }
-function renderDots() {
+function adBannerClick() {
+  const a=bannerAds[bannerIdx]; if(a?.url) window.open(a.url,'_blank');
 }
-function goAd(i){ adIdx=i; renderAd(); renderDots(); clearInterval(adTimer); adTimer=setInterval(()=>{adIdx=(adIdx+1)%adsData.length;renderAd();renderDots();},4000); }
-function adClick(){ const a=adsData[adIdx]; if(a?.url) window.open(a.url,'_blank'); }
-loadAds();
+
+// ── Carrusel inferior (carrusel) ─────────────────────────────────────
+let adcAds=[], adcIdx=0, adcTimer=null;
+function loadCarrusel() {
+  adcAds = getLS('gm_ads',[]).filter(a=>a.active && a.tier==='carrusel');
+  if (!adcAds.length) return;
+  const el = document.getElementById('adCarrusel');
+  if(el) el.style.display='block';
+  renderCarrusel(); renderCarruselDots();
+  adcTimer = setInterval(()=>{ adcIdx=(adcIdx+1)%adcAds.length; renderCarrusel(); renderCarruselDots(); }, (adcAds[0]?.seconds||8)*1000);
+}
+function renderCarrusel() {
+  const a=adcAds[adcIdx]; if(!a) return;
+  const inner=document.getElementById('adcInner'); if(!inner) return;
+  if(a.img) {
+    inner.innerHTML='<img src="'+a.img+'" alt="'+a.nombre+'">';
+  } else {
+    inner.innerHTML='<div class="adc-no-img">'+a.nombre+'</div>';
+  }
+}
+function renderCarruselDots() {
+  const el=document.getElementById('adcDots'); if(!el) return;
+  el.innerHTML = adcAds.map((_,i)=>'<div class="adc-dot'+(i===adcIdx?' active':'')+'" onclick="goCarrusel('+i+')"></div>').join('');
+}
+function goCarrusel(i){ adcIdx=i; renderCarrusel(); renderCarruselDots(); clearInterval(adcTimer); adcTimer=setInterval(()=>{adcIdx=(adcIdx+1)%adcAds.length;renderCarrusel();renderCarruselDots();},(adcAds[0]?.seconds||8)*1000); }
+function adCarruselClick(){ const a=adcAds[adcIdx]; if(a?.url) window.open(a.url,'_blank'); }
+
+// Cargar todo
+loadBannerAd();
+loadCarrusel();
 
 // Auth
 let authMode = 'login';
@@ -870,5 +942,14 @@ function showErr(msg) {
 showFullAd(null);
 
 </script>
+<!-- Carrusel inferior (carrusel) -->
+<div id="adCarrusel">
+  <div class="adc-label">PUBLICIDAD</div>
+  <div class="adc-inner" id="adcInner" onclick="adCarruselClick()">
+    <div class="adc-no-img" id="adcNoImg">Espacio publicitario disponible</div>
+  </div>
+  <div class="adc-dots" id="adcDots"></div>
+</div>
+
 </body>
 </html>
