@@ -204,6 +204,13 @@
     .adc-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.2); cursor:pointer; }
     .adc-dot.active { background:#4ade80; }
     .adc-label { font-size:.5rem; color:#1a3a28; letter-spacing:1.5px; text-transform:uppercase; text-align:center; padding:2px 0 0; }
+
+    .terms-box { background:rgba(27,58,107,.2); border:1px solid rgba(74,124,201,.2); border-radius:8px; padding:12px 14px; font-size:.78rem; color:#8a9ab0; line-height:1.55; margin-top:4px; }
+    .terms-box strong { color:#a0b8d0; }
+    .terms-check { display:flex; align-items:flex-start; gap:10px; margin-top:10px; cursor:pointer; }
+    .terms-check input[type=checkbox] { margin-top:2px; flex-shrink:0; accent-color:#4ade80; width:16px; height:16px; cursor:pointer; }
+    .terms-check label { font-size:.8rem; color:#a0b8d0; cursor:pointer; line-height:1.4; }
+    .age-warning { color:#ef4444; font-size:.75rem; margin-top:4px; display:none; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -240,8 +247,12 @@
     <div class="features">
       <div class="feat"><div class="feat-icon">🌍</div><div class="feat-title">200+ Jugadores</div><div class="feat-desc">De las 48 selecciones del Mundial</div></div>
       <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">Puntos en vivo</div><div class="feat-desc">Sistema triple de puntuación</div></div>
-      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">Hasta $4.000.000 en premios</div><div class="feat-desc">Fechas + campeón final</div></div>
+      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">Premios para los ganadores</div><div class="feat-desc">Por fecha y campeón final</div></div>
       <div class="feat"><div class="feat-icon">⚙️</div><div class="feat-title">Tu formación</div><div class="feat-desc">Elegí táctica y armá el XI ideal</div></div>
+      <div class="feat"><div class="feat-icon">🏘</div><div class="feat-title">Ligas privadas</div><div class="feat-desc">Creá tu liga y competí con amigos</div></div>
+      <div class="feat"><div class="feat-icon">🏅</div><div class="feat-title">Logros y badges</div><div class="feat-desc">Desbloqueá medallas jugando</div></div>
+      <div class="feat"><div class="feat-icon">📸</div><div class="feat-title">Compartí tu equipo</div><div class="feat-desc">Generá una tarjeta para compartir</div></div>
+      <div class="feat"><div class="feat-icon">🎯</div><div class="feat-title">Prode de partidos</div><div class="feat-desc">Pronosticá y sumá puntos extra</div></div>
     </div>
   </div>
 </section>
@@ -262,7 +273,7 @@
     <div class="step" data-n="01"><div class="step-icon">📝</div><div class="step-title">Registrate</div><div class="step-desc">Creá tu cuenta, recibís tu ID único y enviás el comprobante de pago para activarla.</div></div>
     <div class="step" data-n="02"><div class="step-icon">🛒</div><div class="step-title">Armá tu equipo</div><div class="step-desc">Elegí 15 jugadores de 48 selecciones. Definí tu capitán y formación táctica.</div></div>
     <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido y escalá en el ranking de la comunidad.</div></div>
-    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios por cada fecha (hasta cuartos de final) y $4.000.000 para el campeón final de la comunidad.</div></div>
+    <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios para los ganadores por cada fecha y un gran premio para el campeón final de la comunidad.</div></div>
   </div>
 </div>
 
@@ -333,20 +344,88 @@
   </div>
 </div>
 
+
+<div class="wrap" style="padding-top:0;">
+  <div class="sec-label">Funcionalidades</div>
+  <div class="sec-title">Todo lo que podés <span>hacer</span></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:8px;">
+
+    <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">🏘</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Ligas Privadas</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Creá tu propia liga con un código único e invitá a tus amigos. Ranking exclusivo, podés expulsar miembros y ver a todos competir en tiempo real.</div>
+    </div>
+
+    <div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">🏅</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Logros y Badges</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">17 logros desbloqueables: primer fichaje, top 10, galácticos, fundador de liga, adivino del prode y más. Cada logro se notifica en el momento.</div>
+    </div>
+
+    <div style="background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">📸</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Compartí tu Equipo</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Generá una tarjeta visual con tu XI en la cancha y compartila por WhatsApp o Instagram. Incluye tu posición en el ranking y sponsor.</div>
+    </div>
+
+    <div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">📈</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Ranking en tiempo real</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Tu posición en el ranking global siempre visible en el header. Rankings individuales, por comunidad y prode separados.</div>
+    </div>
+
+    <div style="background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">⚙️</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Formaciones y tácticas</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Elegí entre múltiples formaciones, cambiá titulares por suplentes, designá capitán con bonus de 25% y reorganizá tu XI automáticamente.</div>
+    </div>
+
+    <div style="background:rgba(244,114,182,.05);border:1px solid rgba(244,114,182,.15);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">🔄</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Múltiples cuentas</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Podés registrar hasta 5 cuentas con el mismo DNI para que toda la familia participe. Cada cuenta tiene su propio equipo y ranking.</div>
+    </div>
+
+  </div>
+</div>
+
 <!-- PREMIOS -->
 <div class="wrap" style="padding-top:0;">
   <div class="sec-label">Premios</div>
   <div class="sec-title">¿Qué podés <span>ganar</span>?</div>
 
   <!-- Premio grande -->
-  <div style="background:linear-gradient(135deg,rgba(200,151,58,.15),rgba(232,184,75,.08));border:2px solid var(--dorado);border-radius:20px;padding:32px 28px;text-align:center;margin-bottom:28px;position:relative;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,rgba(200,151,58,.15),rgba(232,184,75,.08));border:2px solid var(--dorado);border-radius:20px;padding:32px 28px;text-align:center;margin-bottom:20px;position:relative;overflow:hidden;">
     <div style="position:absolute;top:-20px;right:-20px;font-size:8rem;opacity:.06;line-height:1;">🏆</div>
-    <div style="font-size:.68rem;letter-spacing:4px;color:var(--dorado);text-transform:uppercase;font-weight:700;margin-bottom:12px;">Premio mayor · Campeón del torneo hasta</div>
-    <div style="font-family:'Assistant',sans-serif;font-size:clamp(2.8rem,8vw,4.5rem);font-weight:900;color:var(--dorado-clr);line-height:1;margin-bottom:8px;">$4.000.000</div>
-    <div style="font-size:1rem;color:var(--gris);margin-bottom:16px;">para la comunidad con más puntos al final del torneo</div>
+    <div style="font-size:.68rem;letter-spacing:4px;color:var(--dorado);text-transform:uppercase;font-weight:700;margin-bottom:12px;">Premio mayor · Campeón del torneo</div>
+    <div style="font-size:2.2rem;margin-bottom:8px;">🏆🥇🎉</div>
+    <div style="font-family:'Assistant',sans-serif;font-size:clamp(1.4rem,4vw,2rem);font-weight:900;color:var(--dorado-clr);line-height:1.2;margin-bottom:8px;">Gran Premio para la Comunidad Ganadora</div>
+    <div style="font-size:.92rem;color:var(--gris);margin-bottom:16px;">La comunidad con más puntos al final del torneo se lleva el gran premio del Gran Moishe 2026</div>
     <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,151,58,.12);border:1px solid rgba(200,151,58,.3);border-radius:20px;padding:6px 16px;font-size:.78rem;color:var(--dorado-clr);font-weight:600;">
       🏆 El gran premio del Gran Moishe 2026
     </div>
+  </div>
+
+  <!-- Premios por fecha -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;">
+    <div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:14px;padding:20px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🥇</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:.95rem;margin-bottom:4px;">Premio por Fecha</div>
+      <div style="font-size:.8rem;color:var(--gris);line-height:1.5;">Premio para el top de cada jornada del grupo, octavos y cuartos</div>
+    </div>
+    <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:20px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🏘</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:.95rem;margin-bottom:4px;">Premio Comunidad</div>
+      <div style="font-size:.8rem;color:var(--gris);line-height:1.5;">La comunidad con más puntos acumulados al final del Mundial gana el gran premio</div>
+    </div>
+    <div style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);border-radius:14px;padding:20px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🎯</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:.95rem;margin-bottom:4px;">Premio Prode</div>
+      <div style="font-size:.8rem;color:var(--gris);line-height:1.5;">Premio especial para el mejor pronosticador del torneo</div>
+    </div>
+  </div>
+  <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px 18px;font-size:.8rem;color:var(--gris);line-height:1.6;">
+    ⚠️ Los premios finales se anuncian antes del inicio del torneo. El monto exacto depende de la cantidad de participantes.
   </div>
 
 <footer>
@@ -740,7 +819,12 @@ function renderForm() {
     </div>
     <div class="field"><label>Contraseña *</label><input id="f_password" type="password" placeholder="••••••••"/></div>
     <div class="field" style="max-width:240px;"><label>País *</label><select id="f_pais" onchange="onPaisChange()">${PAISES.map(p=>`<option>${p}</option>`).join('')}</select></div>
-    <div class="field" style="max-width:180px;"><label>Fecha de nacimiento *</label><input id="f_fecha_nac" type="date" max="2010-01-01"/></div>
+    <div class="field" style="max-width:220px;">
+      <label>Fecha de nacimiento *</label>
+      <input id="f_fecha_nac" type="date" max="${getMaxFechaNac()}" onchange="onFechaNacChange()"/>
+      <div class="age-warning" id="ageWarning">⛔ Debés tener al menos 18 años para participar.</div>
+      <div class="field-hint" id="ageOk" style="display:none;">✅ Edad verificada.</div>
+    </div>
     <div class="field">
       <label>Comunidad / Club *</label>
       <select id="f_comunidad" onchange="onComChange()">${coms.map(c=>`<option value="${c}">${c}</option>`).join('')}<option value="__otra__">➕ Otra (escribila)</option></select>
@@ -751,10 +835,81 @@ function renderForm() {
       <div class="field"><label>Dirección de la comunidad</label><input id="f_comDir" placeholder="Av. Corrientes 1234"/></div>
       <div class="field"><label>Contacto director/a</label><input id="f_comContacto" placeholder="director@comunidad.com"/></div>
     </div>
+    <div class="field">
+      <div class="terms-box">
+        <strong>Términos y Condiciones de Participación</strong><br><br>
+        La plataforma es un <strong>Concurso de Destreza y Conocimiento Estadístico Deportivo</strong>. El pago de la inscripción otorga el derecho de acceso a la plataforma tecnológica y la participación en el certamen de pronósticos. Los premios se otorgan en base a la puntuación por aciertos, <strong>no existiendo factores de azar involucrados</strong>.<br><br>
+        <strong>Solo pueden participar mayores de 18 años.</strong> Al registrarte declarás tener 18 años o más y aceptás estos términos.
+        <div class="terms-check">
+          <input type="checkbox" id="f_terminos" onchange="onTerminosChange()"/>
+          <label for="f_terminos">Leí y acepto los Términos y Condiciones. Declaro tener 18 años o más.</label>
+        </div>
+      </div>
+    </div>
   ` : `
     <div class="field"><label>Email *</label><input id="f_email" type="email" placeholder="tu@email.com"/></div>
     <div class="field"><label>Contraseña *</label><input id="f_password" type="password" placeholder="••••••••"/></div>
   `;
+  if (isReg) {
+    const btn = document.getElementById('btnSubmit');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'not-allowed'; btn.title = 'Completá tu fecha de nacimiento y aceptá los términos para continuar.'; }
+  }
+}
+
+
+// ── Edad y Términos ──────────────────────────────────────────────────
+function getMaxFechaNac() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+}
+
+function checkRegisterBtn() {
+  const btn = document.getElementById('btnSubmit');
+  if (!btn || authMode !== 'register') return;
+  const val = document.getElementById('f_fecha_nac')?.value;
+  const cb  = document.getElementById('f_terminos');
+  const termsOk = cb ? cb.checked : true;
+  let ageOk = false;
+  if (val) {
+    const birth = new Date(val);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    ageOk = age >= 18;
+  }
+  const canSubmit = ageOk && termsOk;
+  btn.disabled = !canSubmit;
+  btn.style.opacity = canSubmit ? '1' : '0.45';
+  btn.style.cursor  = canSubmit ? 'pointer' : 'not-allowed';
+  btn.title = !ageOk ? 'Debés tener al menos 18 años para registrarte.'
+            : !termsOk ? 'Debés aceptar los Términos y Condiciones.'
+            : '';
+}
+
+function onFechaNacChange() {
+  const val  = document.getElementById('f_fecha_nac')?.value;
+  const warn = document.getElementById('ageWarning');
+  const ok   = document.getElementById('ageOk');
+  if (!val || !warn) return;
+  const birth = new Date(val);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  if (age < 18) {
+    warn.style.display = 'block';
+    if (ok) ok.style.display = 'none';
+  } else {
+    warn.style.display = 'none';
+    if (ok) ok.style.display = 'block';
+  }
+  checkRegisterBtn();
+}
+
+function onTerminosChange() {
+  checkRegisterBtn();
 }
 
 function renderFormLogo() {
@@ -863,6 +1018,18 @@ async function submitAuth() {
   if (!nombre || !apellido) { showErr('Completá nombre y apellido'); return; }
   if (!dni)    { showErr('El DNI es obligatorio'); return; }
   if (!fecha_nac) { showErr('La fecha de nacimiento es obligatoria'); return; }
+  // Validar edad mínima 18 años
+  (function() {
+    const birth = new Date(fecha_nac);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    if (age < 18) { showErr('Debés tener al menos 18 años para participar.'); return; }
+  })();
+  if (document.getElementById('f_terminos') && !document.getElementById('f_terminos').checked) {
+    showErr('Debés aceptar los Términos y Condiciones para registrarte.'); return;
+  }
   if (!celular)    { showErr('El celular es obligatorio'); return; }
   if (!equipo) { showErr('Completá el nombre del equipo'); return; }
   if (!email || !pass) { showErr('Completá email y contraseña'); return; }
