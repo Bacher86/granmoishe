@@ -20877,14 +20877,14 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
     [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0),
   [xi, subs, capitan]);
 
-  // Sponsor: busca ads con compartir:true activos
-  const sponsorAd = useMemo(() => {
-    const shareAds = getLS("gm_ads",[]).filter(a=>a.active&&a.compartir);
-    return shareAds.length ? shareAds[0] : null;
+  // Sponsor: busca ads con compartir:true activos (hasta 2)
+  const sponsorAds = useMemo(() => {
+    return getLS("gm_ads",[]).filter(a=>a.active&&a.compartir).slice(0,2);
   }, []);
+  const sponsorAd = sponsorAds[0] || null;
 
   // ── DRAW CANVAS ──────────────────────────────────────────────────────────
-  const drawCanvas = useCallback(() => {
+  const drawCanvas = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas || xi.length === 0) return;
     const ctx = canvas.getContext("2d");
@@ -20895,8 +20895,8 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
 
     const HEADER_H  = 90;
     const PITCH_TOP = HEADER_H;
-    const PITCH_H   = 640;
-    const SPONSOR_H = 80;
+    const PITCH_H   = 620;
+    const SPONSOR_H = 110;
     const FOOTER_H  = H - HEADER_H - PITCH_H - SPONSOR_H;
 
     // ── HEADER ────────────────────────────────────────────────────────────
@@ -21053,57 +21053,76 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
       });
     }
 
-    // ── SPONSOR STRIP ─────────────────────────────────────────────────────
+    // ── SPONSOR STRIP — 2 rectángulos landscape lado a lado ───────────────
     const sponsorY = H - SPONSOR_H;
+    const PAD = 8, GAP = 8;
+    const slotW = (W - PAD*2 - GAP) / 2;
+    const slotH = SPONSOR_H - PAD*2;
+
+    // Fondo franja
     ctx.fillStyle = "#07111e";
     ctx.fillRect(0, sponsorY, W, SPONSOR_H);
-    ctx.strokeStyle = "rgba(74,222,128,0.3)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(74,222,128,0.25)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0,sponsorY); ctx.lineTo(W,sponsorY); ctx.stroke();
 
-    if (sponsorAd && sponsorAd.img) {
-      // Load and draw sponsor image
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const maxImgH = SPONSOR_H - 16;
-        const scale = Math.min((W*0.55)/img.width, maxImgH/img.height);
-        const iw = img.width*scale, ih = img.height*scale;
-        ctx.drawImage(img, (W-iw)/2, sponsorY+(SPONSOR_H-ih)/2, iw, ih);
-        // sponsor label
-        ctx.fillStyle = "rgba(74,222,128,0.4)";
-        ctx.font = "9px Arial"; ctx.textAlign = "left";
-        ctx.fillText("AUSPICIA", 10, sponsorY+14);
-        // url
-        ctx.fillStyle = "#2a5a3a"; ctx.font = "bold 11px Arial"; ctx.textAlign = "right";
-        ctx.fillText("granmoishe.com", W-10, sponsorY+SPONSOR_H-10);
-        setCanvasReady(true);
-      };
-      img.onerror = () => {
-        // fallback: draw sponsor name text
-        drawSponsorText(ctx, sponsorAd, sponsorY, W, SPONSOR_H);
-        setCanvasReady(true);
-      };
-      img.src = sponsorAd.img;
-    } else if (sponsorAd) {
-      drawSponsorText(ctx, sponsorAd, sponsorY, W, SPONSOR_H);
-      setCanvasReady(true);
-    } else {
-      // No sponsor — just branding
-      ctx.fillStyle = "#1a3a28"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center";
-      ctx.fillText("granmoishe.com", W/2, sponsorY + SPONSOR_H/2 + 5);
-      setCanvasReady(true);
-    }
-  }, [xi, subs, capitan, formation, user, totalPts, sponsorAd]);
-
-  function drawSponsorText(ctx, ad, sponsorY, W, SPONSOR_H) {
+    // Etiqueta "AUSPICIAN"
     ctx.fillStyle = "rgba(74,222,128,0.35)";
-    ctx.font = "9px Arial"; ctx.textAlign = "left";
-    ctx.fillText("AUSPICIA", 10, sponsorY+14);
-    ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-    ctx.fillText(ad.nombre, W/2, sponsorY+SPONSOR_H/2+7);
-    ctx.fillStyle = "#2a5a3a"; ctx.font = "bold 11px Arial"; ctx.textAlign = "right";
-    ctx.fillText("granmoishe.com", W-10, sponsorY+SPONSOR_H-10);
-  }
+    ctx.font = "bold 9px Arial"; ctx.textAlign = "left"; ctx.letterSpacing = "1px";
+    ctx.fillText("AUSPICIAN", PAD, sponsorY + 11);
+    ctx.letterSpacing = "0px";
+
+    // URL branding
+    ctx.fillStyle = "#1a3a28"; ctx.font = "bold 10px Arial"; ctx.textAlign = "right";
+    ctx.fillText("granmoishe.com", W - PAD, sponsorY + SPONSOR_H - 5);
+
+    // Helper para cargar imagen con timeout
+    function loadImg(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        const timer = setTimeout(() => resolve(null), 3000);
+        img.onload = () => { clearTimeout(timer); resolve(img); };
+        img.onerror = () => { clearTimeout(timer); resolve(null); };
+        img.src = src;
+      });
+    }
+
+    // Dibujar un slot sponsor en posición x
+    async function drawSlot(ad, slotX) {
+      const rx = slotX, ry = sponsorY + PAD + 12, rw = slotW, rh = slotH - 12;
+      // Fondo slot
+      ctx.fillStyle = "#0d1e30";
+      drawRoundRect(ctx, rx, ry, rw, rh, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(249,115,22,0.4)"; ctx.lineWidth = 1.5;
+      drawRoundRect(ctx, rx, ry, rw, rh, 7); ctx.stroke();
+
+      if (ad && ad.img) {
+        const img = await loadImg(ad.img);
+        if (img) {
+          const scale = Math.min(rw/img.width, rh/img.height) * 0.88;
+          const iw = img.width*scale, ih = img.height*scale;
+          ctx.drawImage(img, rx+(rw-iw)/2, ry+(rh-ih)/2, iw, ih);
+          return;
+        }
+      }
+      // Fallback texto
+      if (ad) {
+        ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center";
+        ctx.fillText(ad.nombre, rx + rw/2, ry + rh/2 + 5);
+      } else {
+        ctx.fillStyle = "#1a2d30"; ctx.font = "10px Arial"; ctx.textAlign = "center";
+        ctx.fillText("ESPACIO DISPONIBLE", rx + rw/2, ry + rh/2 + 4);
+      }
+    }
+
+    // Dibujar los 2 slots en paralelo y esperar
+    await Promise.all([
+      drawSlot(sponsorAds[0] || null, PAD),
+      drawSlot(sponsorAds[1] || null, PAD + slotW + GAP),
+    ]);
+
+    setCanvasReady(true);
+  }, [xi, subs, capitan, formation, user, totalPts, sponsorAds]);
 
   useEffect(() => {
     setCanvasReady(false);
