@@ -17734,7 +17734,8 @@ const FB_CONFIG = {
 const FB_KEYS = [
   "gm_users", "gm_ads", "gm_player_stats", "gm_stats_by_name",
   "gm_matches_cache", "gm_published_matches", "gm_match_stats",
-  "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players"
+  "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players",
+  "gm_ultima_fecha_publicada"
 ];
 
 let _fbApp = null, _fbDB = null, _fbReady = false;
@@ -19525,32 +19526,59 @@ function ApiPanel({ toast }) {
       if (ps[pid]) statsByName[nombre + "|" + pais] = ps[pid];
     });
     setLS("gm_stats_by_name", statsByName);
-    // Guardar timestamp de publicación — el juego lo usa para validar elegibilidad
+    // Guardar timestamp y número de fecha publicada
     const publishedAt = Date.now();
     localStorage.setItem("gm_stats_published_at", String(publishedAt));
-    // Update user pts — squad stored in gm_squad_{uid} as [{id, nombre, pais, ...}]
+    // Guardar la última fecha (matchday) publicada — juego.html lo lee al registrar usuarios
+    const matchdayPublicado = match.matchday || 0;
+    const ultimaFechaAnterior = parseInt(localStorage.getItem("gm_ultima_fecha_publicada") || "0");
+    const ultimaFecha = Math.max(ultimaFechaAnterior, matchdayPublicado);
+    localStorage.setItem("gm_ultima_fecha_publicada", String(ultimaFecha));
+    setLS("gm_ultima_fecha_publicada", ultimaFecha); // también en Firebase
+    // Update user pts — squad stored in gm_squad_{uid}
     const users = DB.getUsers();
     users.forEach(u => {
-      // Read squad from separate key (how juego.html stores it)
       const squad = JSON.parse(localStorage.getItem("gm_squad_" + u.uid) || "[]");
       if(!squad.length) return;
-      // Verificar elegibilidad: squad armado ANTES de esta publicación
-      const squadCreatedAt = parseInt(localStorage.getItem("gm_squad_created_" + u.uid) || "0");
-      const eligible = !squadCreatedAt || squadCreatedAt <= publishedAt;
-      if (!eligible) {
-        u.pts = 0; // Se unió después de la jornada empezada, suma desde la próxima
-        return;
-      }
+      // fecha_ingreso: matchday en que se registró el usuario (suma desde la SIGUIENTE fecha)
+      const fechaIngreso = u.fecha_ingreso !== undefined ? u.fecha_ingreso : 0;
       let pts = 0;
       squad.forEach(player => {
-        // player.id is numeric id; match against ps by pid
-        if(ps[player.id]) {
-          pts += ps[player.id].puntos;
-        } else {
-          // fallback: match by nombre|pais key via statsByName
-          const key = player.nombre + "|" + player.pais;
-          if(statsByName[key]) pts += statsByName[key].puntos;
+        const pdata = ps[player.id] || statsByName[player.nombre + "|" + player.pais];
+        if (!pdata || !pdata.fechas) return;
+        // Sumar solo fechas con matchday > fecha_ingreso
+        Object.entries(pdata.fechas).forEach(([fkey, fstat]) => {
+          // fkey formato: "WC-1", "WC-2", etc.
+          const md = parseInt((fkey.split("-")[1]) || "0");
+          if (md > fechaIngreso) {
+            pts += fstat.puntos || 0;
+          }
+        });
+        // Aplicar bonus capitán si corresponde
+        const capKey = "gm_cap_" + u.uid;
+        const capId = localStorage.getItem(capKey) ? JSON.parse(localStorage.getItem(capKey)) : null;
+        if (capId && player.id === capId) {
+          // El capitán ya fue contado arriba, agregar bonus 25%
+          // (se recalcula abajo completo, así que reset y rehacemos)
         }
+      });
+      // Recalcular con capitán
+      pts = 0;
+      const capId = (() => { try { return JSON.parse(localStorage.getItem("gm_cap_" + u.uid)); } catch(e){ return null; } })();
+      squad.forEach(player => {
+        const pdata = ps[player.id] || statsByName[player.nombre + "|" + player.pais];
+        if (!pdata || !pdata.fechas) return;
+        let playerPts = 0;
+        Object.entries(pdata.fechas).forEach(([fkey, fstat]) => {
+          const md = parseInt((fkey.split("-")[1]) || "0");
+          if (md > fechaIngreso) {
+            playerPts += fstat.puntos || 0;
+          }
+        });
+        if (capId && player.id === capId) {
+          playerPts = Math.ceil(playerPts * 1.25);
+        }
+        pts += playerPts;
       });
       u.pts = pts;
     });
