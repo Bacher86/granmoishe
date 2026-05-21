@@ -17813,11 +17813,12 @@ const TIER = {
 
 // Ad tiers
 const AD_TIERS = {
-  elite:    { name:"Elite",    price:1000000, color:"#FFD700", desc:"Pantalla completa login (10s)", slot:"login_full" },
-  push:     { name:"Push",     price:1500000, color:"#f97316", desc:"Popup al 3er click del usuario (8s)", slot:"push" },
-  bronce:   { name:"Bronce",   price:700000,  color:"#60a5fa", desc:"Banner lateral todas las pantallas (8s)", slot:"sidebar" },
-  plata:    { name:"Plata",    price:500000,  color:"#C0C0C0", desc:"Banner pantalla principal index (8s)", slot:"index_banner" },
-  carrusel: { name:"Carrusel", price:300000,  color:"#a78bfa", desc:"Carrusel inferior granmoishe.com", slot:"index_carousel" },
+  elite:     { name:"Elite",             price:1000000, color:"#FFD700", desc:"Pantalla completa login (10s)", slot:"login_full" },
+  push:      { name:"Push",              price:1500000, color:"#f97316", desc:"Popup al 3er click del usuario (8s)", slot:"push" },
+  bronce:    { name:"Bronce",            price:700000,  color:"#60a5fa", desc:"Banner lateral todas las pantallas (8s)", slot:"sidebar" },
+  plata:     { name:"Plata",             price:500000,  color:"#C0C0C0", desc:"Banner pantalla principal index (8s)", slot:"index_banner" },
+  carrusel:  { name:"Carrusel",          price:300000,  color:"#a78bfa", desc:"Carrusel inferior granmoishe.com", slot:"index_carousel" },
+  compartir: { name:"Foto Compartir",    price:200000,  color:"#f97316", desc:"Sale como sponsor en la foto que los usuarios comparten", slot:"compartir" },
 };
 
 const FLAGS = {
@@ -20754,9 +20755,323 @@ function LogrosView({ squad, xi, subs, user, capitan, formation }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPARTIR EQUIPO
 // ═══════════════════════════════════════════════════════════════════════════
+// ─── helpers canvas ────────────────────────────────────────────────────────
+function drawRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const test = line + words[n] + ' ';
+    if (ctx.measureText(test).width > maxW && n > 0) {
+      ctx.fillText(line.trim(), x, y);
+      line = words[n] + ' ';
+      y += lineH;
+    } else { line = test; }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+
+// Genera posiciones en cancha según formación (retorna array [{x,y}] para 11 titulares)
+function pitchPositions(formation, W, H, topPad, bottomPad) {
+  const fm = FORMATIONS[formation] || FORMATIONS["4-3-3"];
+  const playH = H - topPad - bottomPad;
+  // Flatten GK + DEF + MID + FWD in that order
+  const slots = [...(fm.GK||[]), ...(fm.DEF||[]), ...(fm.MID||[]), ...(fm.FWD||[])];
+  return slots.map(([px, py]) => ({
+    x: W * px / 100,
+    y: topPad + playH * py / 100
+  }));
+}
+
 function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
-  const totalPts = [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0);
-  const allPlayers = [...xi,...subs];
+  const canvasRef = useRef(null);
+  const [generating, setGenerating] = useState(false);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const [formation, setFormation] = useState(() => {
+    if (!user) return "4-3-3";
+    return getLS("gm_fm_"+user.uid, "4-3-3");
+  });
+
+  const totalPts = useMemo(() =>
+    [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0),
+  [xi, subs, capitan]);
+
+  // Sponsor: busca ads con compartir:true activos
+  const sponsorAd = useMemo(() => {
+    const shareAds = getLS("gm_ads",[]).filter(a=>a.active&&a.compartir);
+    return shareAds.length ? shareAds[0] : null;
+  }, []);
+
+  // ── DRAW CANVAS ──────────────────────────────────────────────────────────
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || xi.length === 0) return;
+    const ctx = canvas.getContext("2d");
+
+    // Canvas size — portrait card optimized for mobile sharing
+    const W = 540, H = 960;
+    canvas.width = W; canvas.height = H;
+
+    const HEADER_H  = 90;
+    const PITCH_TOP = HEADER_H;
+    const PITCH_H   = 640;
+    const SPONSOR_H = 80;
+    const FOOTER_H  = H - HEADER_H - PITCH_H - SPONSOR_H;
+
+    // ── HEADER ────────────────────────────────────────────────────────────
+    const grad = ctx.createLinearGradient(0,0,W,HEADER_H);
+    grad.addColorStop(0,"#07111e"); grad.addColorStop(1,"#0d2a1a");
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,HEADER_H);
+    // bottom border
+    ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,HEADER_H); ctx.lineTo(W,HEADER_H); ctx.stroke();
+    // title
+    ctx.fillStyle = "#4ade80";
+    ctx.font = "bold 22px 'Arial Narrow', Arial, sans-serif";
+    ctx.letterSpacing = "4px";
+    ctx.textAlign = "center";
+    ctx.fillText("GRAN MOISHE 2026", W/2, 32);
+    ctx.letterSpacing = "0px";
+    // equipo
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 18px Arial, sans-serif";
+    ctx.fillText(user.equipo || "Mi Equipo", W/2, 56);
+    // pts
+    ctx.fillStyle = "#FFD700";
+    ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText(totalPts + " PTS", W/2, 82);
+
+    // ── PITCH ─────────────────────────────────────────────────────────────
+    // Grass stripes
+    const stripeH = 38;
+    for (let y = PITCH_TOP; y < PITCH_TOP + PITCH_H; y += stripeH*2) {
+      ctx.fillStyle = "#1a4d2e";
+      ctx.fillRect(0, y, W, stripeH);
+      ctx.fillStyle = "#1e5534";
+      ctx.fillRect(0, y + stripeH, W, stripeH);
+    }
+
+    // Field lines
+    ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 2;
+    // Center line
+    ctx.beginPath(); ctx.moveTo(0, PITCH_TOP+PITCH_H/2); ctx.lineTo(W, PITCH_TOP+PITCH_H/2); ctx.stroke();
+    // Center circle
+    ctx.beginPath(); ctx.arc(W/2, PITCH_TOP+PITCH_H/2, 52, 0, Math.PI*2); ctx.stroke();
+    // Penalty areas
+    const paW = W*0.52, paH = PITCH_H*0.15, paX = (W-paW)/2;
+    ctx.strokeRect(paX, PITCH_TOP, paW, paH);
+    ctx.strokeRect(paX, PITCH_TOP+PITCH_H-paH, paW, paH);
+    // Goal areas
+    const gaW = W*0.26, gaH = PITCH_H*0.07, gaX = (W-gaW)/2;
+    ctx.strokeRect(gaX, PITCH_TOP, gaW, gaH);
+    ctx.strokeRect(gaX, PITCH_TOP+PITCH_H-gaH, gaW, gaH);
+    // Penalty spots
+    ctx.fillStyle = "rgba(255,255,255,.25)";
+    ctx.beginPath(); ctx.arc(W/2, PITCH_TOP+PITCH_H*0.11, 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2, PITCH_TOP+PITCH_H*0.89, 4, 0, Math.PI*2); ctx.fill();
+
+    // ── PLAYER TOKENS ─────────────────────────────────────────────────────
+    const TOP_PAD = 28, BOT_PAD = 28;
+    const positions = pitchPositions(formation, W, PITCH_H, TOP_PAD, BOT_PAD);
+    const ordered = [...xi].slice(0, 11);
+
+    ordered.forEach((p, i) => {
+      const pos = positions[i];
+      if (!pos) return;
+      const cx = pos.x, cy = PITCH_TOP + pos.y;
+      const isCap = p.id === capitan;
+      const pts = isCap ? Math.ceil(p.puntos*(1+SCORING.captain_bonus)) : p.puntos;
+      const posColor = POS_COLORS[p.posicion] || "#4ade80";
+
+      // Shadow
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      drawRoundRect(ctx, cx-26, cy-26+3, 52, 62, 8);
+      ctx.fill();
+
+      // Token bg
+      ctx.fillStyle = "rgba(7,17,30,0.92)";
+      drawRoundRect(ctx, cx-26, cy-26, 52, 62, 8);
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = isCap ? "#FFD700" : posColor;
+      ctx.lineWidth = isCap ? 2.5 : 1.5;
+      drawRoundRect(ctx, cx-26, cy-26, 52, 62, 8);
+      ctx.stroke();
+
+      // Pos bar top
+      ctx.fillStyle = posColor;
+      drawRoundRect(ctx, cx-26, cy-26, 52, 16, 7);
+      ctx.fill();
+      // Pos text
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 9px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(p.posicion, cx, cy-26+11);
+
+      // Flag emoji
+      const fl = flag(p.pais);
+      ctx.font = "15px serif";
+      ctx.fillText(fl, cx, cy+3);
+
+      // Name (last name)
+      const lastName = p.nombre.split(" ").slice(-1)[0].toUpperCase();
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "bold 9px Arial";
+      const maxNameW = 44;
+      if (ctx.measureText(lastName).width > maxNameW) {
+        ctx.font = "bold 8px Arial";
+      }
+      ctx.fillText(lastName.length>9?lastName.slice(0,9)+"…":lastName, cx, cy+18);
+
+      // Pts
+      ctx.fillStyle = "#4ade80";
+      ctx.font = "bold 10px Arial";
+      ctx.fillText(pts+"pts", cx, cy+30);
+
+      // Captain crown
+      if (isCap) {
+        ctx.fillStyle = "#FFD700";
+        ctx.font = "12px serif";
+        ctx.fillText("👑", cx+17, cy-22);
+      }
+    });
+
+    // ── SUBS STRIP ────────────────────────────────────────────────────────
+    const subY = PITCH_TOP + PITCH_H;
+    ctx.fillStyle = "#071a10";
+    ctx.fillRect(0, subY, W, FOOTER_H);
+    ctx.strokeStyle = "rgba(74,222,128,0.2)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,subY); ctx.lineTo(W,subY); ctx.stroke();
+
+    if (subs.length > 0) {
+      ctx.fillStyle = "#2a5a3a";
+      ctx.font = "bold 10px Arial";
+      ctx.textAlign = "left";
+      ctx.letterSpacing = "2px";
+      ctx.fillText("SUPLENTES", 14, subY+16);
+      ctx.letterSpacing = "0px";
+      const subW = W / Math.max(subs.length, 1);
+      subs.slice(0,4).forEach((p, i) => {
+        const sx = i * subW + subW/2;
+        const sy = subY + 20;
+        const posC = POS_COLORS[p.posicion] || "#60a5fa";
+        ctx.fillStyle = "rgba(96,165,250,0.12)";
+        drawRoundRect(ctx, sx-30, sy, 60, 46, 7);
+        ctx.fill();
+        ctx.strokeStyle = posC; ctx.lineWidth = 1;
+        drawRoundRect(ctx, sx-30, sy, 60, 46, 7);
+        ctx.stroke();
+        ctx.font = "13px serif"; ctx.textAlign = "center";
+        ctx.fillText(flag(p.pais), sx, sy+18);
+        const ln = p.nombre.split(" ").slice(-1)[0].toUpperCase();
+        ctx.fillStyle = "#c0d0e0"; ctx.font = "bold 8px Arial";
+        ctx.fillText(ln.length>8?ln.slice(0,8)+"…":ln, sx, sy+30);
+        ctx.fillStyle = posC; ctx.font = "bold 8px Arial";
+        ctx.fillText(p.posicion, sx, sy+41);
+      });
+    }
+
+    // ── SPONSOR STRIP ─────────────────────────────────────────────────────
+    const sponsorY = H - SPONSOR_H;
+    ctx.fillStyle = "#07111e";
+    ctx.fillRect(0, sponsorY, W, SPONSOR_H);
+    ctx.strokeStyle = "rgba(74,222,128,0.3)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,sponsorY); ctx.lineTo(W,sponsorY); ctx.stroke();
+
+    if (sponsorAd && sponsorAd.img) {
+      // Load and draw sponsor image
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const maxImgH = SPONSOR_H - 16;
+        const scale = Math.min((W*0.55)/img.width, maxImgH/img.height);
+        const iw = img.width*scale, ih = img.height*scale;
+        ctx.drawImage(img, (W-iw)/2, sponsorY+(SPONSOR_H-ih)/2, iw, ih);
+        // sponsor label
+        ctx.fillStyle = "rgba(74,222,128,0.4)";
+        ctx.font = "9px Arial"; ctx.textAlign = "left";
+        ctx.fillText("AUSPICIA", 10, sponsorY+14);
+        // url
+        ctx.fillStyle = "#2a5a3a"; ctx.font = "bold 11px Arial"; ctx.textAlign = "right";
+        ctx.fillText("granmoishe.com", W-10, sponsorY+SPONSOR_H-10);
+        setCanvasReady(true);
+      };
+      img.onerror = () => {
+        // fallback: draw sponsor name text
+        drawSponsorText(ctx, sponsorAd, sponsorY, W, SPONSOR_H);
+        setCanvasReady(true);
+      };
+      img.src = sponsorAd.img;
+    } else if (sponsorAd) {
+      drawSponsorText(ctx, sponsorAd, sponsorY, W, SPONSOR_H);
+      setCanvasReady(true);
+    } else {
+      // No sponsor — just branding
+      ctx.fillStyle = "#1a3a28"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center";
+      ctx.fillText("granmoishe.com", W/2, sponsorY + SPONSOR_H/2 + 5);
+      setCanvasReady(true);
+    }
+  }, [xi, subs, capitan, formation, user, totalPts, sponsorAd]);
+
+  function drawSponsorText(ctx, ad, sponsorY, W, SPONSOR_H) {
+    ctx.fillStyle = "rgba(74,222,128,0.35)";
+    ctx.font = "9px Arial"; ctx.textAlign = "left";
+    ctx.fillText("AUSPICIA", 10, sponsorY+14);
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+    ctx.fillText(ad.nombre, W/2, sponsorY+SPONSOR_H/2+7);
+    ctx.fillStyle = "#2a5a3a"; ctx.font = "bold 11px Arial"; ctx.textAlign = "right";
+    ctx.fillText("granmoishe.com", W-10, sponsorY+SPONSOR_H-10);
+  }
+
+  useEffect(() => {
+    setCanvasReady(false);
+    if (xi.length > 0) drawCanvas();
+  }, [drawCanvas]);
+
+  // ── SHARE ACTIONS ─────────────────────────────────────────────────────────
+  async function downloadImage() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = "gran-moishe-equipo.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    if (sponsorAd) DB.trackAdView(sponsorAd.id);
+  }
+
+  async function shareImage() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setGenerating(true);
+    try {
+      canvas.toBlob(async (blob) => {
+        if (!blob) { setGenerating(false); return; }
+        const file = new File([blob], "gran-moishe-equipo.png", {type:"image/png"});
+        if (navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({
+            files: [file],
+            title: "Gran Moishe 2026 — "+( user.equipo||"Mi Equipo"),
+            text: totalPts+" puntos 🏆\ngranmoishe.com"
+          });
+          if (sponsorAd) DB.trackAdView(sponsorAd.id);
+        } else {
+          // fallback: download
+          downloadImage();
+        }
+        setGenerating(false);
+      }, "image/png");
+    } catch(e) { setGenerating(false); }
+  }
 
   function shareWhatsApp() {
     const lines = ["🏆 *MI EQUIPO — GRAN MOISHE 2026*",""];
@@ -20770,80 +21085,77 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
       lines.push(flag(p.pais)+" "+p.nombre+(p.id===capitan?" 👑":"")+" ("+p.posicion+") · "+pts+"pts");
     });
     if(subs.length>0){
-      lines.push("");
-      lines.push("*Suplentes:*");
+      lines.push(""); lines.push("*Suplentes:*");
       subs.forEach(p=>lines.push(flag(p.pais)+" "+p.nombre+" ("+p.posicion+")"));
     }
-    lines.push("");
-    lines.push("🎮 Jugá en *granmoishe.com*");
-    const text = encodeURIComponent(lines.join("\n"));
-    window.open("https://wa.me/?text="+text, "_blank");
+    lines.push(""); lines.push("🎮 Jugá en *granmoishe.com*");
+    if(sponsorAd){ DB.trackAdView(sponsorAd.id); }
+    window.open("https://wa.me/?text="+encodeURIComponent(lines.join("\n")), "_blank");
   }
 
-  function shareNative() {
-    const text = "Mirá mi equipo en Gran Moishe 2026: "+(user.equipo||"Mi equipo")+" · "+totalPts+" puntos 🏆\n\ngranmoishe.com";
-    if(navigator.share){
-      navigator.share({title:"Gran Moishe 2026",text,url:"https://granmoishe.com"}).catch(()=>{});
-    } else {
-      navigator.clipboard.writeText(text).then(()=>alert("¡Copiado! Pegalo donde quieras.")).catch(()=>{});
-    }
-  }
-
-  if(squad.length===0) return React.createElement('div',{style:{textAlign:"center",padding:"40px 20px",color:"#3a5a4a",fontSize:".9rem"}},
+  if (squad.length === 0) return React.createElement('div',{style:{textAlign:"center",padding:"40px 20px",color:"#3a5a4a",fontSize:".9rem"}},
     "Armá tu equipo primero para poder compartirlo."
   );
 
-  return React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:14}},
-    React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:900,letterSpacing:2,color:"#e2e8f0"}},"📤 COMPARTIR EQUIPO"),
+  if (xi.length === 0) return React.createElement('div',{style:{textAlign:"center",padding:"40px 20px",color:"#3a5a4a",fontSize:".9rem"}},
+    "Asigná al menos un titular para generar la foto."
+  );
 
-    // Preview card
-    React.createElement('div',{className:"share-canvas-wrap"},
-      React.createElement('div',{className:"share-card"},
-        React.createElement('div',{className:"share-card-header"},
-          React.createElement('div',{className:"share-card-title"},"GRAN MOISHE 2026"),
-          React.createElement('div',{className:"share-card-sub"},user.equipo||"MI EQUIPO"),
-          React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.8rem",fontWeight:900,color:"#FFD700",marginTop:8}},totalPts+" pts")
-        ),
-        React.createElement('div',{style:{marginBottom:8,fontSize:".65rem",color:"#2a5a3a",letterSpacing:1,textTransform:"uppercase",fontFamily:"Oswald,sans-serif"}},"XI Titular"),
-        React.createElement('div',{className:"share-player-grid"},
-          xi.map(p=>{
-            const pts=p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos;
-            return React.createElement('div',{key:p.id,className:"share-player-item",style:{borderColor:p.id===capitan?"rgba(255,215,0,.4)":"rgba(255,255,255,.07)"}},
-              React.createElement('div',{className:"share-player-flag"},flag(p.pais)),
-              React.createElement('div',{className:"share-player-name"},p.nombre.split(" ").slice(-1)[0]+(p.id===capitan?" 👑":"")),
-              React.createElement('div',{className:"share-player-pos",style:{color:POS_COLORS[p.posicion]}},p.posicion),
-              React.createElement('div',{className:"share-player-pts"},pts+"pts")
-            );
-          })
-        ),
-        subs.length>0&&React.createElement('div',null,
-          React.createElement('div',{style:{marginTop:10,marginBottom:6,fontSize:".65rem",color:"#2a5a3a",letterSpacing:1,textTransform:"uppercase",fontFamily:"Oswald,sans-serif"}},"Suplentes"),
-          React.createElement('div',{style:{display:"flex",gap:5,flexWrap:"wrap"}},
-            subs.map(p=>React.createElement('div',{key:p.id,style:{background:"rgba(96,165,250,.08)",border:"1px solid rgba(96,165,250,.2)",borderRadius:5,padding:"3px 7px",fontSize:".6rem",color:"#60a5fa"}},
-              flag(p.pais)+" "+p.nombre.split(" ").slice(-1)[0]
-            ))
-          )
-        ),
-        React.createElement('div',{style:{marginTop:14,paddingTop:10,borderTop:"1px solid rgba(74,222,128,.1)",textAlign:"center",fontSize:".6rem",color:"#1a3a28",letterSpacing:2}},
-          "granmoishe.com"
-        )
+  return React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:14,maxWidth:600,margin:"0 auto"}},
+
+    React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:900,letterSpacing:2,color:"#e2e8f0"}},
+      "📤 COMPARTIR EQUIPO"
+    ),
+
+    // Formation selector
+    React.createElement('div',{style:{display:"flex",alignItems:"center",gap:10,background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:9,padding:"10px 14px"}},
+      React.createElement('span',{style:{fontSize:".78rem",color:"#4a6a5a",fontFamily:"Oswald,sans-serif",letterSpacing:1}},"FORMACIÓN"),
+      React.createElement('select',{
+        value:formation,
+        onChange:e=>setFormation(e.target.value),
+        style:{background:"#0a1525",border:"1px solid #1e2d40",color:"#e2e8f0",borderRadius:6,padding:"5px 10px",fontFamily:"Oswald,sans-serif",fontWeight:700,cursor:"pointer",flex:1}
+      }, FORMATIONS_LIST.map(f=>React.createElement('option',{key:f,value:f},f)))
+    ),
+
+    // Canvas preview
+    React.createElement('div',{className:"share-canvas-wrap",style:{position:"relative",width:"100%",maxWidth:380,margin:"0 auto"}},
+      React.createElement('canvas',{
+        ref:canvasRef,
+        style:{width:"100%",height:"auto",display:"block",borderRadius:10}
+      }),
+      !canvasReady&&React.createElement('div',{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(7,17,30,.7)",borderRadius:10}},
+        React.createElement('div',{style:{color:"#4ade80",fontSize:".9rem",fontFamily:"Oswald,sans-serif",letterSpacing:2}},"Generando imagen...")
       )
     ),
 
-    // Botones
-    React.createElement('div',{style:{display:"flex",gap:10,flexWrap:"wrap"}},
+    // Sponsor info
+    sponsorAd
+      ? React.createElement('div',{style:{background:"rgba(249,115,22,.07)",border:"1px solid rgba(249,115,22,.2)",borderRadius:8,padding:"8px 14px",fontSize:".78rem",color:"#f97316",display:"flex",alignItems:"center",gap:8}},
+          React.createElement('span',null,"📢"),
+          React.createElement('span',null,"Auspicia: ",React.createElement('strong',null,sponsorAd.nombre))
+        )
+      : React.createElement('div',{style:{fontSize:".72rem",color:"#2a4a3a",textAlign:"center"}},"Sin sponsor activo — el admin puede cargar uno desde la sección Publicidad"),
+
+    // Buttons
+    React.createElement('div',{style:{display:"flex",gap:8,flexWrap:"wrap"}},
+      React.createElement('button',{
+        onClick:shareImage,
+        disabled:!canvasReady||generating,
+        style:{flex:1,minWidth:140,padding:"12px 10px",borderRadius:9,border:"none",background:canvasReady?"#4ade80":"#1a3a28",color:canvasReady?"#07111e":"#3a5a4a",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".9rem",cursor:canvasReady?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:6}
+      }, generating?"Generando...":"📸 Compartir Foto"),
+      React.createElement('button',{
+        onClick:downloadImage,
+        disabled:!canvasReady,
+        style:{flex:1,minWidth:120,padding:"12px 10px",borderRadius:9,border:"1px solid rgba(96,165,250,.4)",background:"rgba(96,165,250,.1)",color:canvasReady?"#60a5fa":"#2a4a5a",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".9rem",cursor:canvasReady?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:6}
+      },"⬇ Descargar"),
       React.createElement('button',{
         onClick:shareWhatsApp,
-        style:{flex:1,minWidth:140,padding:"12px 16px",borderRadius:9,border:"none",background:"#25D366",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".95rem",cursor:"pointer",letterSpacing:.5,display:"flex",alignItems:"center",justifyContent:"center",gap:7}
-      },"💬 Compartir por WhatsApp"),
-      React.createElement('button',{
-        onClick:shareNative,
-        style:{flex:1,minWidth:140,padding:"12px 16px",borderRadius:9,border:"1px solid rgba(96,165,250,.4)",background:"rgba(96,165,250,.1)",color:"#60a5fa",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".95rem",cursor:"pointer",letterSpacing:.5,display:"flex",alignItems:"center",justifyContent:"center",gap:7}
-      },"🔗 Compartir link")
+        style:{flex:1,minWidth:140,padding:"12px 10px",borderRadius:9,border:"none",background:"#25D366",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".9rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}
+      },"💬 WhatsApp")
     ),
 
-    React.createElement('div',{style:{fontSize:".75rem",color:"#3a5a4a",textAlign:"center",padding:"6px 0"}},
-      "Compartí tu equipo con amigos e invitalos a jugar"
+    React.createElement('div',{style:{fontSize:".72rem",color:"#2a4a3a",textAlign:"center"}},
+      "📸 Compartir Foto: guarda la imagen y la abre en tu app de fotos o redes."
     )
   );
 }
