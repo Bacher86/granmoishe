@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico Gran Moishe</title>
+<style>
+  body { background:#07111e; color:#e2e8f0; font-family:sans-serif; padding:20px; }
+  .ok { color:#4ade80; }
+  .fail { color:#ef4444; }
+  .warn { color:#fbbf24; }
+  .test { padding:8px 12px; margin:4px 0; border-radius:6px; background:#0d1b2a; font-size:14px; }
+  h2 { color:#4ade80; font-size:1.1rem; margin-top:20px; }
+  #log { white-space:pre-wrap; font-size:11px; color:#5a7a8a; margin-top:20px; background:#040a10; padding:12px; border-radius:8px; max-height:300px; overflow-y:auto; }
+</style>
+</head>
+<body>
+<h1 style="color:#4ade80;font-size:1.3rem;">🔧 Diagnóstico Gran Moishe</h1>
+<p style="color:#5a7a8a;font-size:.85rem;">Ejecutando tests en tu dispositivo...</p>
+
+<div id="tests"></div>
+<div id="log"></div>
+
+<script>
+const tests = document.getElementById('tests');
+const logEl = document.getElementById('log');
+let logText = '';
+
+function log(msg) {
+  logText += msg + '\n';
+  logEl.textContent = logText;
+}
+
+function test(name, fn) {
+  const div = document.createElement('div');
+  div.className = 'test';
+  try {
+    const result = fn();
+    div.innerHTML = '<span class="ok">✅</span> ' + name;
+    if (result) div.innerHTML += ' <span style="color:#5a7a8a;font-size:.8em">→ ' + result + '</span>';
+    log('OK: ' + name);
+  } catch(e) {
+    div.innerHTML = '<span class="fail">❌</span> ' + name + '<br><span style="color:#ef4444;font-size:.75em">' + e.toString() + '</span>';
+    log('FAIL: ' + name + ' — ' + e.toString());
+  }
+  tests.appendChild(div);
+}
+
+function testAsync(name, fn) {
+  const div = document.createElement('div');
+  div.className = 'test';
+  div.innerHTML = '<span class="warn">⏳</span> ' + name;
+  tests.appendChild(div);
+  fn().then(result => {
+    div.innerHTML = '<span class="ok">✅</span> ' + name;
+    if (result) div.innerHTML += ' <span style="color:#5a7a8a;font-size:.8em">→ ' + result + '</span>';
+    log('OK: ' + name);
+  }).catch(e => {
+    div.innerHTML = '<span class="fail">❌</span> ' + name + '<br><span style="color:#ef4444;font-size:.75em">' + e.toString() + '</span>';
+    log('FAIL: ' + name + ' — ' + e.toString());
+  });
+}
+
+// ── Device info ──
+const h2info = document.createElement('h2'); h2info.textContent = 'Dispositivo'; tests.appendChild(h2info);
+test('User Agent', () => navigator.userAgent.slice(0,80));
+test('Screen', () => screen.width + 'x' + screen.height);
+test('Window', () => window.innerWidth + 'x' + window.innerHeight);
+test('localStorage', () => { localStorage.setItem('_t','1'); return localStorage.getItem('_t')==='1'?'OK':'FAIL'; });
+
+// ── JS Features ──
+const h2js = document.createElement('h2'); h2js.textContent = 'Soporte JS'; tests.appendChild(h2js);
+test('Spread objeto', () => { const a={x:1}; const b={...a,y:2}; return b.x+','+b.y; });
+test('Spread array', () => { const a=[1,2]; const b=[...a,3]; return b.join(','); });
+test('Optional chaining (?.)', () => { const o=null; return (o?.x ?? 'null ok'); });
+test('Nullish coalescing (??)', () => { return (null ?? 'ok'); });
+test('Arrow functions', () => { const f = x => x*2; return f(3); });
+test('Template literals', () => { const x=5; return `val=${x}`; });
+test('async/await', () => { async function f(){ return 1; } return 'defined'; });
+test('Promise', () => { return new Promise(r=>r('ok')).constructor.name; });
+test('class', () => { class A { f(){return 1;} } return new A().f(); });
+test('Array.from', () => Array.from([1,2,3]).join(','));
+test('Object.assign', () => Object.assign({},{a:1},{b:2}).b);
+test('Set', () => new Set([1,2,2]).size);
+test('Map', () => new Map([['a',1]]).get('a'));
+
+// ── Canvas ──
+const h2canvas = document.createElement('h2'); h2canvas.textContent = 'Canvas'; tests.appendChild(h2canvas);
+test('Canvas createElement', () => {
+  const c = document.createElement('canvas');
+  return c ? 'OK' : 'FAIL';
+});
+test('Canvas getContext', () => {
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  return ctx ? 'OK' : 'FAIL';
+});
+test('ctx.roundRect nativo', () => {
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  return typeof ctx.roundRect === 'function' ? 'SI' : 'NO (necesita polyfill)';
+});
+test('ctx.roundRect con polyfill', () => {
+  const c = document.createElement('canvas');
+  c.width = 100; c.height = 100;
+  const ctx = c.getContext('2d');
+  if (!ctx.roundRect) {
+    ctx.roundRect = function(x,y,w,h,r){
+      this.beginPath();
+      this.moveTo(x+r,y);
+      this.arcTo(x+w,y,x+w,y+h,r);
+      this.arcTo(x+w,y+h,x,y+h,r);
+      this.arcTo(x,y+h,x,y,r);
+      this.arcTo(x,y,x+w,y,r);
+      this.closePath();
+    };
+  }
+  ctx.roundRect(10,10,80,80,8);
+  ctx.fillStyle='#4ade80';
+  ctx.fill();
+  return 'OK';
+});
+test('createLinearGradient', () => {
+  const c = document.createElement('canvas');
+  c.width=100; c.height=100;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0,0,100,100);
+  g.addColorStop(0,'#000');
+  g.addColorStop(1,'#fff');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,100,100);
+  return 'OK';
+});
+
+// ── React ──
+const h2react = document.createElement('h2'); h2react.textContent = 'React'; tests.appendChild(h2react);
+testAsync('Cargar React', () => new Promise((resolve, reject) => {
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+  s.onload = () => resolve('v' + React.version);
+  s.onerror = () => reject(new Error('No se pudo cargar React'));
+  document.head.appendChild(s);
+}));
+
+testAsync('Cargar ReactDOM', () => new Promise((resolve, reject) => {
+  setTimeout(() => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+    s.onload = () => resolve('OK');
+    s.onerror = () => reject(new Error('No se pudo cargar ReactDOM'));
+    document.head.appendChild(s);
+  }, 500);
+}));
+
+testAsync('Render React básico', () => new Promise((resolve, reject) => {
+  setTimeout(() => {
+    try {
+      const div = document.createElement('div');
+      document.body.appendChild(div);
+      const root = ReactDOM.createRoot(div);
+      root.render(React.createElement('span', null, 'test'));
+      setTimeout(() => {
+        if (div.textContent === 'test') resolve('OK');
+        else reject(new Error('Render vacío'));
+      }, 100);
+    } catch(e) { reject(e); }
+  }, 1200);
+}));
+
+// ── Firebase ──
+const h2fb = document.createElement('h2'); h2fb.textContent = 'Firebase'; tests.appendChild(h2fb);
+testAsync('Cargar Firebase App', () => new Promise((resolve, reject) => {
+  const s = document.createElement('script');
+  s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+  s.onload = () => resolve('OK');
+  s.onerror = () => reject(new Error('FALLO cargar Firebase'));
+  document.head.appendChild(s);
+}));
+
+testAsync('Cargar Firebase DB', () => new Promise((resolve, reject) => {
+  setTimeout(() => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+    s.onload = () => resolve('OK');
+    s.onerror = () => reject(new Error('FALLO cargar Firebase DB'));
+    document.head.appendChild(s);
+  }, 800);
+}));
+
+log('--- Tests completados ---');
+</script>
+</body>
+</html>
