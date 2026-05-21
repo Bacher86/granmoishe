@@ -457,22 +457,16 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 
 /* ── BOTTOM AD BAR ── */
 .sidebar-ads{display:none !important;}
-.bottom-ad-bar{position:fixed;bottom:0;left:0;right:0;z-index:250;background:#07111e;border-top:1px solid #1a2d40;display:flex;align-items:stretch;min-height:56px;max-height:72px;box-shadow:0 -4px 20px rgba(0,0,0,.5);}
-.bottom-ad-img{flex:1;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;}
-.bottom-ad-img img{width:100%;height:100%;object-fit:contain;max-height:70px;display:block;background:#07111e;}
-.bottom-ad-placeholder{padding:8px 18px;font-size:.6rem;color:#1a3a28;letter-spacing:2px;text-transform:uppercase;}
-.bottom-ad-label{position:absolute;top:3px;left:6px;font-size:.5rem;color:#1a3a28;letter-spacing:1px;}
-.bottom-ad-timer{position:absolute;bottom:3px;right:6px;font-size:.58rem;color:#1a3a28;}
-/* Bottom ad bar — pega justo debajo del contenido, 2x3 grid */
-.main{padding-bottom:0 !important; display:flex; flex-direction:column;}
+/* Ad grid — fluye dentro del contenido, justo después de cada tab */
 .bottom-ad-bar{
-  position:sticky; bottom:0; left:0; right:0; z-index:250;
-  background:#07111e; border-top:2px solid #1a3a28;
-  display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr);
-  gap:4px; padding:4px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(2,1fr);
+  gap:5px;
+  padding:5px 0;
   height:180px;
-  box-shadow:0 -4px 20px rgba(0,0,0,.7);
-  flex-shrink:0;
+  margin-top:16px;
+  border-top:2px solid #1a3a28;
 }
 .bad-slot{min-width:0;cursor:pointer;overflow:hidden;position:relative;border-radius:8px;background:#0d1e30;border:1px solid #1a2d40;display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
 .bad-slot:hover{border-color:rgba(74,222,128,.4);}
@@ -21684,8 +21678,6 @@ function GranMoishe() {
           /* ── MERCADO ── */
           , tab==="mercado"&&React.createElement(MarketView, { squad: squad, xi: xi, subs: subs, addToSquad: addToSquad, removeFromSquad: removeFromSquad, setModal: setModal, budget: budget, countryCounts: countryCounts, canAddFn: canAddFn,})
 
-          /* ── PUNTOS ── */
-
           /* ── RANKING ── */
           , tab==="ranking"&&React.createElement(RankingView, { user: user,})
 
@@ -21706,12 +21698,9 @@ function GranMoishe() {
           /* ── COMPARTIR ── */
           , tab==="compartir"&&React.createElement(CompartirEquipoView, { user: user, xi: xi, subs: subs, capitan: capitan, squad: squad,})
 
-          /* ── FIXTURE ── */
-          
+          /* ── AD GRID — aparece en todas las tabs al final del contenido ── */
+          , !user.admin && React.createElement(BottomAdBar, { ads: ads})
         )
-
-        /* BOTTOM AD BAR */
-        , React.createElement(BottomAdBar, { ads: ads})
       )
     )
   );
