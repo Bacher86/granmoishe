@@ -464,7 +464,17 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .bottom-ad-label{position:absolute;top:3px;left:6px;font-size:.5rem;color:#1a3a28;letter-spacing:1px;}
 .bottom-ad-timer{position:absolute;bottom:3px;right:6px;font-size:.58rem;color:#1a3a28;}
 /* extra padding on main content so bottom bar doesn't overlap */
-.main{padding-bottom:80px !important;}
+.main{padding-bottom:90px !important;}
+/* Bottom ad bar — 6 landscape slots always visible */
+.bottom-ad-bar{position:fixed;bottom:0;left:0;right:0;z-index:250;background:#07111e;border-top:1px solid #1a2d40;display:flex;align-items:stretch;height:72px;box-shadow:0 -4px 20px rgba(0,0,0,.5);padding:4px 4px;gap:3px;}
+.bad-slot{flex:1;min-width:0;cursor:pointer;overflow:hidden;position:relative;border-radius:6px;background:#0a1520;border:1px solid #1a2d40;display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
+.bad-slot:hover{border-color:rgba(74,222,128,.3);}
+.bad-slot img{width:100%;height:100%;object-fit:cover;display:block;border-radius:5px;}
+.bad-slot-text{padding:3px 5px;text-align:center;}
+.bad-slot-name{font-family:'Oswald',sans-serif;font-weight:700;color:#60a5fa;font-size:.6rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%;}
+.bad-slot-empty{font-size:.45rem;color:#1a2d30;letter-spacing:1px;text-transform:uppercase;text-align:center;padding:2px;}
+.bad-slot-timer{position:absolute;bottom:2px;right:3px;font-size:.45rem;color:rgba(74,222,128,.3);font-family:'Oswald',sans-serif;}
+.bad-slot-label{position:absolute;top:2px;left:3px;font-size:.42rem;color:#1a3a28;letter-spacing:.5px;}
 </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -19236,9 +19246,10 @@ function PlayerModal({ player, onClose, onAdd, onRemove, onSetCapitan, inSquad, 
 // ═══════════════════════════════════════════════════════════════════════════
 function MarketView({ squad, xi, addToSquad, removeFromSquad, setModal, budget, countryCounts, canAddFn, subs }) {
   const marketOpen = getLS("gm_market_open", true);
+  const firstCountry = useMemo(()=>[...new Set(PLAYERS_DB.map(p=>p.pais))].sort()[0]||"ALL",[]);
   const [search,setSearch]=useState("");
-  const [filterPos,setFilterPos]=useState("ALL");
-  const [filterCountry,setFilterCountry]=useState("ALL");
+  const [filterPos,setFilterPos]=useState("GK");
+  const [filterCountry,setFilterCountry]=useState(firstCountry);
   const [filterTier,setFilterTier]=useState("ALL");
   const [sortBy,setSortBy]=useState("puntos");
 
@@ -20264,29 +20275,29 @@ function ProdeView({ user, toast }) {
   return React.createElement("div", { style: { padding: "16px", maxWidth: 760, margin: "0 auto" } },
 
     // Header
-    React.createElement("div", { style: { marginBottom: 20 } },
+    React.createElement("div", { style: { marginBottom: 12 } },
       React.createElement("h2", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 900, letterSpacing: 2, color: "#4ade80", marginBottom: 4 } }, "🎯 PRODE"),
-      React.createElement("p", { style: { fontSize: ".82rem", color: "#5a7a6a" } }, "Pronosticá resultados antes de que empiece cada partido. +3 pts por exacto, +1 por ganador correcto.")
+      React.createElement("p", { style: { fontSize: ".78rem", color: "#5a7a6a" } }, "Pronosticá resultados antes de que empiece cada partido. +3 pts por exacto, +1 por ganador correcto.")
     ),
 
     // Stats strip
-    React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" } },
-      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
-        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#4ade80" } }, totalPicks),
-        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Pronósticos")
+    React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
+      React.createElement("div", { style: { flex: 1, minWidth: 80, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "8px 10px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.4rem", fontWeight: 700, color: "#4ade80" } }, totalPicks),
+        React.createElement("div", { style: { fontSize: ".68rem", color: "#5a7a6a" } }, "Pronósticos")
       ),
-      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
-        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#FFD700" } }, totalPts),
-        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Pts Prode")
+      React.createElement("div", { style: { flex: 1, minWidth: 80, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "8px 10px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.4rem", fontWeight: 700, color: "#FFD700" } }, totalPts),
+        React.createElement("div", { style: { fontSize: ".68rem", color: "#5a7a6a" } }, "Pts Prode")
       ),
-      React.createElement("div", { style: { flex: 1, minWidth: 100, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "10px 14px", textAlign: "center" } },
-        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 700, color: "#60a5fa" } }, exactos),
-        React.createElement("div", { style: { fontSize: ".72rem", color: "#5a7a6a" } }, "Exactos ⭐")
+      React.createElement("div", { style: { flex: 1, minWidth: 80, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.15)", borderRadius: 10, padding: "8px 10px", textAlign: "center" } },
+        React.createElement("div", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.4rem", fontWeight: 700, color: "#60a5fa" } }, exactos),
+        React.createElement("div", { style: { fontSize: ".68rem", color: "#5a7a6a" } }, "Exactos ⭐")
       )
     ),
 
-    // Filter tabs
-    React.createElement("div", { style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 16 } },
+    // Filter tabs — scrollable horizontal
+    React.createElement("div", { style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 10, WebkitOverflowScrolling: "touch" } },
       FILTER_TABS.map(function(ft) {
         return React.createElement("button", {
           key: ft.id,
@@ -20303,8 +20314,18 @@ function ProdeView({ user, toast }) {
       })
     ),
 
-    // Match cards
-    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+    // Match cards — scroll interno para no tapar el ad bar
+    React.createElement("div", {
+      style: {
+        display: "flex", flexDirection: "column", gap: 10,
+        maxHeight: "calc(100vh - 320px)",
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
+        paddingRight: 2,
+        paddingBottom: 8
+      }
+    },
       visibleMatches.length === 0 && React.createElement("div", {
         style: { textAlign: "center", padding: 40, color: "#3a5a4a", fontSize: ".9rem" }
       }, "No hay partidos en esta categoría"),
@@ -21210,47 +21231,71 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BOTTOM AD BAR (reemplaza sidebar en mobile)
+// BOTTOM AD BAR — 6 slots siempre visibles, cada uno rota independiente
 // ═══════════════════════════════════════════════════════════════════════════
+const NUM_SLOTS = 6;
+
+function AdSlot({ ads, slotIndex, total }) {
+  // Cada slot arranca en un offset distinto para que no roten todos al mismo tiempo
+  const [idx, setIdx] = useState(() => slotIndex % Math.max(ads.length, 1));
+  const [secs, setSecs] = useState(() => {
+    const a = ads[slotIndex % Math.max(ads.length, 1)];
+    return a ? (a.seconds || 8) : 8;
+  });
+
+  useEffect(() => {
+    if (ads.length < 2) return;
+    // Offset escalonado: cada slot rota con un delay distinto
+    const delay = (slotIndex * Math.floor((ads[0]?.seconds || 8) * 1000 / NUM_SLOTS));
+    const tid = setTimeout(() => {
+      const interval = (ads[idx]?.seconds || 8) * 1000;
+      const t = setInterval(() => {
+        setIdx(i => {
+          const n = (i + 1) % ads.length;
+          setSecs(ads[n]?.seconds || 8);
+          return n;
+        });
+      }, interval);
+      return () => clearInterval(t);
+    }, delay);
+    return () => clearTimeout(tid);
+  }, [ads]);
+
+  useEffect(() => {
+    if (!secs) return;
+    const t = setInterval(() => setSecs(s => s > 0 ? s - 1 : 0), 1000);
+    return () => clearInterval(t);
+  }, [secs]);
+
+  const a = ads.length ? ads[idx % ads.length] : null;
+
+  if (!a) return React.createElement('div', { className: "bad-slot" },
+    React.createElement('div', { className: "bad-slot-empty" }, "PUB")
+  );
+
+  return React.createElement('div', {
+    className: "bad-slot",
+    onClick: () => { if(DB.trackAdClick) DB.trackAdClick(a.id); if (a.url) window.open(a.url, "_blank"); }
+  },
+    React.createElement('div', { className: "bad-slot-label" }, "PUB"),
+    a.img
+      ? React.createElement('img', { src: a.img, alt: a.nombre, onError: e => { e.target.style.display = 'none'; } })
+      : React.createElement('div', { className: "bad-slot-text" },
+          React.createElement('div', { className: "bad-slot-name" }, a.nombre),
+          a.descripcion && React.createElement('div', { style: { fontSize: ".45rem", color: "#3a5a6a", marginTop: 1 } }, a.descripcion)
+        ),
+    ads.length > 1 && React.createElement('div', { className: "bad-slot-timer" }, secs + "s")
+  );
+}
+
 function BottomAdBar({ ads }) {
   const adsOn = getLS("gm_ads_enabled", true);
   if (!adsOn) return null;
-  const slotAds = useMemo(()=>ads.filter(a=>a.active&&a.tier==="bronce"),[ads]);
-  const [idx,setIdx]=useState(0);
-  const [secs,setSecs]=useState(0);
+  const slotAds = useMemo(() => ads.filter(a => a.active && a.tier === "bronce"), [ads]);
 
-  useEffect(()=>{
-    if(!slotAds.length) return;
-    setSecs(slotAds[0]&&slotAds[0].seconds||8);
-    if(slotAds.length<2) return;
-    const t=setInterval(()=>{
-      setIdx(i=>{const n=(i+1)%slotAds.length; setSecs(slotAds[n]&&slotAds[n].seconds||8); return n;});
-    },(slotAds[0]&&slotAds[0].seconds||8)*1000);
-    return()=>clearInterval(t);
-  },[slotAds]);
-
-  useEffect(()=>{
-    if(!secs) return;
-    const t=setInterval(()=>setSecs(s=>s>0?s-1:0),1000);
-    return()=>clearInterval(t);
-  },[secs]);
-
-  const a = slotAds.length ? slotAds[idx] : null;
-
-  if (!a) return React.createElement('div',{className:"bottom-ad-bar"},
-    React.createElement('div',{className:"bottom-ad-placeholder"},"Espacio publicitario disponible")
-  );
-
-  return React.createElement('div',{className:"bottom-ad-bar"},
-    React.createElement('div',{className:"bottom-ad-img",onClick:()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");}},
-      React.createElement('div',{className:"bottom-ad-label"},"PUBLICIDAD"),
-      a.img
-        ?React.createElement('img',{src:a.img,alt:a.nombre,onError:function(e){e.target.style.display='none';}})
-        :React.createElement('div',{style:{display:"flex",alignItems:"center",gap:10,padding:"8px 18px"}},
-          React.createElement('span',{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#60a5fa",fontSize:".85rem"}},a.nombre),
-          a.descripcion&&React.createElement('span',{style:{fontSize:".72rem",color:"#4a5a6a"}},a.descripcion)
-        ),
-      slotAds.length>1&&React.createElement('div',{className:"bottom-ad-timer"},secs+"s")
+  return React.createElement('div', { className: "bottom-ad-bar" },
+    Array.from({ length: NUM_SLOTS }).map((_, i) =>
+      React.createElement(AdSlot, { key: i, ads: slotAds, slotIndex: i, total: NUM_SLOTS })
     )
   );
 }
