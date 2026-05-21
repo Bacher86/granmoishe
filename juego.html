@@ -17642,6 +17642,24 @@ exports.version = "19.2.5";
 (function(){
   var React=window.React,ReactDOM=window.ReactDOM;
   var useState=React.useState,useEffect=React.useEffect,useMemo=React.useMemo,useCallback=React.useCallback,useRef=React.useRef;
+
+  // Polyfill global para ctx.roundRect (Safari/iOS/Android viejos)
+  (function(){
+    var proto = CanvasRenderingContext2D.prototype;
+    if (!proto.roundRect) {
+      proto.roundRect = function(x,y,w,h,r){
+        r = Math.min(typeof r==='number'?r:0, w/2, h/2);
+        this.beginPath();
+        this.moveTo(x+r, y);
+        this.arcTo(x+w, y,   x+w, y+h, r);
+        this.arcTo(x+w, y+h, x,   y+h, r);
+        this.arcTo(x,   y+h, x,   y,   r);
+        this.arcTo(x,   y,   x+w, y,   r);
+        this.closePath();
+        return this;
+      };
+    }
+  })();
  function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }// ╔══════════════════════════════════════════════════════════════════════════╗
 // ║                    GRAN MOISHE 2026 — v2.1                              ║
 // ║           Fantasy Fútbol · Mundial · Comunidades Judías                 ║
@@ -20334,7 +20352,9 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
     setGenerated(true);
   }, [user, xi, subs, capitan, myPos, totalPlayers]);
 
-  useEffect(() => { drawCard(activeAd?.id||null); }, [drawCard, activeAd]);
+  useEffect(() => {
+    try { drawCard(activeAd?.id||null); } catch(e){ console.warn('[GM] canvas error:',e); }
+  }, [drawCard, activeAd]);
 
   const handleShare = async () => {
     const canvas = canvasRef.current;
@@ -21577,7 +21597,32 @@ function GranMoishe() {
   );
 }
 
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(GranMoishe));
+  class ErrorBoundary extends React.Component {
+    constructor(p){ super(p); this.state={err:null}; }
+    static getDerivedStateFromError(e){ return {err:e}; }
+    componentDidCatch(e,i){ console.error('[GM] React crash:',e,i); }
+    render(){
+      if(this.state.err) return React.createElement('div',{style:{
+        minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',
+        justifyContent:'center',background:'#07111e',color:'#e2e8f0',padding:24,textAlign:'center'
+      }},
+        React.createElement('div',{style:{fontSize:'2rem',marginBottom:12}},'⚠️'),
+        React.createElement('div',{style:{fontFamily:'Oswald,sans-serif',fontSize:'1.2rem',color:'#4ade80',marginBottom:8}},'Error al cargar'),
+        React.createElement('div',{style:{fontSize:'.85rem',color:'#5a7a8a',marginBottom:20}},
+          'Tocá para recargar la página'
+        ),
+        React.createElement('button',{
+          onClick:()=>window.location.reload(),
+          style:{padding:'12px 28px',borderRadius:9,border:'none',background:'#4ade80',
+                 color:'#07111e',fontFamily:'Oswald,sans-serif',fontWeight:700,fontSize:'1rem',cursor:'pointer'}
+        },'Recargar')
+      );
+      return this.props.children;
+    }
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    React.createElement(ErrorBoundary, null, React.createElement(GranMoishe))
+  );
 })();
   </script>
 <script>
