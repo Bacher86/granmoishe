@@ -17684,7 +17684,8 @@ const FB_CONFIG = {
 const FB_KEYS = [
   "gm_users", "gm_ads", "gm_player_stats", "gm_stats_by_name",
   "gm_matches_cache", "gm_published_matches", "gm_match_stats",
-  "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players"
+  "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players",
+  "gm_ultima_fecha_publicada"
 ];
 
 let _fbApp = null, _fbDB = null, _fbReady = false;
@@ -18396,22 +18397,67 @@ const PLAYERS_DB = RAW.map(([nombre, pais, posicion, tier]) => {
            eliminated, forma:Array.from({length:5},()=>rand(4,10)) };
 });
 // ── Stats reales del admin ──────────────────────────────────────
-function applyAdminStats(){
+function applyAdminStats(fechaIngreso){
+  // fechaIngreso: matchday en que se registró el usuario actual (suma solo > este número)
+  // Si es undefined/0, suma todo (usuarios que arrancaron desde el inicio)
   try{
-    var stats=JSON.parse(localStorage.getItem("gm_stats_by_name")||"{}");
-    if(!Object.keys(stats).length)return false;
+    var fi = (fechaIngreso !== undefined && fechaIngreso !== null) ? parseInt(fechaIngreso) : 0;
+    var ps = JSON.parse(localStorage.getItem("gm_player_stats")||"{}");
+    var statsByName = JSON.parse(localStorage.getItem("gm_stats_by_name")||"{}");
+    // Si hay stats por jugador con fechas, usarlas filtrando por fecha_ingreso
+    var useFechas = Object.keys(ps).length > 0;
     PLAYERS_DB.forEach(function(p){
-      var s=stats[p.nombre+"|"+p.pais];
-      if(s){p.puntos=s.puntos||0;p.goles=s.goles||0;p.asist=s.asist||0;
-            p.amarillas=s.amarillas||0;p.rojas=s.rojas||0;
-            p.wins=s.wins||0;p.draws=s.draws||0;p.losses=s.losses||0;}
+      if(useFechas && ps[p.id] && ps[p.id].fechas){
+        var tot={goles:0,asist:0,vallas:0,wins:0,draws:0,losses:0,amarillas:0,rojas:0,puntos:0};
+        Object.entries(ps[p.id].fechas).forEach(function(entry){
+          var fkey=entry[0], fstat=entry[1];
+          var md = parseInt((fkey.split("-")[1])||"0");
+          if(md > fi){
+            tot.goles+=fstat.goles||0; tot.asist+=fstat.asist||0;
+            tot.vallas+=fstat.vallas||0; tot.wins+=fstat.wins||0;
+            tot.draws+=fstat.draws||0; tot.losses+=fstat.losses||0;
+            tot.amarillas+=fstat.amarillas||0; tot.rojas+=fstat.rojas||0;
+          }
+        });
+        // recalcular puntos desde cero con solo las fechas elegibles
+        var pos=p.posicion;
+        var pts=0;
+        pts += tot.wins*(SCORING.win||5) + tot.draws*(SCORING.draw||3) + tot.losses*(SCORING.loss||1);
+        pts += tot.goles*(SCORING.goal||4);
+        if(pos==="GK") pts += tot.goles*(SCORING.goal_gk||3);
+        else if(pos==="DEF") pts += tot.goles*(SCORING.goal_def||2);
+        else if(pos==="MID") pts += tot.goles*(SCORING.goal_mid||1);
+        pts += tot.asist*(SCORING.assist||2);
+        if(pos==="GK") pts += tot.vallas*(SCORING.clean_sheet_gk||4);
+        else if(pos==="DEF") pts += tot.vallas*(SCORING.clean_sheet_def||2);
+        pts += tot.amarillas*(SCORING.yellow||-1);
+        pts += tot.rojas*(SCORING.red||-3);
+        tot.puntos = pts;
+        p.puntos=tot.puntos; p.goles=tot.goles; p.asist=tot.asist;
+        p.amarillas=tot.amarillas; p.rojas=tot.rojas;
+        p.wins=tot.wins; p.draws=tot.draws; p.losses=tot.losses;
+        p.vallas=tot.vallas;
+      } else {
+        // fallback a gm_stats_by_name (sumatorio ya calculado por admin)
+        // si fi=0 usarlo tal cual, si fi>0 no podemos filtrar → mostrar 0 hasta que admin republique
+        var s = statsByName[p.nombre+"|"+p.pais];
+        if(s && fi===0){
+          p.puntos=s.puntos||0; p.goles=s.goles||0; p.asist=s.asist||0;
+          p.amarillas=s.amarillas||0; p.rojas=s.rojas||0;
+          p.wins=s.wins||0; p.draws=s.draws||0; p.losses=s.losses||0;
+        } else if(fi>0){
+          // usuario tardío sin datos de fechas desglosadas → 0 hasta próxima publicación
+          p.puntos=0; p.goles=0; p.asist=0; p.amarillas=0; p.rojas=0;
+          p.wins=0; p.draws=0; p.losses=0;
+        }
+      }
     });
     return true;
-  }catch(e){return false;}
+  }catch(e){console.error("applyAdminStats error:",e);return false;}
 }
-applyAdminStats();
+applyAdminStats(0);
 window.addEventListener("storage",function(e){
-  if(e.key==="gm_stats_by_name"||e.key==="gm_player_stats")applyAdminStats();
+  if(e.key==="gm_stats_by_name"||e.key==="gm_player_stats"){var _sess=null;try{_sess=JSON.parse(localStorage.getItem("gm_session"));}catch(_e){}applyAdminStats(_sess&&_sess.fecha_ingreso!==undefined?_sess.fecha_ingreso:0);}
 });
 const ALL_COUNTRIES = [...new Set(PLAYERS_DB.map(p=>p.pais))].sort();
 
@@ -18430,8 +18476,11 @@ const Auth = {
     const uid = "u_"+Math.random().toString(36).slice(2);
     const playerNum = String(users.length + 1).padStart(4, "0");
     const playerId = "GM-" + playerNum;
+    // Guardar la fecha (matchday) en que se registra — solo suma desde la SIGUIENTE
+    const fechaIngreso = parseInt(getLS("gm_ultima_fecha_publicada", 0) || 0);
     const user = { uid, email, dni, nombre, apellido, comunidad, pais, celular, fecha_nac,
-                   equipo, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId };
+                   equipo, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null,
+                   pagado:false, playerId, fecha_ingreso: fechaIngreso };
     setLS("gm_users",[...users,user]); return { ok:true, user };
   },
   login: async ({ email, password }) => {
@@ -21294,7 +21343,7 @@ function GranMoishe() {
   useEffect(()=>{
     if(!user)return;
     var refreshPts=function(){
-      applyAdminStats();
+      applyAdminStats(user&&user.fecha_ingreso!==undefined?user.fecha_ingreso:0);
       var upd=function(arr){return arr.map(function(p){var live=PLAYERS_DB.find(function(x){return x.id===p.id;});return live?Object.assign({},p,{puntos:live.puntos,goles:live.goles,asist:live.asist,amarillas:live.amarillas,wins:live.wins,draws:live.draws,losses:live.losses}):p;});};
       setSquad(function(prev){var n=upd(prev);setLS(squadKey,n);return n;});
       setXi(function(prev){return upd(prev);});setSubs(function(prev){return upd(prev);});
