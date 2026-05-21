@@ -427,7 +427,45 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   .idx-ctas{flex-direction:column;align-items:center;}
   .idx-features{grid-template-columns:1fr 1fr;max-width:100%;}
 }
-.prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}</style>
+.prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}
+
+/* ── LOGROS ── */
+.logro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.logro-card{background:var(--card,#0d1b2a);border:1px solid #1a2d40;border-radius:12px;padding:14px 10px;text-align:center;transition:border-color .2s,transform .15s;position:relative;}
+.logro-card.desbloqueado{border-color:rgba(74,222,128,.4);background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(74,222,128,.02));}
+.logro-card.bloqueado{opacity:.45;filter:grayscale(.6);}
+.logro-card.nuevo{animation:logroPop .5s ease;}
+@keyframes logroPop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.logro-icon{font-size:2.2rem;margin-bottom:6px;line-height:1;}
+.logro-name{font-family:Oswald,sans-serif;font-size:.78rem;font-weight:700;color:#e2e8f0;letter-spacing:.5px;margin-bottom:3px;}
+.logro-desc{font-size:.65rem;color:#5a7a8a;line-height:1.3;}
+.logro-nuevo-badge{position:absolute;top:6px;right:6px;background:#4ade80;color:#07111e;font-size:.55rem;font-weight:900;padding:2px 5px;border-radius:4px;font-family:Oswald,sans-serif;letter-spacing:.5px;}
+.logro-lock{position:absolute;top:6px;right:6px;font-size:.75rem;opacity:.4;}
+
+/* ── COMPARTIR EQUIPO ── */
+.share-canvas-wrap{border-radius:12px;overflow:hidden;border:1px solid rgba(74,222,128,.25);margin-bottom:12px;background:#07111e;}
+.share-card{background:linear-gradient(135deg,#07111e,#0d2a1a);padding:20px;font-family:'Oswald',sans-serif;min-height:300px;}
+.share-card-header{text-align:center;margin-bottom:16px;border-bottom:1px solid rgba(74,222,128,.2);padding-bottom:12px;}
+.share-card-title{font-size:1.4rem;font-weight:900;letter-spacing:3px;color:#4ade80;}
+.share-card-sub{font-size:.7rem;color:#2a5a3a;letter-spacing:2px;margin-top:2px;}
+.share-player-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.share-player-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:7px 5px;text-align:center;}
+.share-player-flag{font-size:1rem;}
+.share-player-name{font-size:.6rem;font-weight:700;color:#e2e8f0;margin-top:2px;line-height:1.2;}
+.share-player-pos{font-size:.55rem;color:#4a6a5a;margin-top:1px;}
+.share-player-pts{font-size:.62rem;color:#4ade80;font-weight:700;}
+
+/* ── BOTTOM AD BAR ── */
+.sidebar-ads{display:none !important;}
+.bottom-ad-bar{position:fixed;bottom:0;left:0;right:0;z-index:250;background:#07111e;border-top:1px solid #1a2d40;display:flex;align-items:stretch;min-height:56px;max-height:72px;box-shadow:0 -4px 20px rgba(0,0,0,.5);}
+.bottom-ad-img{flex:1;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;}
+.bottom-ad-img img{width:100%;height:100%;object-fit:contain;max-height:70px;display:block;background:#07111e;}
+.bottom-ad-placeholder{padding:8px 18px;font-size:.6rem;color:#1a3a28;letter-spacing:2px;text-transform:uppercase;}
+.bottom-ad-label{position:absolute;top:3px;left:6px;font-size:.5rem;color:#1a3a28;letter-spacing:1px;}
+.bottom-ad-timer{position:absolute;bottom:3px;right:6px;font-size:.58rem;color:#1a3a28;}
+/* extra padding on main content so bottom bar doesn't overlap */
+.main{padding-bottom:80px !important;}
+</style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -20635,6 +20673,227 @@ function EquipoListView(props){
 }
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LOGROS SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+const LOGROS_DEF = [
+  { id:"l01", icon:"⭐", nombre:"Primera estrella",  desc:"Armá tu equipo completo (15 jugadores)",       check:(s,xi,subs,u)=>s.length>=15 },
+  { id:"l02", icon:"👑", nombre:"Capitán elegido",   desc:"Asignale el brazalete a un jugador",            check:(s,xi,subs,u,cap)=>!!cap },
+  { id:"l03", icon:"🏟", nombre:"XI completo",       desc:"Poné 11 titulares en cancha",                   check:(s,xi)=>xi.length===11 },
+  { id:"l04", icon:"🔄", nombre:"Banco completo",    desc:"Tenés 4 suplentes",                             check:(s,xi,subs)=>subs.length===4 },
+  { id:"l05", icon:"🌍", nombre:"Multi-selección",   desc:"Jugadores de 5 o más países distintos",         check:(s)=>new Set(s.map(p=>p.pais)).size>=5 },
+  { id:"l06", icon:"💎", nombre:"Estrella del fútbol",desc:"Tenés 3 o más jugadores estrella en tu XI",    check:(s,xi)=>xi.filter(p=>p.tier==="estrella").length>=3 },
+  { id:"l07", icon:"🎯", nombre:"Estratega",         desc:"Cambiá la formación al menos una vez",          check:(s,xi,subs,u,cap,fm)=>fm!=="4-3-3" },
+  { id:"l08", icon:"⚽", nombre:"Goleador",          desc:"Tu XI suma 10+ goles en total",                 check:(s,xi)=>xi.reduce((a,p)=>a+p.goles,0)>=10 },
+  { id:"l09", icon:"🅰",  nombre:"Asistidor",        desc:"Tu XI suma 8+ asistencias en total",            check:(s,xi)=>xi.reduce((a,p)=>a+p.asist,0)>=8 },
+  { id:"l10", icon:"🧤", nombre:"El Muro",           desc:"Tu GK tiene 2+ vallas invictas",                check:(s,xi)=>xi.filter(p=>p.posicion==="GK").some(p=>p.vallas>=2) },
+  { id:"l11", icon:"📈", nombre:"Top 10",            desc:"Entrá al top 10 del ranking general",           check:(s,xi,subs,u)=>{ if(!u) return false; const ranked=getLS("gm_users",[]).filter(x=>!x.admin&&x.pagado!==false).sort((a,b)=>(b.pts||0)-(a.pts||0)); const pos=ranked.findIndex(x=>x.uid===u.uid); return pos>=0&&pos<10; } },
+  { id:"l12", icon:"🏆", nombre:"Podio",             desc:"Entrá al top 3 del ranking general",            check:(s,xi,subs,u)=>{ if(!u) return false; const ranked=getLS("gm_users",[]).filter(x=>!x.admin&&x.pagado!==false).sort((a,b)=>(b.pts||0)-(a.pts||0)); const pos=ranked.findIndex(x=>x.uid===u.uid); return pos>=0&&pos<3; } },
+  { id:"l13", icon:"🤝", nombre:"Social",            desc:"Unite o creá una liga privada",                 check:(s,xi,subs,u)=>u&&!!u.liga },
+  { id:"l14", icon:"🌟", nombre:"100 puntos",        desc:"Superá los 100 puntos",                         check:(s,xi,subs,u)=>u&&(u.pts||0)>=100 },
+  { id:"l15", icon:"🔥", nombre:"En llamas",         desc:"Superá los 300 puntos",                         check:(s,xi,subs,u)=>u&&(u.pts||0)>=300 },
+  { id:"l16", icon:"💰", nombre:"Presupuestero",     desc:"Gastá más del 90% del presupuesto",             check:(s,xi,subs,u)=>{ const spent=s.reduce((a,p)=>a+p.valor,0); return spent>=(BUDGET*0.9); } },
+  { id:"l17", icon:"🇦🇷", nombre:"Hincha",           desc:"Tenés 3 jugadores argentinos",                  check:(s)=>s.filter(p=>p.pais==="Argentina").length>=3 },
+  { id:"l18", icon:"🎲", nombre:"Apostador",         desc:"Completá 10 pronósticos en el Prode",           check:(s,xi,subs,u)=>{ if(!u) return false; const picks=getLS("gm_prode_"+u.uid,{}); return Object.keys(picks).length>=10; } },
+];
+
+function getLogros(squad, xi, subs, user, capitan, formation) {
+  const key = user ? "gm_logros_seen_"+user.uid : null;
+  const seen = key ? getLS(key,[]) : [];
+  return LOGROS_DEF.map(l => {
+    const unlocked = l.check(squad, xi, subs, user, capitan, formation);
+    const isNew = unlocked && !seen.includes(l.id);
+    return { ...l, unlocked, isNew };
+  });
+}
+
+function markLogrosAsSeen(user, logros) {
+  if (!user) return;
+  const key = "gm_logros_seen_"+user.uid;
+  const seen = getLS(key,[]);
+  const newSeen = [...new Set([...seen, ...logros.filter(l=>l.unlocked).map(l=>l.id)])];
+  setLS(key, newSeen);
+}
+
+function LogrosView({ squad, xi, subs, user, capitan, formation }) {
+  const logros = useMemo(()=>getLogros(squad, xi, subs, user, capitan, formation), [squad, xi, subs, user, capitan, formation]);
+  const desbloqueados = logros.filter(l=>l.unlocked).length;
+
+  useEffect(()=>{
+    markLogrosAsSeen(user, logros);
+  }, [logros]);
+
+  return React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:16} },
+    React.createElement('div', { style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8} },
+      React.createElement('div', null,
+        React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontSize:"1.6rem",fontWeight:900,letterSpacing:2,color:"#e2e8f0"} }, "🏅 LOGROS"),
+        React.createElement('div', { style:{fontSize:".78rem",color:"#4a6a5a",marginTop:3} }, "Completá desafíos para desbloquear logros")
+      ),
+      React.createElement('div', { style:{background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.25)",borderRadius:20,padding:"6px 16px",fontFamily:"Oswald,sans-serif",fontSize:".95rem",fontWeight:700,color:"#4ade80"} },
+        desbloqueados + " / " + logros.length
+      )
+    ),
+    // progress bar
+    React.createElement('div', { style:{background:"rgba(255,255,255,.05)",borderRadius:6,height:8,overflow:"hidden"} },
+      React.createElement('div', { style:{height:8,borderRadius:6,background:"linear-gradient(90deg,#4ade80,#22c55e)",width:(desbloqueados/logros.length*100)+"%",transition:"width .5s ease"} })
+    ),
+    React.createElement('div', { className:"logro-grid" },
+      logros.map(l =>
+        React.createElement('div', { key:l.id, className:"logro-card "+(l.unlocked?"desbloqueado":"bloqueado")+(l.isNew?" nuevo":"") },
+          l.isNew && React.createElement('div', { className:"logro-nuevo-badge" }, "¡NUEVO!"),
+          !l.unlocked && React.createElement('div', { className:"logro-lock" }, "🔒"),
+          React.createElement('div', { className:"logro-icon" }, l.icon),
+          React.createElement('div', { className:"logro-name" }, l.nombre),
+          React.createElement('div', { className:"logro-desc" }, l.desc)
+        )
+      )
+    )
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPARTIR EQUIPO
+// ═══════════════════════════════════════════════════════════════════════════
+function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
+  const totalPts = [...xi,...subs].reduce((s,p)=>s+(p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos),0);
+  const allPlayers = [...xi,...subs];
+
+  function shareWhatsApp() {
+    const lines = ["🏆 *MI EQUIPO — GRAN MOISHE 2026*",""];
+    lines.push("👤 "+(user.nombre||"")+" "+(user.apellido||""));
+    lines.push("🏟 "+(user.equipo||"Mi equipo"));
+    lines.push("⭐ *"+totalPts+" puntos*");
+    lines.push("");
+    lines.push("*XI TITULAR:*");
+    xi.forEach(p=>{
+      const pts = p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos;
+      lines.push(flag(p.pais)+" "+p.nombre+(p.id===capitan?" 👑":"")+" ("+p.posicion+") · "+pts+"pts");
+    });
+    if(subs.length>0){
+      lines.push("");
+      lines.push("*Suplentes:*");
+      subs.forEach(p=>lines.push(flag(p.pais)+" "+p.nombre+" ("+p.posicion+")"));
+    }
+    lines.push("");
+    lines.push("🎮 Jugá en *granmoishe.com*");
+    const text = encodeURIComponent(lines.join("\n"));
+    window.open("https://wa.me/?text="+text, "_blank");
+  }
+
+  function shareNative() {
+    const text = "Mirá mi equipo en Gran Moishe 2026: "+(user.equipo||"Mi equipo")+" · "+totalPts+" puntos 🏆\n\ngranmoishe.com";
+    if(navigator.share){
+      navigator.share({title:"Gran Moishe 2026",text,url:"https://granmoishe.com"}).catch(()=>{});
+    } else {
+      navigator.clipboard.writeText(text).then(()=>alert("¡Copiado! Pegalo donde quieras.")).catch(()=>{});
+    }
+  }
+
+  if(squad.length===0) return React.createElement('div',{style:{textAlign:"center",padding:"40px 20px",color:"#3a5a4a",fontSize:".9rem"}},
+    "Armá tu equipo primero para poder compartirlo."
+  );
+
+  return React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:14}},
+    React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:900,letterSpacing:2,color:"#e2e8f0"}},"📤 COMPARTIR EQUIPO"),
+
+    // Preview card
+    React.createElement('div',{className:"share-canvas-wrap"},
+      React.createElement('div',{className:"share-card"},
+        React.createElement('div',{className:"share-card-header"},
+          React.createElement('div',{className:"share-card-title"},"GRAN MOISHE 2026"),
+          React.createElement('div',{className:"share-card-sub"},user.equipo||"MI EQUIPO"),
+          React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.8rem",fontWeight:900,color:"#FFD700",marginTop:8}},totalPts+" pts")
+        ),
+        React.createElement('div',{style:{marginBottom:8,fontSize:".65rem",color:"#2a5a3a",letterSpacing:1,textTransform:"uppercase",fontFamily:"Oswald,sans-serif"}},"XI Titular"),
+        React.createElement('div',{className:"share-player-grid"},
+          xi.map(p=>{
+            const pts=p.id===capitan?Math.ceil(p.puntos*(1+SCORING.captain_bonus)):p.puntos;
+            return React.createElement('div',{key:p.id,className:"share-player-item",style:{borderColor:p.id===capitan?"rgba(255,215,0,.4)":"rgba(255,255,255,.07)"}},
+              React.createElement('div',{className:"share-player-flag"},flag(p.pais)),
+              React.createElement('div',{className:"share-player-name"},p.nombre.split(" ").slice(-1)[0]+(p.id===capitan?" 👑":"")),
+              React.createElement('div',{className:"share-player-pos",style:{color:POS_COLORS[p.posicion]}},p.posicion),
+              React.createElement('div',{className:"share-player-pts"},pts+"pts")
+            );
+          })
+        ),
+        subs.length>0&&React.createElement('div',null,
+          React.createElement('div',{style:{marginTop:10,marginBottom:6,fontSize:".65rem",color:"#2a5a3a",letterSpacing:1,textTransform:"uppercase",fontFamily:"Oswald,sans-serif"}},"Suplentes"),
+          React.createElement('div',{style:{display:"flex",gap:5,flexWrap:"wrap"}},
+            subs.map(p=>React.createElement('div',{key:p.id,style:{background:"rgba(96,165,250,.08)",border:"1px solid rgba(96,165,250,.2)",borderRadius:5,padding:"3px 7px",fontSize:".6rem",color:"#60a5fa"}},
+              flag(p.pais)+" "+p.nombre.split(" ").slice(-1)[0]
+            ))
+          )
+        ),
+        React.createElement('div',{style:{marginTop:14,paddingTop:10,borderTop:"1px solid rgba(74,222,128,.1)",textAlign:"center",fontSize:".6rem",color:"#1a3a28",letterSpacing:2}},
+          "granmoishe.com"
+        )
+      )
+    ),
+
+    // Botones
+    React.createElement('div',{style:{display:"flex",gap:10,flexWrap:"wrap"}},
+      React.createElement('button',{
+        onClick:shareWhatsApp,
+        style:{flex:1,minWidth:140,padding:"12px 16px",borderRadius:9,border:"none",background:"#25D366",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".95rem",cursor:"pointer",letterSpacing:.5,display:"flex",alignItems:"center",justifyContent:"center",gap:7}
+      },"💬 Compartir por WhatsApp"),
+      React.createElement('button',{
+        onClick:shareNative,
+        style:{flex:1,minWidth:140,padding:"12px 16px",borderRadius:9,border:"1px solid rgba(96,165,250,.4)",background:"rgba(96,165,250,.1)",color:"#60a5fa",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".95rem",cursor:"pointer",letterSpacing:.5,display:"flex",alignItems:"center",justifyContent:"center",gap:7}
+      },"🔗 Compartir link")
+    ),
+
+    React.createElement('div',{style:{fontSize:".75rem",color:"#3a5a4a",textAlign:"center",padding:"6px 0"}},
+      "Compartí tu equipo con amigos e invitalos a jugar"
+    )
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BOTTOM AD BAR (reemplaza sidebar en mobile)
+// ═══════════════════════════════════════════════════════════════════════════
+function BottomAdBar({ ads }) {
+  const adsOn = getLS("gm_ads_enabled", true);
+  if (!adsOn) return null;
+  const slotAds = useMemo(()=>ads.filter(a=>a.active&&a.tier==="bronce"),[ads]);
+  const [idx,setIdx]=useState(0);
+  const [secs,setSecs]=useState(0);
+
+  useEffect(()=>{
+    if(!slotAds.length) return;
+    setSecs(slotAds[0]&&slotAds[0].seconds||8);
+    if(slotAds.length<2) return;
+    const t=setInterval(()=>{
+      setIdx(i=>{const n=(i+1)%slotAds.length; setSecs(slotAds[n]&&slotAds[n].seconds||8); return n;});
+    },(slotAds[0]&&slotAds[0].seconds||8)*1000);
+    return()=>clearInterval(t);
+  },[slotAds]);
+
+  useEffect(()=>{
+    if(!secs) return;
+    const t=setInterval(()=>setSecs(s=>s>0?s-1:0),1000);
+    return()=>clearInterval(t);
+  },[secs]);
+
+  const a = slotAds.length ? slotAds[idx] : null;
+
+  if (!a) return React.createElement('div',{className:"bottom-ad-bar"},
+    React.createElement('div',{className:"bottom-ad-placeholder"},"Espacio publicitario disponible")
+  );
+
+  return React.createElement('div',{className:"bottom-ad-bar"},
+    React.createElement('div',{className:"bottom-ad-img",onClick:()=>{DB.trackAdClick(a.id);if(a.url)window.open(a.url,"_blank");}},
+      React.createElement('div',{className:"bottom-ad-label"},"PUBLICIDAD"),
+      a.img
+        ?React.createElement('img',{src:a.img,alt:a.nombre,onError:function(e){e.target.style.display='none';}})
+        :React.createElement('div',{style:{display:"flex",alignItems:"center",gap:10,padding:"8px 18px"}},
+          React.createElement('span',{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#60a5fa",fontSize:".85rem"}},a.nombre),
+          a.descripcion&&React.createElement('span',{style:{fontSize:".72rem",color:"#4a5a6a"}},a.descripcion)
+        ),
+      slotAds.length>1&&React.createElement('div',{className:"bottom-ad-timer"},secs+"s")
+    )
+  );
+}
+
 function GranMoishe() {
   const [user,setUser]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
@@ -20872,6 +21131,8 @@ function GranMoishe() {
     {id:"ranking",icon:"📈",label:"Ranking"},
     {id:"prode",icon:"🎯",label:"Prode"},
     {id:"ligas",icon:"🏆",label:"Ligas"},
+    {id:"logros",icon:"🏅",label:"Logros"},
+    {id:"compartir",icon:"📤",label:"Compartir"},
     {id:"reglas",icon:"📋",label:"Reglas"},
     {id:"perfil",icon:"👤",label:"Perfil"},
   ];
@@ -20988,11 +21249,17 @@ function GranMoishe() {
 
       /* NAV */
       , React.createElement('nav', { className: "nav",}
-        , TABS.map(t=>(
-          React.createElement('button', { key: t.id, className: `ntab${tab===t.id?" active":""}${t.id==="admin"?" admin-tab":""}`, onClick: ()=>setTab(t.id),}
-            , React.createElement('span', null, t.icon), React.createElement('span', { className: "ntab-lbl",}, t.label)
-          )
-        ))
+        , TABS.map(t=>{
+          const isLogros = t.id==="logros";
+          const newLogrosCount = isLogros && user ? getLogros(squad,xi,subs,user,capitan,formation).filter(l=>l.isNew).length : 0;
+          return React.createElement('button', { key: t.id, className: `ntab${tab===t.id?" active":""}${t.id==="admin"?" admin-tab":""}`, onClick: ()=>setTab(t.id),},
+            React.createElement('span', { style:{position:"relative"} },
+              t.icon,
+              newLogrosCount>0&&React.createElement('span',{style:{position:"absolute",top:-4,right:-6,background:"#ef4444",color:"#fff",borderRadius:"50%",width:13,height:13,fontSize:".55rem",fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Oswald,sans-serif"}},newLogrosCount)
+            ),
+            React.createElement('span', { className: "ntab-lbl",}, t.label)
+          );
+        })
       )
 
       , React.createElement('div', { className: "app-layout",}
@@ -21021,13 +21288,17 @@ function GranMoishe() {
           , tab==="ligas"&&React.createElement(LigasView, { user: user, toast: toast,})
           /* ── PRODE ── */
           , tab==="prode"&&React.createElement(ProdeView, { user: user, toast: toast,})
+          /* ── LOGROS ── */
+          , tab==="logros"&&React.createElement(LogrosView, { squad: squad, xi: xi, subs: subs, user: user, capitan: capitan, formation: formation,})
+          /* ── COMPARTIR ── */
+          , tab==="compartir"&&React.createElement(CompartirEquipoView, { user: user, xi: xi, subs: subs, capitan: capitan, squad: squad,})
 
           /* ── FIXTURE ── */
           
         )
 
-        /* SIDEBAR ADS (all tabs except cancha) */
-        , showSidebar&&React.createElement(SidebarAds, { ads: ads})
+        /* BOTTOM AD BAR */
+        , React.createElement(BottomAdBar, { ads: ads})
       )
     )
   );
