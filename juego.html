@@ -20045,25 +20045,31 @@ const LOGROS_DEF = [
   { id:"registrado",       icon:"🎉", nombre:"Bienvenido",         desc:"Te registraste en Gran Moishe",           check:()=>true },
 ];
 
-function evaluarLogros(user, squad, xi, subs, capitan, myPos) {
-  const prevLogros = getLS("gm_logros_"+user.uid, []);
-  const nuevos = [];
-  const ahora = Date.now();
-  const todos = LOGROS_DEF.map(def => {
-    const yaDesbloqueado = prevLogros.find(l=>l.id===def.id);
-    if (yaDesbloqueado) return { ...def, desbloqueado:true, fecha:yaDesbloqueado.fecha, nuevo:false };
-    const cumple = def.check(user, squad, xi, subs, capitan, myPos);
-    if (cumple) {
-      nuevos.push(def.id);
-      return { ...def, desbloqueado:true, fecha:ahora, nuevo:true };
+function evaluarLogros(user, squad, xi, subs, cap, myPos) {
+  if(!user||!squad||!xi||!subs) return {todos:LOGROS_DEF.map(function(d){return Object.assign({},d,{desbloqueado:false});}),nuevos:[]};
+  try {
+    var prevLogros = getLS("gm_logros_"+user.uid, []);
+    var nuevos = [];
+    var ahora = Date.now();
+    var todos = LOGROS_DEF.map(function(def) {
+      var yaDesbloqueado = prevLogros.find(function(l){return l.id===def.id;});
+      if (yaDesbloqueado) return Object.assign({},def,{desbloqueado:true,fecha:yaDesbloqueado.fecha,nuevo:false});
+      var cumple = def.check(user, squad, xi, subs, cap, myPos);
+      if (cumple) {
+        nuevos.push(def.id);
+        return Object.assign({},def,{desbloqueado:true,fecha:ahora,nuevo:true});
+      }
+      return Object.assign({},def,{desbloqueado:false});
+    });
+    if (nuevos.length) {
+      var guardados = todos.filter(function(l){return l.desbloqueado;}).map(function(l){return {id:l.id,fecha:l.fecha};});
+      setLS("gm_logros_"+user.uid, guardados);
     }
-    return { ...def, desbloqueado:false };
-  });
-  if (nuevos.length) {
-    const guardados = todos.filter(l=>l.desbloqueado).map(l=>({id:l.id,fecha:l.fecha}));
-    setLS("gm_logros_"+user.uid, guardados);
+    return {todos:todos,nuevos:nuevos};
+  } catch(e) {
+    console.warn("evaluarLogros error:",e);
+    return {todos:LOGROS_DEF.map(function(d){return Object.assign({},d,{desbloqueado:false});}),nuevos:[]};
   }
-  return { todos, nuevos };
 }
 
 
@@ -20071,10 +20077,11 @@ function evaluarLogros(user, squad, xi, subs, capitan, myPos) {
 // LOGROS VIEW
 // ══════════════════════════════════════════════════════════════════
 function LogrosView({ user, squad, xi, subs, capitan, myPos, toast }) {
-  const { todos, nuevos } = useMemo(
-    () => evaluarLogros(user, squad, xi, subs, capitan, myPos),
-    [user, squad, xi, subs, capitan, myPos]
-  );
+  var logrosResult = useMemo(function() {
+    return evaluarLogros(user, squad, xi, subs, capitan, myPos);
+  }, [user, squad, xi, subs, capitan, myPos]);
+  var todos = logrosResult.todos;
+  var nuevos = logrosResult.nuevos;
 
   useEffect(() => {
     nuevos.forEach(id => {
@@ -20106,12 +20113,12 @@ function LogrosView({ user, squad, xi, subs, capitan, myPos, toast }) {
     // Grid de logros
     React.createElement('div', { className:"logro-grid" },
       // Primero los desbloqueados, después los bloqueados
-      [...todos].sort((a,b)=>{
+      (todos||[]).slice().sort(function(a,b){
         if (a.desbloqueado && !b.desbloqueado) return -1;
         if (!a.desbloqueado && b.desbloqueado) return 1;
         return (b.fecha||0)-(a.fecha||0);
-      }).map(logro =>
-        React.createElement('div', {
+      }).map(function(logro) {
+        return React.createElement('div', {
           key:logro.id,
           className:"logro-card "+(logro.desbloqueado?"desbloqueado "+(logro.nuevo?"nuevo":""):"bloqueado")
         },
@@ -20124,8 +20131,8 @@ function LogrosView({ user, squad, xi, subs, capitan, myPos, toast }) {
             React.createElement('div', { style:{fontSize:".58rem",color:"#2a4a3a",marginTop:4} },
               new Date(logro.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})
             )
-        )
-      )
+        );
+      })
     )
   );
 }
@@ -21256,13 +21263,15 @@ function GranMoishe() {
   useEffect(()=>{ if(user){setLS(capKey,capitan);} },[capitan]);
   // Evaluar logros silenciosamente al cambiar estado
   useEffect(()=>{
-    if(!user) return;
-    const {nuevos} = evaluarLogros(user, squad, xi, subs, capitan, myGlobalPos);
-    nuevos.forEach(id=>{
-      const def = LOGROS_DEF.find(d=>d.id===id);
-      if(def) toast(def.icon+" ¡Logro desbloqueado! "+def.nombre, "success");
-    });
-  },[squad.length, xi.length, capitan, user&&user.pts, myGlobalPos]);
+    if(!user||!squad||!xi||!subs) return;
+    try {
+      var res = evaluarLogros(user, squad, xi, subs, capitan, myGlobalPos);
+      res.nuevos.forEach(function(id){
+        var def = LOGROS_DEF.find(function(d){return d.id===id;});
+        if(def) toast(def.icon+" ¡Logro desbloqueado! "+def.nombre, "success");
+      });
+    } catch(e){ console.warn("logros effect:",e); }
+  },[squad.length, xi.length, myGlobalPos]);
 
   useEffect(()=>{
     if(!user)return;
