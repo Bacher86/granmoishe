@@ -17697,12 +17697,8 @@ function fbInit() {
         }
         // Notificar listeners
         if (_fbListeners[key]) _fbListeners[key].forEach(fn => fn(val));
-        // Disparar evento storage — con flag para evitar loop con refreshPts
-        try {
-          window._fbTriggered = true;
-          window.dispatchEvent(new StorageEvent('storage', {key, newValue: JSON.stringify(val)}));
-          setTimeout(function(){ window._fbTriggered = false; }, 100);
-        } catch(e){}
+        // Disparar evento storage para que React re-renderice
+        try { window.dispatchEvent(new StorageEvent('storage', {key, newValue: JSON.stringify(val)})); } catch(e){}
       });
     });
 
@@ -18402,23 +18398,6 @@ function squadEligibleForCurrentStats(uid) {
   if (!published) return true; // nunca se publicaron stats = todos suman
   const created = getSquadCreatedAt(uid);
   if (!created) return true; // squad muy viejo sin timestamp = asumir elegible
-  return created <= published;
-}
-
-function getStatsPublishedAt() {
-  return parseInt(localStorage.getItem("gm_stats_published_at")||"0");
-}
-function getSquadCreatedAt(uid) {
-  return parseInt(localStorage.getItem("gm_squad_created_"+uid)||"0");
-}
-function setSquadCreatedAt(uid, ts) {
-  localStorage.setItem("gm_squad_created_"+uid, String(ts));
-}
-function squadEligibleForCurrentStats(uid) {
-  var published = getStatsPublishedAt();
-  if (!published) return true;
-  var created = getSquadCreatedAt(uid);
-  if (!created) return true;
   return created <= published;
 }
 
@@ -20048,7 +20027,6 @@ const LOGROS_DEF = [
 ];
 
 function evaluarLogros(user, squad, xi, subs, capitan, myPos) {
-  if(!user||!squad||!xi||!subs) return {todos:LOGROS_DEF.map(function(d){return Object.assign({},d,{desbloqueado:false});}),nuevos:[]};
   const prevLogros = getLS("gm_logros_"+user.uid, []);
   const nuevos = [];
   const ahora = Date.now();
@@ -20153,18 +20131,6 @@ function CompartirEquipoView({ user, xi, subs, capitan, myPos, totalPlayers, toa
     const W = 420, H = 680;
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
-    if (!ctx.roundRect) {
-      ctx.roundRect = function(x,y,w,h,r){
-        r=Math.min(r||0,w/2,h/2);
-        this.beginPath();
-        this.moveTo(x+r,y);
-        this.arcTo(x+w,y,x+w,y+h,r);
-        this.arcTo(x+w,y+h,x,y+h,r);
-        this.arcTo(x,y+h,x,y,r);
-        this.arcTo(x,y,x+w,y,r);
-        this.closePath();
-      };
-    }
 
     // ── Fondo ──
     const grad = ctx.createLinearGradient(0,0,0,H);
@@ -21052,7 +21018,7 @@ function FixtureView() {
 function EquipoListView(props){
   var xi=props.xi,subs=props.subs,squad=props.squad;
   var formation=props.formation,setXi=props.setXi,setSubs=props.setSubs;
-  var setTab=props.setTab,toast=props.toast,autoXI=props.autoXI,user=props.user,myGlobalPos=props.myGlobalPos||0,ads=props.ads||[];
+  var setTab=props.setTab,toast=props.toast,autoXI=props.autoXI,user=props.user,ads=props.ads||[];
   var swapState=useState(null);
   var swapMode=swapState[0],setSwapMode=swapState[1];
 
@@ -21271,15 +21237,13 @@ function GranMoishe() {
   useEffect(()=>{ if(user){setLS(capKey,capitan);} },[capitan]);
   // Evaluar logros silenciosamente al cambiar estado
   useEffect(()=>{
-    if(!user||!squad||!xi||!subs) return;
-    try {
-      const {nuevos} = evaluarLogros(user, squad, xi, subs, capitan, myGlobalPos);
-      nuevos.forEach(id=>{
-        const def = LOGROS_DEF.find(d=>d.id===id);
-        if(def) toast(def.icon+" ¡Logro desbloqueado! "+def.nombre, "success");
-      });
-    } catch(e){ console.warn('logros:',e); }
-  },[squad.length, xi.length, capitan, myGlobalPos]);
+    if(!user) return;
+    const {nuevos} = evaluarLogros(user, squad, xi, subs, capitan, myGlobalPos);
+    nuevos.forEach(id=>{
+      const def = LOGROS_DEF.find(d=>d.id===id);
+      if(def) toast(def.icon+" ¡Logro desbloqueado! "+def.nombre, "success");
+    });
+  },[squad.length, xi.length, capitan, user&&user.pts, myGlobalPos]);
 
   useEffect(()=>{
     if(!user)return;
@@ -21304,7 +21268,7 @@ function GranMoishe() {
         if(idx!==-1&&users[idx].pts!==0){users[idx].pts=0;setLS("gm_users",users);}
       }
     };
-    var onSt=function(e){ if(window._fbTriggered) return; if(e.key==="gm_stats_by_name"||e.key==="gm_users")refreshPts(); };
+    var onSt=function(e){if(e.key==="gm_stats_by_name"||e.key==="gm_users")refreshPts();};
     window.addEventListener("storage",onSt);
     var iv=setInterval(refreshPts,10000);
     return function(){window.removeEventListener("storage",onSt);clearInterval(iv);};
@@ -21617,18 +21581,7 @@ function GranMoishe() {
 })();
   </script>
 <script>
-// Limpiar SW y caché viejos para forzar versión nueva
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(regs) {
-    regs.forEach(function(reg) { reg.unregister(); });
-  });
-  // Limpiar todos los cachés del SW
-  if (window.caches) {
-    caches.keys().then(function(names) {
-      names.forEach(function(name) { caches.delete(name); });
-    });
-  }
-}
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw-juego.js").catch(()=>{});
 
 
 // ── PWA INSTALL ──────────────────────────────────────────────────────────────
