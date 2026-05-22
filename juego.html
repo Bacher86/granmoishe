@@ -56,11 +56,19 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .idx-btn.primary:hover{background:#22c55e;transform:translateY(-2px);}
 .idx-btn.secondary{background:transparent;border:2px solid #4ade80;color:#4ade80;}
 .idx-btn.secondary:hover{background:rgba(74,222,128,.1);}
-.idx-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:540px;margin:0 auto;width:100%;}
-.idx-feat{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;text-align:left;}
-.idx-feat-i{font-size:1.4rem;flex-shrink:0;}
-.idx-feat-t{font-weight:600;font-size:.85rem;color:#e2e8f0;}
-.idx-feat-d{font-size:.72rem;color:#5a7a8a;margin-top:2px;}
+.idx-features{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:640px;margin:0 auto;width:100%;}
+.idx-feat{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 12px;text-align:left;transition:border-color .2s;}
+.idx-feat-i{font-size:1.6rem;}
+.idx-feat-t{font-weight:700;font-size:.88rem;color:#e2e8f0;line-height:1.2;}
+.idx-feat-d{font-size:.7rem;color:#5a7a8a;margin-top:2px;line-height:1.4;}
+.idx-feat-trivia{border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.07);}
+.idx-feat-trivia .idx-feat-t{color:#a78bfa;}
+.idx-feat-fantasy{border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.06);}
+.idx-feat-fantasy .idx-feat-t{color:#4ade80;}
+.idx-feat-prode{border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06);}
+.idx-feat-prode .idx-feat-t{color:#60a5fa;}
+.idx-no-azar{background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:10px 14px;font-size:.75rem;color:#4a7a5a;text-align:center;margin-top:4px;max-width:540px;margin-left:auto;margin-right:auto;}
+.idx-no-azar strong{color:#4ade80;}
 
 /* AUTH */
 .auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);overflow-y:auto;}
@@ -18988,41 +18996,52 @@ function IndexPage({ onLogin, onRegister, ads }) {
               , React.createElement('div', { className: "idx-subtitle",}, "El DT del Mundial 2026"    )
             )
           )
-          , React.createElement('div', { className: "idx-tagline",}, "Armá tu equipo, competí con tu comunidad, viví el Mundial"         )
+          , React.createElement('div', { className: "idx-tagline",}
+            , "No es azar. Es "
+            , React.createElement('strong',{style:{color:"#a78bfa"}},"conocimiento.")
+            , React.createElement('br',null)
+            , React.createElement('span',{style:{fontSize:".9rem",color:"#4a6a5a"}},"Trivia · Fantasy · Prode · Comunidad")
+          )
           , React.createElement('div', { className: "idx-ctas",}
-            , React.createElement('button', { className: "idx-btn primary" , onClick: ()=>setMode("register"),}, "⚽ Sumate al torneo")
-            , React.createElement('button', { className: "idx-btn secondary" , onClick: ()=>setMode("register"),}, "Registrarse · "  , fmtARS(ACCOUNT_PRICE))
-            , React.createElement('button', { className: "idx-btn secondary" , onClick: ()=>setMode("login"),}, "Ya tengo cuenta")
+            , React.createElement('button', { className: "idx-btn primary", onClick: ()=>setMode("register"),}, "🧠 Sumate al torneo")
+            , React.createElement('button', { className: "idx-btn secondary", onClick: ()=>setMode("login"),}, "Ya tengo cuenta")
           )
           , React.createElement('div', { className: "idx-features",}
-              , React.createElement('div', {className:"idx-feat"}
-                , React.createElement('span',{className:"idx-feat-i"},"⚽")
-                , React.createElement('div',null
-                  , React.createElement('div',{className:"idx-feat-t"},"200+ Jugadores")
-                  , React.createElement('div',{className:"idx-feat-d"},"de 48 selecciones")
-                )
-              )
-              , React.createElement('div', {className:"idx-feat"}
-                , React.createElement('span',{className:"idx-feat-i"},"📊")
-                , React.createElement('div',null
-                  , React.createElement('div',{className:"idx-feat-t"},"Puntos en Vivo")
-                  , React.createElement('div',{className:"idx-feat-d"},"sistema triple validación")
-                )
-              )
-              , React.createElement('div', {className:"idx-feat idx-feat-premio"}
-                , React.createElement('span',{className:"idx-feat-i"},"🏆")
-                , React.createElement('div',null
-                  , React.createElement('div',{className:"idx-feat-t"},"Hasta $4.000.000")
-                  , React.createElement('div',{className:"idx-feat-d"},"para la comunidad ganadora")
-                )
-              )
-              , React.createElement('div', {className:"idx-feat idx-feat-premio"}
-                , React.createElement('span',{className:"idx-feat-i"},"🥇")
-                , React.createElement('div',null
-                  , React.createElement('div',{className:"idx-feat-t"},"Premios por fecha")
-                  , React.createElement('div',{className:"idx-feat-d"},"desde cuartos de final")
-                )
-              )
+            , React.createElement('div', {className:"idx-feat idx-feat-trivia"}
+              , React.createElement('span',{className:"idx-feat-i"},"🧠")
+              , React.createElement('div',{className:"idx-feat-t"},"Trivia diaria")
+              , React.createElement('div',{className:"idx-feat-d"},"10 preguntas · 20 seg · Fútbol, cultura judía y general")
+            )
+            , React.createElement('div', {className:"idx-feat idx-feat-fantasy"}
+              , React.createElement('span',{className:"idx-feat-i"},"⚽")
+              , React.createElement('div',{className:"idx-feat-t"},"Fantasy football")
+              , React.createElement('div',{className:"idx-feat-d"},"Armá tu XI con jugadores reales de 48 selecciones")
+            )
+            , React.createElement('div', {className:"idx-feat idx-feat-prode"}
+              , React.createElement('span',{className:"idx-feat-i"},"🎯")
+              , React.createElement('div',{className:"idx-feat-t"},"Prode")
+              , React.createElement('div',{className:"idx-feat-d"},"Pronosticá resultados y sumate puntos extra")
+            )
+            , React.createElement('div', {className:"idx-feat"}
+              , React.createElement('span',{className:"idx-feat-i"},"🔮")
+              , React.createElement('div',{className:"idx-feat-t"},"Predicciones")
+              , React.createElement('div',{className:"idx-feat-d"},"Elegí campeón y goleador antes del inicio")
+            )
+            , React.createElement('div', {className:"idx-feat"}
+              , React.createElement('span',{className:"idx-feat-i"},"🏘")
+              , React.createElement('div',{className:"idx-feat-t"},"Ligas privadas")
+              , React.createElement('div',{className:"idx-feat-d"},"Competí con tu grupo con código único")
+            )
+            , React.createElement('div', {className:"idx-feat"}
+              , React.createElement('span',{className:"idx-feat-i"},"🏆")
+              , React.createElement('div',{className:"idx-feat-t"},"Premios")
+              , React.createElement('div',{className:"idx-feat-d"},"Por fecha y campeón final de comunidad")
+            )
+          )
+          , React.createElement('div', {className:"idx-no-azar"}
+            , React.createElement('strong',null,"Concurso de destreza y conocimiento. ")
+            , "Los premios se otorgan por puntaje. "
+            , React.createElement('strong',{style:{color:"#4ade80"}},"Sin azar involucrado.")
           )
         )
       )
