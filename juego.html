@@ -477,6 +477,23 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .bad-slot-empty{font-size:.5rem;color:#1a2d30;letter-spacing:1px;text-transform:uppercase;}
 .bad-slot-timer{position:absolute;bottom:3px;right:4px;font-size:.5rem;color:rgba(74,222,128,.35);font-family:'Oswald',sans-serif;}
 .bad-slot-label{position:absolute;top:3px;left:4px;font-size:.46rem;color:#1a3a28;letter-spacing:.5px;}
+
+/* ── TRIVIA ── */
+.trivia-wrap{display:flex;flex-direction:column;gap:14px;}
+.trivia-header{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(167,139,250,.04));border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:16px 18px;}
+.trivia-q{font-size:1rem;font-weight:700;color:#e2e8f0;line-height:1.45;margin-bottom:14px;}
+.trivia-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.trivia-opt{padding:10px 12px;border-radius:9px;border:1px solid #1a2d40;background:#0d1b2a;color:#a0b8d0;font-size:.88rem;cursor:pointer;text-align:left;transition:all .15s;font-family:inherit;}
+.trivia-opt:hover{border-color:rgba(167,139,250,.4);color:#e2e8f0;}
+.trivia-opt.correct{background:rgba(74,222,128,.15);border-color:#4ade80;color:#4ade80;font-weight:700;}
+.trivia-opt.wrong{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444;}
+.trivia-opt:disabled{cursor:default;}
+.trivia-timer{height:4px;background:#1a2d40;border-radius:2px;overflow:hidden;margin-bottom:12px;}
+.trivia-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.5px;}
+/* ── PREDICCION ── */
+.pred-select{width:100%;padding:9px 12px;background:#07111e;border:1px solid #1a3a28;border-radius:8px;color:#e2e8f0;font-size:.9rem;font-family:inherit;outline:none;}
+.pred-select:focus{border-color:rgba(74,222,128,.5);}
+.pred-deadline{font-size:.72rem;color:#ef4444;margin-top:5px;}
 </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -20383,6 +20400,303 @@ function calcProdePoints(userPick, match) {
 // PRODE VIEW
 // ═══════════════════════════════════════════════════════════════════════════
 
+
+// ══════════════════════════════════════════════════════════════════
+// BANCO DE PREGUNTAS TRIVIA
+// ══════════════════════════════════════════════════════════════════
+const TRIVIA_BANK = [
+  // Fútbol mundial
+  {q:"¿Cuántas selecciones participan en el Mundial 2026?",opts:["32","36","48","64"],a:2},
+  {q:"¿En cuántos países se juega el Mundial 2026?",opts:["1","2","3","4"],a:2},
+  {q:"¿Quién es el máximo goleador de la historia de los Mundiales?",opts:["Pelé","Miroslav Klose","Ronaldo Nazario","Gerd Müller"],a:1},
+  {q:"¿Cuántos mundiales ganó Brasil?",opts:["4","5","6","3"],a:1},
+  {q:"¿En qué año ganó Argentina su primer Mundial?",opts:["1974","1978","1982","1986"],a:1},
+  {q:"¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",opts:["5","6","7","8"],a:2},
+  {q:"¿Qué país fue campeón del Mundial 2018?",opts:["Croacia","Bélgica","Francia","Inglaterra"],a:2},
+  {q:"¿Cuántos Mundiales ganó Alemania?",opts:["3","4","5","2"],a:1},
+  {q:"¿Quién fue el jugador del torneo en Qatar 2022?",opts:["Mbappe","Modric","Messi","De Bruyne"],a:2},
+  {q:"¿Qué selección tiene más Mundiales ganados?",opts:["Alemania","Italia","Argentina","Brasil"],a:3},
+  {q:"¿En qué año se jugó el primer Mundial de fútbol?",opts:["1926","1930","1934","1938"],a:1},
+  {q:"¿Qué país organizó el primer Mundial?",opts:["Brasil","Argentina","Uruguay","Italia"],a:2},
+  {q:"¿Cuántos jugadores tiene un equipo en la cancha?",opts:["10","11","12","9"],a:1},
+  {q:"¿Cuánto dura un partido de fútbol?",opts:["80 minutos","90 minutos","100 minutos","120 minutos"],a:1},
+  {q:"¿Qué selección ganó la Eurocopa 2024?",opts:["Francia","Inglaterra","España","Alemania"],a:2},
+  {q:"¿Quién ganó el Balón de Oro 2023?",opts:["Haaland","Mbappe","Messi","Vinicius"],a:2},
+  {q:"¿En qué club juega actualmente Mbappe?",opts:["PSG","Bayern Munich","Real Madrid","Manchester City"],a:2},
+  {q:"¿Quién es el máximo goleador histórico de la Champions League?",opts:["Messi","Ronaldo","Raúl","Benzema"],a:1},
+  {q:"¿Cuántos títulos de Champions tiene el Real Madrid?",opts:["13","14","15","16"],a:2},
+  {q:"¿Qué país inventó el fútbol moderno?",opts:["Brasil","Argentina","Inglaterra","Uruguay"],a:2},
+  {q:"¿Cuánto mide la portería de fútbol de alto?",opts:["2 metros","2,44 metros","2,80 metros","3 metros"],a:1},
+  {q:"¿Qué selección ganó el Mundial de Brasil 2014?",opts:["Brasil","Argentina","Alemania","Países Bajos"],a:2},
+  {q:"¿Cuántos metros tiene el arco de fútbol de ancho?",opts:["6,32 m","7,32 m","8,32 m","5,32 m"],a:1},
+  {q:"¿Quién fue el primer jugador en ganar 8 Balones de Oro?",opts:["Ronaldo","Messi","Platini","Van Basten"],a:1},
+  {q:"¿En qué año Argentina ganó el último Mundial antes de Qatar?",opts:["1978","1982","1986","1990"],a:2},
+  // Selecciones
+  {q:"¿Cuál es el apodo de la selección de Brasil?",opts:["La Canarinha","La Verde","La Seleção","La Aurinegra"],a:0},
+  {q:"¿Cómo se llama la mascota del Mundial 2026?",opts:["Zakumi","Fuleco","Atchim","Pique"],a:2},
+  {q:"¿Cuál es el apodo de la selección de Argentina?",opts:["Los Guerreros","La Albiceleste","La Celeste","Los Gauchos"],a:1},
+  {q:"¿Cuál es el estadio más grande del mundo?",opts:["Wembley","Camp Nou","Rungrado May Day","Maracaná"],a:2},
+  {q:"¿Cuántos jugadores tiene una plantilla en un Mundial?",opts:["23","24","25","26"],a:3},
+  // Cultura judía
+  {q:"¿Qué significa Moishe en hebreo?",opts:["Rey","Profeta","Sacado del agua","Bendito"],a:2},
+  {q:"¿Cuántos libros tiene la Torá?",opts:["3","4","5","6"],a:2},
+  {q:"¿Qué festividad judía se llama el año nuevo?",opts:["Pesaj","Rosh Hashaná","Yom Kipur","Sucot"],a:1},
+  {q:"¿Qué significa Shalom?",opts:["Hola","Paz","Bendición","Amén"],a:1},
+  {q:"¿Cuántas ramas tiene la Menorá tradicional?",opts:["5","6","7","9"],a:2},
+  {q:"¿Qué celebra Janucá?",opts:["La salida de Egipto","El milagro del aceite","El año nuevo","El ayuno"],a:1},
+  {q:"¿En qué idioma está escrita la Torá?",opts:["Arameo","Yidish","Hebreo","Ladino"],a:2},
+  {q:"¿Cuántas ramas tiene el Janukiá?",opts:["7","8","9","6"],a:2},
+  {q:"¿Qué significa Bar Mitzvá?",opts:["Hijo del mandamiento","Hijo de Dios","Mayor de edad","Hombre nuevo"],a:0},
+  {q:"¿Qué comida se come en Pesaj en lugar de pan?",opts:["Jalá","Matzá","Burekas","Knishes"],a:1},
+  {q:"¿Qué día de la semana es Shabat?",opts:["Viernes","Sábado","Domingo","Jueves"],a:1},
+  {q:"¿Cuántas letras tiene el alefato hebreo?",opts:["20","22","24","26"],a:1},
+  {q:"¿Qué significa Mazal Tov?",opts:["Buena suerte / Enhorabuena","Shabbat Shalom","Gracias","L'Chaim"],a:0},
+  {q:"¿En qué año fue fundado el Estado de Israel?",opts:["1945","1947","1948","1950"],a:2},
+  // General / entretenimiento
+  {q:"¿Cuántos continentes hay en el mundo?",opts:["5","6","7","8"],a:2},
+  {q:"¿Cuál es el país más grande del mundo?",opts:["China","Canadá","Estados Unidos","Rusia"],a:3},
+  {q:"¿Cuántos planetas tiene el sistema solar?",opts:["7","8","9","10"],a:1},
+  {q:"¿Cuántos colores tiene el arcoíris?",opts:["5","6","7","8"],a:2},
+  {q:"¿En qué año llegó el hombre a la Luna?",opts:["1965","1967","1969","1972"],a:2},
+  {q:"¿Cuál es el océano más grande del mundo?",opts:["Atlántico","Índico","Pacífico","Ártico"],a:2},
+  {q:"¿Cuántos lados tiene un hexágono?",opts:["5","6","7","8"],a:1},
+  {q:"¿Cuál es la capital de Australia?",opts:["Sídney","Melbourne","Brisbane","Canberra"],a:3},
+  {q:"¿Cuántos huesos tiene el cuerpo humano adulto?",opts:["186","196","206","216"],a:2},
+  {q:"¿Cuál es el elemento químico más abundante en el universo?",opts:["Oxígeno","Helio","Hidrógeno","Carbono"],a:2},
+  {q:"¿Cuánto tarda la luz del Sol en llegar a la Tierra?",opts:["4 minutos","8 minutos","12 minutos","16 minutos"],a:1},
+  {q:"¿Cuál es el país con más idiomas oficiales?",opts:["India","Sudáfrica","Bolivia","Suiza"],a:1},
+  {q:"¿Qué instrumento tiene 88 teclas?",opts:["Órgano","Acordeón","Piano","Clavicémbalo"],a:2},
+  {q:"¿Cuántas cuerdas tiene una guitarra estándar?",opts:["4","5","6","7"],a:2},
+  {q:"¿En qué país se inventó el tango?",opts:["España","Cuba","Uruguay/Argentina","Brasil"],a:2},
+  {q:"¿Cuánto es 15% de 200?",opts:["25","30","35","40"],a:1},
+  {q:"¿Cuál es la raíz cuadrada de 144?",opts:["10","11","12","13"],a:2},
+];
+
+// Elegir N preguntas aleatorias distintas para el usuario del día
+function getTriviaDelDia(uid, n) {
+  var hoy = new Date().toISOString().slice(0,10); // "2026-06-14"
+  var seed = uid + hoy;
+  // Seeded shuffle usando el uid+fecha como seed
+  var arr = TRIVIA_BANK.slice();
+  var hash = 0;
+  for (var i=0; i<seed.length; i++) { hash = ((hash<<5)-hash)+seed.charCodeAt(i); hash|=0; }
+  for (var i2=arr.length-1; i2>0; i2--) {
+    hash = ((hash<<5)-hash)+i2; hash|=0;
+    var j = Math.abs(hash) % (i2+1);
+    var tmp=arr[i2]; arr[i2]=arr[j]; arr[j]=tmp;
+  }
+  return arr.slice(0, n);
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// TRIVIA VIEW
+// ══════════════════════════════════════════════════════════════════
+function TriviaView({ user, toast }) {
+  var hoy = new Date().toISOString().slice(0,10);
+  var storageKey = "gm_trivia_" + user.uid + "_" + hoy;
+  var savedState = getLS(storageKey, null);
+
+  var [phase, setPhase] = useState(savedState ? "done" : "intro"); // intro | playing | done
+  var [preguntas, setPreguntas] = useState(null);
+  var [qIdx, setQIdx] = useState(0);
+  var [selected, setSelected] = useState(null);  // índice opción elegida
+  var [revealed, setRevealed] = useState(false);
+  var [score, setScore] = useState(0);
+  var [answers, setAnswers] = useState([]); // {correct: bool}
+  var [timeLeft, setTimeLeft] = useState(20);
+  var timerRef = useRef(null);
+  var N_QUESTIONS = 10;
+
+  // Stats del día guardadas
+  var todayStats = savedState || null;
+
+  // Ranking trivia (todos los usuarios)
+  var triviaRanking = useMemo(function() {
+    return getLS("gm_users",[])
+      .filter(function(u){ return !u.admin && (u.ptsTrivia||0) > 0; })
+      .sort(function(a,b){ return (b.ptsTrivia||0)-(a.ptsTrivia||0); })
+      .slice(0,20);
+  }, [phase]);
+
+  function startTrivia() {
+    var qs = getTriviaDelDia(user.uid, N_QUESTIONS);
+    setPreguntas(qs);
+    setQIdx(0);
+    setSelected(null);
+    setRevealed(false);
+    setScore(0);
+    setAnswers([]);
+    setTimeLeft(20);
+    setPhase("playing");
+  }
+
+  // Timer
+  useEffect(function() {
+    if (phase !== "playing" || revealed) return;
+    if (timeLeft <= 0) { handleTimeUp(); return; }
+    timerRef.current = setTimeout(function() { setTimeLeft(function(t){ return t-1; }); }, 1000);
+    return function() { clearTimeout(timerRef.current); };
+  }, [phase, timeLeft, revealed]);
+
+  function handleTimeUp() {
+    setRevealed(true);
+    setAnswers(function(prev){ return prev.concat([{correct:false}]); });
+    setTimeout(nextQuestion, 1800);
+  }
+
+  function handleSelect(optIdx) {
+    if (revealed || selected !== null) return;
+    clearTimeout(timerRef.current);
+    var q = preguntas[qIdx];
+    var correct = optIdx === q.a;
+    setSelected(optIdx);
+    setRevealed(true);
+    if (correct) setScore(function(s){ return s+3; });
+    setAnswers(function(prev){ return prev.concat([{correct:correct}]); });
+    setTimeout(nextQuestion, 1600);
+  }
+
+  function nextQuestion() {
+    if (!preguntas) return;
+    if (qIdx >= preguntas.length - 1) {
+      finishTrivia();
+    } else {
+      setQIdx(function(i){ return i+1; });
+      setSelected(null);
+      setRevealed(false);
+      setTimeLeft(20);
+    }
+  }
+
+  function finishTrivia() {
+    var pts = score + (selected !== null && preguntas[qIdx] && selected === preguntas[qIdx].a ? 3 : 0);
+    // Guardar resultado del día
+    var result = { score: pts, date: hoy, total: N_QUESTIONS*3 };
+    setLS(storageKey, result);
+    // Actualizar ptsTrivia del usuario
+    var users = getLS("gm_users", []);
+    var idx = users.findIndex(function(u){ return u.uid===user.uid; });
+    if (idx !== -1) {
+      users[idx].ptsTrivia = (users[idx].ptsTrivia||0) + pts;
+      setLS("gm_users", users);
+    }
+    // Actualizar pts comunidad (suma trivia a ptsComunidad)
+    toast("🧠 Trivia completada! +" + pts + " puntos", "success");
+    setPhase("done");
+  }
+
+  var medalColor = function(i){ return i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#2a4a5a"; };
+  var medalIcon  = function(i){ return i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1); };
+
+  // ── INTRO ──
+  if (phase === "intro") return React.createElement('div', {className:"trivia-wrap"},
+    React.createElement('div', {className:"trivia-header", style:{textAlign:"center",padding:"28px 20px"}},
+      React.createElement('div', {style:{fontSize:"3rem",marginBottom:10}}, "🧠"),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:700,color:"#a78bfa",letterSpacing:1,marginBottom:6}}, "TRIVIA DEL DÍA"),
+      React.createElement('div', {style:{fontSize:".85rem",color:"#7a8ba8",marginBottom:18,lineHeight:1.6}},
+        N_QUESTIONS+" preguntas · 20 segundos cada una · 3 puntos por acierto"
+      ),
+      React.createElement('div', {style:{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:18}},
+        React.createElement('span', {className:"trivia-pill",style:{background:"rgba(167,139,250,.12)",color:"#a78bfa",border:"1px solid rgba(167,139,250,.25)"}}, "⚽ Fútbol"),
+        React.createElement('span', {className:"trivia-pill",style:{background:"rgba(74,222,128,.08)",color:"#4ade80",border:"1px solid rgba(74,222,128,.2)"}}, "✡️ Cultura judía"),
+        React.createElement('span', {className:"trivia-pill",style:{background:"rgba(96,165,250,.08)",color:"#60a5fa",border:"1px solid rgba(96,165,250,.2)"}}, "🌍 General")
+      ),
+      React.createElement('button', {
+        onClick: startTrivia,
+        style:{padding:"13px 36px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#6d28d9,#a78bfa)",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",cursor:"pointer",letterSpacing:1}
+      }, "¡EMPEZAR!")
+    ),
+    // Ranking trivia
+    triviaRanking.length > 0 && React.createElement('div', {style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:12,padding:16}},
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a",letterSpacing:1,marginBottom:10}}, "RANKING TRIVIA ACUMULADO"),
+      triviaRanking.slice(0,10).map(function(u,i){
+        return React.createElement('div', {key:u.uid, style:{display:"flex",alignItems:"center",gap:10,padding:"7px 8px",borderRadius:7,background:u.uid===user.uid?"rgba(167,139,250,.07)":"transparent"}},
+          React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:900,color:medalColor(i),minWidth:24,textAlign:"center"}}, medalIcon(i)),
+          React.createElement('div', {style:{flex:1,fontSize:".88rem",color:u.uid===user.uid?"#a78bfa":"#e2e8f0"}}, u.equipo||u.nombre),
+          React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#a78bfa"}}, u.ptsTrivia||0)
+        );
+      })
+    )
+  );
+
+  // ── DONE (ya jugó hoy) ──
+  if (phase === "done") {
+    var res = getLS(storageKey, {score:0,total:30});
+    return React.createElement('div', {className:"trivia-wrap"},
+      React.createElement('div', {className:"trivia-header",style:{textAlign:"center",padding:"24px 20px"}},
+        React.createElement('div', {style:{fontSize:"2.5rem",marginBottom:8}}, res.score >= 24 ? "🌟" : res.score >= 15 ? "🎯" : "💪"),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#a78bfa",letterSpacing:1,marginBottom:4}}, "¡TRIVIA COMPLETADA!"),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.5rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||30))),
+        React.createElement('div', {style:{fontSize:".82rem",color:"#5a7a8a"}}, "Volvé mañana para nuevas preguntas 🧠"),
+        React.createElement('div', {style:{marginTop:12,fontSize:".78rem",color:"#3a5a6a"}}, "Tus puntos de trivia se suman al ranking comunitario")
+      ),
+      triviaRanking.length > 0 && React.createElement('div', {style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:12,padding:16}},
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a",letterSpacing:1,marginBottom:10}}, "RANKING TRIVIA"),
+        triviaRanking.slice(0,10).map(function(u,i){
+          return React.createElement('div', {key:u.uid, style:{display:"flex",alignItems:"center",gap:10,padding:"7px 8px",borderRadius:7,background:u.uid===user.uid?"rgba(167,139,250,.07)":"transparent"}},
+            React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:900,color:medalColor(i),minWidth:24,textAlign:"center"}}, medalIcon(i)),
+            React.createElement('div', {style:{flex:1,fontSize:".88rem",color:u.uid===user.uid?"#a78bfa":"#e2e8f0"}}, u.equipo||u.nombre),
+            React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#a78bfa"}}, u.ptsTrivia||0)
+          );
+        })
+      )
+    );
+  }
+
+  // ── PLAYING ──
+  if (!preguntas || !preguntas[qIdx]) return null;
+  var q = preguntas[qIdx];
+  var timerPct = (timeLeft / 20) * 100;
+  var timerColor = timeLeft > 10 ? "#a78bfa" : timeLeft > 5 ? "#fbbf24" : "#ef4444";
+
+  return React.createElement('div', {className:"trivia-wrap"},
+    // Progreso
+    React.createElement('div', {style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}},
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a"}}, "Pregunta "+(qIdx+1)+" de "+preguntas.length),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#a78bfa"}}, score+" pts")
+    ),
+    // Respuestas previas dots
+    React.createElement('div', {style:{display:"flex",gap:4,marginBottom:8}},
+      preguntas.map(function(_,i){
+        var ans = answers[i];
+        return React.createElement('div', {key:i, style:{
+          flex:1, height:4, borderRadius:2,
+          background: i===qIdx ? timerColor : ans ? (ans.correct?"#4ade80":"#ef4444") : "#1a2d40"
+        }});
+      })
+    ),
+    // Timer bar
+    React.createElement('div', {className:"trivia-timer"},
+      React.createElement('div', {className:"trivia-timer-bar", style:{
+        width:timerPct+"%",
+        background: "linear-gradient(90deg,"+(timeLeft>10?"#a78bfa,#7c3aed":timeLeft>5?"#fbbf24,#d97706":"#ef4444,#dc2626")+")"
+      }})
+    ),
+    // Pregunta
+    React.createElement('div', {className:"trivia-header"},
+      React.createElement('div', {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+        React.createElement('span', {className:"trivia-pill",style:{background:"rgba(167,139,250,.1)",color:"#a78bfa",border:"1px solid rgba(167,139,250,.2)"}}, "🧠 TRIVIA"),
+        React.createElement('span', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:900,color:timerColor}}, timeLeft+"s")
+      ),
+      React.createElement('div', {className:"trivia-q"}, q.q),
+      React.createElement('div', {className:"trivia-opts"},
+        q.opts.map(function(opt, oi) {
+          var cls = "trivia-opt";
+          if (revealed) {
+            if (oi === q.a) cls += " correct";
+            else if (oi === selected && selected !== q.a) cls += " wrong";
+          }
+          return React.createElement('button', {
+            key:oi, className:cls, disabled:revealed,
+            onClick:function(){ handleSelect(oi); }
+          }, opt);
+        })
+      )
+    )
+  );
+}
+
 function ProdeView({ user, toast }) {
   const prodeKey = user ? "gm_prode_" + user.uid : "gm_prode_anon";
   const [picks, setPicks] = useState(function() { return getLS(prodeKey, {}); });
@@ -20437,6 +20751,24 @@ function ProdeView({ user, toast }) {
     return d.toLocaleString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + "hs";
   }
 
+  // ── Predicción campeón + goleador ──────────────────────
+  var predKey = 'gm_pred_' + user.uid;
+  var predStateArr = useState(function(){ return getLS(predKey, {campeon:'', goleador:''}); });
+  var pred = predStateArr[0]; var setPred = predStateArr[1];
+  var predDeadline = getLS('gm_pred_deadline', '');
+  var predLocked = predDeadline ? new Date() > new Date(predDeadline) : false;
+  var SELECCIONES = (function(){
+    var all = [];
+    WC2026_FIXTURE.forEach(function(m){ if(all.indexOf(m.home)<0)all.push(m.home); if(all.indexOf(m.away)<0)all.push(m.away); });
+    return all.sort();
+  })();
+  var GOLEADORES_TOP = ['Lionel Messi (Argentina)','Kylian Mbappé (Francia)','Erling Haaland (Noruega)','Vinicius Jr. (Brasil)','Harry Kane (Inglaterra)','Lautaro Martínez (Argentina)','Neymar (Brasil)','Cristiano Ronaldo (Portugal)','Robert Lewandowski (Polonia)','Dusan Vlahovic (Serbia)','Otro jugador'];
+  function savePred(field, val) {
+    if (predLocked) { toast('Las predicciones están cerradas', 'error'); return; }
+    var next = Object.assign({}, pred); next[field] = val;
+    setPred(next); setLS(predKey, next);
+    toast('Predicción guardada ✅', 'success');
+  }
   const totalPicks = Object.keys(picks).length;
   const totalPts = WC2026_FIXTURE.reduce(function(acc, m) {
     const pts = calcProdePoints(picks[m.id], m);
@@ -20449,6 +20781,32 @@ function ProdeView({ user, toast }) {
   const FILTER_TABS = PHASES;
 
   return React.createElement("div", { style: { padding: "16px", maxWidth: 760, margin: "0 auto" } },
+
+    // Predicciones del torneo
+    React.createElement("div", { style:{background:"#0d1b2a",border:"1px solid",borderColor:predLocked?"#2a3a4a":"rgba(74,222,128,.25)",borderRadius:12,padding:14,marginBottom:14}},
+      React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+        React.createElement("span", {style:{fontSize:"1.2rem"}}, "🔮"),
+        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:".95rem",fontWeight:700,color:"#e2e8f0",flex:1}}, "PREDICCIONES DEL TORNEO"),
+        predLocked&&React.createElement("span", {style:{fontSize:".6rem",background:"rgba(239,68,68,.12)",color:"#ef4444",borderRadius:4,padding:"2px 7px"}}, "🔒 CERRADAS")
+      ),
+      React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontSize:".7rem",color:"#5a7a8a",marginBottom:4}}, "🏆 CAMPEÓN DEL MUNDIAL"),
+          React.createElement("select", {className:"pred-select",disabled:predLocked,value:pred.campeon,onChange:function(e){savePred("campeon",e.target.value);}},
+            [React.createElement("option",{key:"",value:""},"-- Elegí --")].concat(SELECCIONES.map(function(s){return React.createElement("option",{key:s,value:s},s);}))
+          ),
+          pred.campeon&&React.createElement("div",{style:{fontSize:".68rem",color:"#4ade80",marginTop:3}},"✅ "+pred.campeon)
+        ),
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontSize:".7rem",color:"#5a7a8a",marginBottom:4}}, "⚽ GOLEADOR DEL TORNEO"),
+          React.createElement("select", {className:"pred-select",disabled:predLocked,value:pred.goleador,onChange:function(e){savePred("goleador",e.target.value);}},
+            [React.createElement("option",{key:"",value:""},"-- Elegí --")].concat(GOLEADORES_TOP.map(function(g){return React.createElement("option",{key:g,value:g},g);}))
+          ),
+          pred.goleador&&React.createElement("div",{style:{fontSize:".68rem",color:"#4ade80",marginTop:3}},"✅ "+pred.goleador)
+        )
+      ),
+      predDeadline&&!predLocked&&React.createElement("div",{style:{fontSize:".68rem",color:"#f97316",marginTop:8}},"⏰ Cierre: "+new Date(predDeadline).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+"hs")
+    ),
 
     // Header
     React.createElement("div", { style: { marginBottom: 12 } },
@@ -21730,6 +22088,7 @@ function GranMoishe() {
     {id:"equipo",icon:"🏟",label:"Equipo"},
     {id:"mercado",icon:"🛒",label:"Mercado"},
     {id:"ranking",icon:"📈",label:"Ranking"},
+    {id:"trivia",icon:"🧠",label:"Trivia"},
     {id:"prode",icon:"🎯",label:"Prode"},
     {id:"ligas",icon:"🏆",label:"Ligas"},
     {id:"logros",icon:"🏅",label:"Logros"},
@@ -21885,6 +22244,8 @@ function GranMoishe() {
           , tab==="admin"&&user.admin&&React.createElement(AdminPanel, { toast: toast,})
           /* ── LIGAS ── */
           , tab==="ligas"&&React.createElement(LigasView, { user: user, toast: toast,})
+          /* ── TRIVIA ── */
+          , tab==="trivia"&&React.createElement(TriviaView, { user: user, toast: toast,})
           /* ── PRODE ── */
           , tab==="prode"&&React.createElement(ProdeView, { user: user, toast: toast,})
           /* ── LOGROS ── */
