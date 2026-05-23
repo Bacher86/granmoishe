@@ -18973,84 +18973,98 @@ function SidebarAds({ ads }) {
 // INDEX PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 function IndexPage({ onLogin, onRegister, ads }) {
-  const [mode,setMode]=useState("landing"); // landing | login | register
-  return (
-    React.createElement('div', { className: "index-page",}
-      , React.createElement('div', { className: "idx-header",}
-        , React.createElement('a', {href:"index.html",className:"idx-hdr-brand"}
+  const [mode,setMode]=useState("landing");
 
-          , React.createElement('span',{className:"idx-hdr-name"},"Gran Moishe")
+  const S = {
+    page: {minHeight:"100vh",background:"linear-gradient(160deg,#020c18 0%,#071525 50%,#020c18 100%)",color:"#e2e8f0",fontFamily:"'Assistant',sans-serif",overflowX:"hidden"},
+    nav: {position:"fixed",top:0,left:0,right:0,zIndex:100,background:"rgba(8,17,31,.92)",backdropFilter:"blur(12px)",borderBottom:"1px solid rgba(74,124,201,.2)",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"},
+    navBrand: {display:"flex",alignItems:"center",gap:10,textDecoration:"none"},
+    navName: {fontFamily:"'Assistant',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#e2e8f0"},
+    navSub: {fontSize:".65rem",color:"#4a6a8a",letterSpacing:2,textTransform:"uppercase"},
+    navActions: {display:"flex",gap:8,alignItems:"center"},
+    btnOutline: {padding:"8px 18px",borderRadius:8,border:"1px solid rgba(74,124,201,.5)",background:"transparent",color:"#7aa0c8",fontFamily:"'Assistant',sans-serif",fontWeight:700,fontSize:".85rem",cursor:"pointer"},
+    btnPrimary: {padding:"8px 18px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#1a4a8a,#2a6ab0)",color:"#fff",fontFamily:"'Assistant',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer"},
+    hero: {position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",padding:"100px 24px 60px",overflow:"hidden"},
+    heroBg: {position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 50% 40%,rgba(42,82,152,.18) 0%,transparent 70%)",pointerEvents:"none"},
+    heroGrid: {position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(74,124,201,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(74,124,201,.04) 1px,transparent 1px)",backgroundSize:"40px 40px",pointerEvents:"none"},
+    heroContent: {position:"relative",zIndex:1,maxWidth:700,width:"100%"},
+    pretitle: {fontSize:".75rem",letterSpacing:6,color:"#4a6a8a",textTransform:"uppercase",fontWeight:600,marginBottom:8},
+    title: {fontFamily:"'Assistant',sans-serif",fontSize:"clamp(3rem,10vw,5.5rem)",fontWeight:900,lineHeight:.95,marginBottom:8,background:"linear-gradient(135deg,#e2e8f0,#a0b8d0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+    titleSpan: {background:"linear-gradient(135deg,#c8973a,#fbbf24)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+    year: {fontSize:".8rem",letterSpacing:4,color:"#4a6a8a",textTransform:"uppercase",marginBottom:24},
+    tagline: {fontSize:"1.1rem",color:"#8a9ab0",margin:"0 0 32px",lineHeight:1.7},
+    taglineStrong: {color:"#7ab8e8"},
+    ctas: {display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:44},
+    ctaMain: {padding:"14px 32px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#1a4a8a,#2a82c8)",color:"#fff",fontFamily:"'Assistant',sans-serif",fontSize:"1.05rem",fontWeight:800,cursor:"pointer"},
+    ctaSec: {padding:"14px 32px",borderRadius:10,background:"transparent",border:"2px solid rgba(74,124,201,.5)",color:"#7aa0c8",fontFamily:"'Assistant',sans-serif",fontSize:"1.05rem",fontWeight:700,cursor:"pointer"},
+    features: {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,maxWidth:640,margin:"0 auto 32px"},
+    feat: {background:"rgba(27,58,107,.25)",border:"1px solid rgba(74,124,201,.12)",borderRadius:12,padding:"14px 12px",textAlign:"left"},
+    featIcon: {fontSize:"1.5rem",marginBottom:7},
+    featTitle: {fontWeight:700,fontSize:".85rem",color:"#e2e8f0",marginBottom:3},
+    featDesc: {fontSize:".72rem",color:"#6a8aa8",lineHeight:1.4},
+    noAzar: {marginTop:8,padding:"12px 20px",background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.06)",borderRadius:10,fontSize:".8rem",color:"#6a8aa8",lineHeight:1.7},
+  };
+
+  const Feat = ({icon,title,desc,color,bg,bord}) =>
+    React.createElement('div',{style:{...S.feat,borderColor:bord||"rgba(74,124,201,.12)",background:bg||"rgba(27,58,107,.25)"}},
+      React.createElement('div',{style:S.featIcon},icon),
+      React.createElement('div',{style:{...S.featTitle,color:color||"#e2e8f0"}},title),
+      React.createElement('div',{style:S.featDesc},desc)
+    );
+
+  return React.createElement('div',{style:S.page},
+
+    /* NAV */
+    React.createElement('nav',{style:S.nav},
+      React.createElement('a',{href:"index.html",style:S.navBrand},
+        React.createElement('div',null,
+          React.createElement('div',{style:S.navName},"Gran Moishe"),
+          React.createElement('div',{style:S.navSub},"Mundial 2026")
         )
-        , React.createElement('div',{className:"idx-hdr-actions"}
+      ),
+      React.createElement('div',{style:S.navActions},
+        React.createElement('button',{style:S.btnOutline,onClick:()=>setMode("login")},"Ingresar"),
+        React.createElement('button',{style:S.btnPrimary,onClick:()=>setMode("register")},"⚽ Registrarse")
+      )
+    ),
 
+    /* HERO */
+    React.createElement('section',{style:S.hero},
+      React.createElement('div',{style:S.heroBg}),
+      React.createElement('div',{style:S.heroGrid}),
+      React.createElement('div',{style:S.heroContent},
+        React.createElement('div',{style:S.pretitle},"Gran Moishe · 2026"),
+        React.createElement('div',{style:S.title},"Gran ",React.createElement('span',{style:S.titleSpan},"Moishe")),
+        React.createElement('div',{style:S.year},"El DT del Mundial 2026"),
+        React.createElement('p',{style:S.tagline},
+          "No es azar. Es ",React.createElement('strong',{style:S.taglineStrong},"conocimiento."),
+          React.createElement('br',null),
+          React.createElement('span',{style:{fontSize:".9rem"}},"Trivia · Verdad o Mito · Fantasy · Resultados · Comunidad")
+        ),
+        React.createElement('div',{style:S.ctas},
+          React.createElement('button',{style:S.ctaMain,onClick:()=>setMode("register")},"🧠 Sumate al torneo"),
+          React.createElement('button',{style:S.ctaSec,onClick:()=>setMode("login")},"Ya tengo cuenta")
+        ),
+        React.createElement('div',{style:S.features},
+          React.createElement(Feat,{icon:"🧠",title:"Trivia diaria",desc:"10 preguntas · 5 pts c/u · Fútbol, judaísmo y general",color:"#a78bfa",bg:"rgba(167,139,250,.07)",bord:"rgba(167,139,250,.4)"}),
+          React.createElement(Feat,{icon:"🎭",title:"Verdad o Mito",desc:"10 afirmaciones · 8 seg · Decidí rápido",color:"#fbbf24",bg:"rgba(251,191,36,.07)",bord:"rgba(251,191,36,.4)"}),
+          React.createElement(Feat,{icon:"⚽",title:"Fantasy football",desc:"Armá tu XI con jugadores de 48 selecciones",color:"#4ade80",bg:"rgba(74,222,128,.07)",bord:"rgba(74,222,128,.4)"}),
+          React.createElement(Feat,{icon:"🎯",title:"Resultados",desc:"Predecí marcadores y sumá puntos extra"}),
+          React.createElement(Feat,{icon:"🏘",title:"Ligas privadas",desc:"Competí con tu grupo con código único"}),
+          React.createElement(Feat,{icon:"🏆",title:"Premios",desc:"Por fecha y campeón final de comunidad"})
+        ),
+        React.createElement('div',{style:S.noAzar},
+          React.createElement('strong',null,"Concurso de destreza y conocimiento. "),
+          "Los premios se otorgan por puntaje. ",
+          React.createElement('strong',{style:{color:"#4ade80"}},"Sin azar involucrado.")
         )
       )
-      , React.createElement('div', { className: "idx-hero",}
-        , React.createElement('div', { className: "idx-bg-grid",})
-        , React.createElement('div', { className: "idx-hero-content",}
-          , React.createElement('div', { className: "idx-logo",}
-            
-            , React.createElement('div', { className: "idx-title-wrap",}
-              , React.createElement('div', { className: "idx-pretitle",}, "GRAN")
-              , React.createElement('div', { className: "idx-title",}, "MOISHE")
-              , React.createElement('div', { className: "idx-subtitle",}, "El DT del Mundial 2026"    )
-            )
-          )
-          , React.createElement('div', { className: "idx-tagline",}
-            , "No es azar. Es "
-            , React.createElement('strong',{style:{color:"#a78bfa"}},"conocimiento.")
-            , React.createElement('br',null)
-            , React.createElement('span',{style:{fontSize:".9rem",color:"#4a6a5a"}},"Trivia · Fantasy · Prode · Comunidad")
-          )
-          , React.createElement('div', { className: "idx-ctas",}
-            , React.createElement('button', { className: "idx-btn primary", onClick: ()=>setMode("register"),}, "🧠 Sumate al torneo")
-            , React.createElement('button', { className: "idx-btn secondary", onClick: ()=>setMode("login"),}, "Ya tengo cuenta")
-          )
-          , React.createElement('div', { className: "idx-features",}
-            , React.createElement('div', {className:"idx-feat idx-feat-trivia"}
-              , React.createElement('span',{className:"idx-feat-i"},"🧠")
-              , React.createElement('div',{className:"idx-feat-t"},"Trivia diaria")
-              , React.createElement('div',{className:"idx-feat-d"},"10 preguntas · 20 seg · Fútbol, cultura judía y general")
-            )
-            , React.createElement('div', {className:"idx-feat idx-feat-fantasy"}
-              , React.createElement('span',{className:"idx-feat-i"},"⚽")
-              , React.createElement('div',{className:"idx-feat-t"},"Fantasy football")
-              , React.createElement('div',{className:"idx-feat-d"},"Armá tu XI con jugadores reales de 48 selecciones")
-            )
-            , React.createElement('div', {className:"idx-feat idx-feat-prode"}
-              , React.createElement('span',{className:"idx-feat-i"},"🎯")
-              , React.createElement('div',{className:"idx-feat-t"},"Prode")
-              , React.createElement('div',{className:"idx-feat-d"},"Pronosticá resultados y sumate puntos extra")
-            )
-            , React.createElement('div', {className:"idx-feat"}
-              , React.createElement('span',{className:"idx-feat-i"},"🔮")
-              , React.createElement('div',{className:"idx-feat-t"},"Predicciones")
-              , React.createElement('div',{className:"idx-feat-d"},"Elegí campeón y goleador antes del inicio")
-            )
-            , React.createElement('div', {className:"idx-feat"}
-              , React.createElement('span',{className:"idx-feat-i"},"🏘")
-              , React.createElement('div',{className:"idx-feat-t"},"Ligas privadas")
-              , React.createElement('div',{className:"idx-feat-d"},"Competí con tu grupo con código único")
-            )
-            , React.createElement('div', {className:"idx-feat"}
-              , React.createElement('span',{className:"idx-feat-i"},"🏆")
-              , React.createElement('div',{className:"idx-feat-t"},"Premios")
-              , React.createElement('div',{className:"idx-feat-d"},"Por fecha y campeón final de comunidad")
-            )
-          )
-          , React.createElement('div', {className:"idx-no-azar"}
-            , React.createElement('strong',null,"Concurso de destreza y conocimiento. ")
-            , "Los premios se otorgan por puntaje. "
-            , React.createElement('strong',{style:{color:"#4ade80"}},"Sin azar involucrado.")
-          )
-        )
-      )
+    ),
 
-      , React.createElement(AdCarousel, { ads: ads,} )
+    React.createElement(AdCarousel,{ads:ads}),
 
-      , mode==="login" && React.createElement(AuthModal, { mode: "login", onSubmit: onLogin, onSwitch: ()=>setMode("register"), onClose: ()=>setMode("landing"),} )
-      , mode==="register" && React.createElement(AuthModal, { mode: "register", onSubmit: onRegister, onSwitch: ()=>setMode("login"), onClose: ()=>setMode("landing"),} )
-    )
+    mode==="login"    && React.createElement(AuthModal,{mode:"login",   onSubmit:onLogin,    onSwitch:()=>setMode("register"),onClose:()=>setMode("landing")}),
+    mode==="register" && React.createElement(AuthModal,{mode:"register",onSubmit:onRegister, onSwitch:()=>setMode("login"),   onClose:()=>setMode("landing")})
   );
 }
 
