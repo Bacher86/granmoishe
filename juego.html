@@ -19901,7 +19901,8 @@ function RankingView({ user }) {
     const totalPicks = Object.keys(pickData).length;
     const ptsEq = u.pts || 0;
     const ptsTri = u.ptsTrivia || 0;
-    return Object.assign({}, u, { ptsProd, exactos, totalPicks, ptsEq, ptsTri, ptsTotal: ptsEq + ptsProd + ptsTri });
+    const ptsMito = u.ptsMito || 0;
+    return Object.assign({}, u, { ptsProd, exactos, totalPicks, ptsEq, ptsTri, ptsMito, ptsTotal: ptsEq + ptsProd + ptsTri + ptsMito });
   }), [allUsers]);
 
   // Rankings individuales
@@ -19909,16 +19910,18 @@ function RankingView({ user }) {
   const rankEquipo   = useMemo(() => [...enriched].sort((a,b) => b.ptsEq - a.ptsEq || b.ptsProd - a.ptsProd), [enriched]);
   const rankTrivia   = useMemo(() => [...enriched].sort((a,b) => b.ptsTri - a.ptsTri), [enriched]);
   const rankProde    = useMemo(() => [...enriched].sort((a,b) => b.ptsProd - a.ptsProd || b.exactos - a.exactos), [enriched]);
+  const rankMito     = useMemo(() => [...enriched].sort((a,b) => b.ptsMito - a.ptsMito), [enriched]);
 
   // Ranking comunidades: promedio del total de sus miembros
   const communityRanking = useMemo(() => {
     const map = {};
     enriched.forEach(u => {
       const c = u.comunidad || "Sin comunidad";
-      if (!map[c]) map[c] = { comunidad: c, ptsEq: 0, ptsProd: 0, ptsTri: 0, ptsTotal: 0, count: 0 };
+      if (!map[c]) map[c] = { comunidad: c, ptsEq: 0, ptsProd: 0, ptsTri: 0, ptsMito: 0, ptsTotal: 0, count: 0 };
       map[c].ptsEq    += u.ptsEq;
       map[c].ptsProd  += u.ptsProd;
       map[c].ptsTri   += u.ptsTri;
+      map[c].ptsMito  += u.ptsMito;
       map[c].ptsTotal += u.ptsTotal;
       map[c].count++;
     });
@@ -19936,6 +19939,7 @@ function RankingView({ user }) {
     { id:"equipo",      label:"🏟 Equipo"      },
     { id:"trivia",      label:"🧠 Trivia"      },
     { id:"prode",       label:"🎯 Prode"       },
+    { id:"mito",        label:"🎭 Verdad/Mito"  },
     { id:"comunidades", label:"🤝 Comunidades" },
   ];
 
@@ -19974,6 +19978,7 @@ function RankingView({ user }) {
         React.createElement('div', { style:{display:"flex",gap:10,marginTop:6,flexWrap:"wrap"} },
           React.createElement('span',{style:{fontSize:".72rem",color:"#4ade80"}}, "🏟 "+myUser.ptsEq+" eq"),
           React.createElement('span',{style:{fontSize:".72rem",color:"#a78bfa"}}, "🧠 "+myUser.ptsTri+" tri"),
+          React.createElement('span',{style:{fontSize:".72rem",color:"#fbbf24"}}, "🎭 "+myUser.ptsMito+" mit"),
           React.createElement('span',{style:{fontSize:".72rem",color:"#60a5fa"}}, "🎯 "+myUser.ptsProd+" pro"),
         )
       ),
@@ -20034,6 +20039,14 @@ function RankingView({ user }) {
     ),
 
     // ── COMUNIDADES ──
+    tab==="mito" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      rankMito.filter(u=>u.ptsMito>0).length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Nadie jugó Verdad o Mito aún")
+        : rankMito.filter(u=>u.ptsMito>0).map((u,i)=>React.createElement(Row,{key:u.uid,u,i,isMe:u.uid===user.uid,
+            mainPts:u.ptsMito, mainLabel:"pts mito",
+            sub:u.nombre+" "+u.apellido+" · "+u.comunidad}))
+    ),
+
     tab==="comunidades" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
       React.createElement('div',{style:{fontSize:".72rem",color:"#3a5a4a",padding:"4px 8px",marginBottom:2}},
         "Puntaje total acumulado de todos los miembros de cada comunidad (equipo + trivia + prode)"
@@ -20054,6 +20067,7 @@ function RankingView({ user }) {
                 React.createElement('span',null,c.count+" participante"+(c.count!==1?"s":"")),
                 React.createElement('span',{style:{color:"#4ade80"}},"🏟 "+c.ptsEq),
                 React.createElement('span',{style:{color:"#a78bfa"}},"🧠 "+c.ptsTri),
+                React.createElement('span',{style:{color:"#fbbf24"}},"🎭 "+c.ptsMito),
                 React.createElement('span',{style:{color:"#60a5fa"}},"🎯 "+c.ptsProd),
               )
             ),
@@ -20436,85 +20450,551 @@ function calcProdePoints(userPick, match) {
 // BANCO DE PREGUNTAS TRIVIA
 // ══════════════════════════════════════════════════════════════════
 const TRIVIA_BANK = [
-  // Fútbol mundial
-  {q:"¿Cuántas selecciones participan en el Mundial 2026?",opts:["32","36","48","64"],a:2},
-  {q:"¿En cuántos países se juega el Mundial 2026?",opts:["1","2","3","4"],a:2},
-  {q:"¿Quién es el máximo goleador de la historia de los Mundiales?",opts:["Pelé","Miroslav Klose","Ronaldo Nazario","Gerd Müller"],a:1},
-  {q:"¿Cuántos mundiales ganó Brasil?",opts:["4","5","6","3"],a:1},
-  {q:"¿En qué año ganó Argentina su primer Mundial?",opts:["1974","1978","1982","1986"],a:1},
-  {q:"¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",opts:["5","6","7","8"],a:2},
-  {q:"¿Qué país fue campeón del Mundial 2018?",opts:["Croacia","Bélgica","Francia","Inglaterra"],a:2},
-  {q:"¿Cuántos Mundiales ganó Alemania?",opts:["3","4","5","2"],a:1},
-  {q:"¿Quién fue el jugador del torneo en Qatar 2022?",opts:["Mbappe","Modric","Messi","De Bruyne"],a:2},
-  {q:"¿Qué selección tiene más Mundiales ganados?",opts:["Alemania","Italia","Argentina","Brasil"],a:3},
-  {q:"¿En qué año se jugó el primer Mundial de fútbol?",opts:["1926","1930","1934","1938"],a:1},
-  {q:"¿Qué país organizó el primer Mundial?",opts:["Brasil","Argentina","Uruguay","Italia"],a:2},
   {q:"¿Cuántos jugadores tiene un equipo en la cancha?",opts:["10","11","12","9"],a:1},
-  {q:"¿Cuánto dura un partido de fútbol?",opts:["80 minutos","90 minutos","100 minutos","120 minutos"],a:1},
-  {q:"¿Qué selección ganó la Eurocopa 2024?",opts:["Francia","Inglaterra","España","Alemania"],a:2},
-  {q:"¿Quién ganó el Balón de Oro 2023?",opts:["Haaland","Mbappe","Messi","Vinicius"],a:2},
-  {q:"¿En qué club juega actualmente Mbappe?",opts:["PSG","Bayern Munich","Real Madrid","Manchester City"],a:2},
+  {q:"¿Cuánto dura un partido de fútbol reglamentario?",opts:["80 min","90 min","100 min","120 min"],a:1},
+  {q:"¿Cuántos árbitros hay en un partido de fútbol profesional?",opts:["1","2","3","4"],a:3},
+  {q:"¿Cuántos pasos puede dar un arquero con la pelota en la mano?",opts:["4","6","8","Sin límite"],a:1},
+  {q:"¿Qué significa la regla del offside?",opts:["Mano en el área","Posición adelantada","Falta dura","Tiempo extra"],a:1},
+  {q:"¿Cuántos metros mide aproximadamente una cancha de fútbol oficial?",opts:["80x50","100x60","105x68","120x80"],a:2},
+  {q:"¿Cuánto mide el arco de fútbol de ancho?",opts:["6,32 m","7,32 m","8,32 m","9,32 m"],a:1},
+  {q:"¿Desde qué distancia se ejecuta un penal?",opts:["10 m","11 m","12 m","13 m"],a:1},
+  {q:"¿Quién inventó el fútbol moderno?",opts:["Francia","Brasil","Inglaterra","Alemania"],a:2},
+  {q:"¿En qué año se fundó la FIFA?",opts:["1900","1904","1910","1920"],a:1},
+  {q:"¿Cuántos equipos compiten en la Champions League desde 2024?",opts:["32","36","48","16"],a:1},
+  {q:"¿Qué club ganó más Champions League?",opts:["Barcelona","Bayern Munich","Real Madrid","Juventus"],a:2},
   {q:"¿Quién es el máximo goleador histórico de la Champions League?",opts:["Messi","Ronaldo","Raúl","Benzema"],a:1},
   {q:"¿Cuántos títulos de Champions tiene el Real Madrid?",opts:["13","14","15","16"],a:2},
-  {q:"¿Qué país inventó el fútbol moderno?",opts:["Brasil","Argentina","Inglaterra","Uruguay"],a:2},
-  {q:"¿Cuánto mide la portería de fútbol de alto?",opts:["2 metros","2,44 metros","2,80 metros","3 metros"],a:1},
-  {q:"¿Qué selección ganó el Mundial de Brasil 2014?",opts:["Brasil","Argentina","Alemania","Países Bajos"],a:2},
-  {q:"¿Cuántos metros tiene el arco de fútbol de ancho?",opts:["6,32 m","7,32 m","8,32 m","5,32 m"],a:1},
-  {q:"¿Quién fue el primer jugador en ganar 8 Balones de Oro?",opts:["Ronaldo","Messi","Platini","Van Basten"],a:1},
-  {q:"¿En qué año Argentina ganó el último Mundial antes de Qatar?",opts:["1978","1982","1986","1990"],a:2},
-  // Selecciones
-  {q:"¿Cuál es el apodo de la selección de Brasil?",opts:["La Canarinha","La Verde","La Seleção","La Aurinegra"],a:0},
-  {q:"¿Cómo se llama la mascota del Mundial 2026?",opts:["Zakumi","Fuleco","Atchim","Pique"],a:2},
-  {q:"¿Cuál es el apodo de la selección de Argentina?",opts:["Los Guerreros","La Albiceleste","La Celeste","Los Gauchos"],a:1},
-  {q:"¿Cuál es el estadio más grande del mundo?",opts:["Wembley","Camp Nou","Rungrado May Day","Maracaná"],a:2},
-  {q:"¿Cuántos jugadores tiene una plantilla en un Mundial?",opts:["23","24","25","26"],a:3},
-  // Cultura judía
-  {q:"¿Qué significa Moishe en hebreo?",opts:["Rey","Profeta","Sacado del agua","Bendito"],a:2},
-  {q:"¿Cuántos libros tiene la Torá?",opts:["3","4","5","6"],a:2},
-  {q:"¿Qué festividad judía se llama el año nuevo?",opts:["Pesaj","Rosh Hashaná","Yom Kipur","Sucot"],a:1},
-  {q:"¿Qué significa Shalom?",opts:["Hola","Paz","Bendición","Amén"],a:1},
-  {q:"¿Cuántas ramas tiene la Menorá tradicional?",opts:["5","6","7","9"],a:2},
-  {q:"¿Qué celebra Janucá?",opts:["La salida de Egipto","El milagro del aceite","El año nuevo","El ayuno"],a:1},
-  {q:"¿En qué idioma está escrita la Torá?",opts:["Arameo","Yidish","Hebreo","Ladino"],a:2},
-  {q:"¿Cuántas ramas tiene el Janukiá?",opts:["7","8","9","6"],a:2},
-  {q:"¿Qué significa Bar Mitzvá?",opts:["Hijo del mandamiento","Hijo de Dios","Mayor de edad","Hombre nuevo"],a:0},
-  {q:"¿Qué comida se come en Pesaj en lugar de pan?",opts:["Jalá","Matzá","Burekas","Knishes"],a:1},
-  {q:"¿Qué día de la semana es Shabat?",opts:["Viernes","Sábado","Domingo","Jueves"],a:1},
-  {q:"¿Cuántas letras tiene el alefato hebreo?",opts:["20","22","24","26"],a:1},
-  {q:"¿Qué significa Mazal Tov?",opts:["Buena suerte / Enhorabuena","Shabbat Shalom","Gracias","L'Chaim"],a:0},
-  {q:"¿En qué año fue fundado el Estado de Israel?",opts:["1945","1947","1948","1950"],a:2},
-  // General / entretenimiento
-  {q:"¿Cuántos continentes hay en el mundo?",opts:["5","6","7","8"],a:2},
-  {q:"¿Cuál es el país más grande del mundo?",opts:["China","Canadá","Estados Unidos","Rusia"],a:3},
-  {q:"¿Cuántos planetas tiene el sistema solar?",opts:["7","8","9","10"],a:1},
-  {q:"¿Cuántos colores tiene el arcoíris?",opts:["5","6","7","8"],a:2},
-  {q:"¿En qué año llegó el hombre a la Luna?",opts:["1965","1967","1969","1972"],a:2},
-  {q:"¿Cuál es el océano más grande del mundo?",opts:["Atlántico","Índico","Pacífico","Ártico"],a:2},
+  {q:"¿En qué club juega actualmente Kylian Mbappé?",opts:["PSG","Bayern Munich","Real Madrid","Manchester City"],a:2},
+  {q:"¿Quién ganó el Balón de Oro 2023?",opts:["Haaland","Mbappé","Messi","Vinicius"],a:2},
+  {q:"¿Cuántos Balones de Oro tiene Messi?",opts:["6","7","8","9"],a:2},
+  {q:"¿Cuántos Balones de Oro tiene Cristiano Ronaldo?",opts:["4","5","6","7"],a:1},
+  {q:"¿En qué liga juega el FC Barcelona?",opts:["Premier League","Bundesliga","La Liga","Serie A"],a:2},
+  {q:"¿Cuál es el estadio más grande del mundo por capacidad?",opts:["Maracaná","Camp Nou","Wembley","Rungrado (Corea del Norte)"],a:3},
+  {q:"¿Qué selección ganó la Eurocopa 2024?",opts:["Francia","Inglaterra","España","Alemania"],a:2},
+  {q:"¿Qué país ganó la Copa América 2024?",opts:["Brasil","Uruguay","Colombia","Argentina"],a:3},
+  {q:"¿Cuántos mundiales ganó España?",opts:["1","2","3","0"],a:0},
+  {q:"¿Cuántos mundiales ganó Italia?",opts:["3","4","5","2"],a:1},
+  {q:"¿Cuántos mundiales ganó Francia?",opts:["1","2","3","4"],a:1},
+  {q:"¿En qué año ganó Argentina su primer Mundial?",opts:["1974","1978","1982","1986"],a:1},
+  {q:"¿En qué año ganó Argentina su segundo Mundial?",opts:["1982","1986","1990","1994"],a:1},
+  {q:"¿En qué año ganó Argentina su tercer Mundial?",opts:["2018","2019","2022","2021"],a:2},
+  {q:"¿Quién anotó el gol que le dio el título a Argentina en Qatar 2022?",opts:["Messi","Di María","Mbappé (para Francia)","Gonzalo Montiel (penal)"],a:3},
+  {q:"¿Cuántos goles marcó Mbappé en la final de Qatar 2022?",opts:["1","2","3","4"],a:2},
+  {q:"¿Qué jugador fue elegido mejor jugador de la Premier League 2023/24?",opts:["Salah","Haaland","Palmer","De Bruyne"],a:2},
+  {q:"¿Cuántos goles marcó Erling Haaland en su primera temporada en la Premier?",opts:["30","36","52","46"],a:2},
+  {q:"¿En qué país nació Lamine Yamal?",opts:["Marruecos","España","Senegal","Francia"],a:1},
+  {q:"¿Qué equipo ganó la Premier League 2023/24?",opts:["Arsenal","Liverpool","Manchester City","Chelsea"],a:2},
+  {q:"¿Quién es el presidente de la FIFA desde 2016?",opts:["Michel Platini","Sepp Blatter","Gianni Infantino","Arsène Wenger"],a:2},
+  {q:"¿Cuántos jugadores puede tener un equipo en el banco de suplentes (FIFA)?",opts:["5","7","9","12"],a:1},
+  {q:"¿Cuántos cambios se permiten en un partido oficial de fútbol?",opts:["3","4","5","6"],a:2},
+  {q:"¿Qué color de tarjeta significa expulsión directa?",opts:["Amarilla","Naranja","Roja","Azul"],a:2},
+  {q:"¿Qué es un hat-trick?",opts:["3 asistencias","3 goles de un jugador","Tres partidos ganados","Tres títulos"],a:1},
+  {q:"¿En qué año se introdujo el VAR en los Mundiales?",opts:["2014","2018","2022","2010"],a:1},
+  {q:"¿En qué año se jugó el primer Mundial de fútbol?",opts:["1926","1930","1934","1938"],a:1},
+  {q:"¿Qué país organizó el primer Mundial de fútbol?",opts:["Brasil","Argentina","Uruguay","Italia"],a:2},
+  {q:"¿Cuántos Mundiales ganó Brasil?",opts:["4","5","6","3"],a:1},
+  {q:"¿Quién es el máximo goleador de la historia de los Mundiales?",opts:["Pelé","Miroslav Klose","Ronaldo Nazario","Gerd Müller"],a:1},
+  {q:"¿Cuántos goles marcó Miroslav Klose en Mundiales?",opts:["14","16","15","13"],a:1},
+  {q:"¿Qué país fue campeón del Mundial 2018?",opts:["Croacia","Bélgica","Francia","Inglaterra"],a:2},
+  {q:"¿Cuántos Mundiales ganó Alemania?",opts:["3","4","5","2"],a:1},
+  {q:"¿Quién fue el jugador del torneo en Qatar 2022?",opts:["Mbappé","Modric","Messi","De Bruyne"],a:2},
+  {q:"¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",opts:["5","6","7","8"],a:2},
+  {q:"¿Qué selección tiene más Mundiales ganados?",opts:["Alemania","Italia","Argentina","Brasil"],a:3},
+  {q:"¿Qué país ganó el Mundial de 2010 en Sudáfrica?",opts:["Brasil","España","Argentina","Alemania"],a:1},
+  {q:"¿Quién fue el máximo goleador del Mundial 2014?",opts:["Messi","Müller","Neymar","Robben"],a:1},
+  {q:"¿Dónde se jugó el Mundial 2014?",opts:["Argentina","Alemania","Brasil","Portugal"],a:2},
+  {q:"¿Qué equipo ganó el Mundial de 2006?",opts:["Francia","Alemania","Italia","Brasil"],a:2},
+  {q:"¿Quién hizo 'La mano de Dios' en 1986?",opts:["Pelé","Zidane","Maradona","Ronaldo"],a:2},
+  {q:"¿En qué Mundial debutó Pelé?",opts:["1954","1958","1962","1966"],a:1},
+  {q:"¿Con cuántos años debutó Pelé en un Mundial?",opts:["15","17","19","21"],a:1},
+  {q:"¿Qué país fue anfitrión del Mundial 1978?",opts:["Brasil","Chile","Uruguay","Argentina"],a:3},
+  {q:"¿Qué país fue anfitrión del Mundial 1966?",opts:["Francia","Alemania","Inglaterra","Italia"],a:2},
+  {q:"¿Cuál fue el resultado de la final del Mundial 1950 (Maracanazo)?",opts:["Uruguay 2-1 Brasil","Brasil 2-1 Uruguay","Uruguay 3-1 Brasil","Empate 1-1"],a:0},
+  {q:"¿Cuántas ediciones del Mundial se han jugado antes de 2026?",opts:["20","21","22","23"],a:2},
+  {q:"¿Qué selección ganó el Mundial de 1954?",opts:["Brasil","Alemania Occidental","Hungría","Uruguay"],a:1},
+  {q:"¿Quién fue el capitán de Francia en el Mundial 1998?",opts:["Zidane","Desailly","Deschamps","Vieira"],a:2},
+  {q:"¿Quién marcó el gol de cabeza de Zidane en la final del 98?",opts:["Thuram","Zidane (2 goles)","Petit","Desailly"],a:1},
+  {q:"¿Cuántos goles tiene Argentina en Mundiales históricamente?",opts:["Más de 100","Más de 130","Más de 150","Más de 200"],a:2},
+  {q:"¿Qué árbitro pita la final del Mundial 2026?",opts:["Aún no determinado","Björn Kuipers","Cüneyt Çakır","Howard Webb"],a:0},
+  {q:"¿En qué Mundial se usó por primera vez el balón Telstar?",opts:["1966","1970","1974","1978"],a:1},
+  {q:"¿Qué país fue eliminado en primera ronda en el Mundial 2022 siendo favorito?",opts:["España","Alemania","Bélgica","Uruguay"],a:1},
+  {q:"¿Quién ganó el Mundial 2002?",opts:["Alemania","Senegal","Brasil","España"],a:2},
+  {q:"¿Dónde se jugó el Mundial 2002?",opts:["Japón y Corea del Sur","China y Japón","Australia y NZ","Japón solo"],a:0},
+  {q:"¿Qué jugador ganó tres Mundiales con Brasil?",opts:["Zico","Pelé","Ronaldo","Garrincha"],a:1},
+  {q:"¿Cuál es el récord de goles en un solo Mundial para un equipo?",opts:["Brasil 1970","Hungría 1954","Francia 1998","Alemania 1954"],a:1},
+  {q:"¿Cuántas selecciones participan en el Mundial 2026?",opts:["32","36","48","64"],a:2},
+  {q:"¿En cuántos países se juega el Mundial 2026?",opts:["1","2","3","4"],a:2},
+  {q:"¿Qué tres países organizan el Mundial 2026?",opts:["EEUU-México-Brasil","EEUU-Canadá-México","EEUU-Canadá-Colombia","México-Argentina-EEUU"],a:1},
+  {q:"¿Cuántos grupos hay en la fase de grupos del Mundial 2026?",opts:["8","10","12","16"],a:2},
+  {q:"¿Cuántos equipos pasan de cada grupo en el Mundial 2026?",opts:["1","2","3","4"],a:1},
+  {q:"¿Dónde se juega la final del Mundial 2026?",opts:["Los Ángeles","Dallas","Nueva York/NJ","Miami"],a:2},
+  {q:"¿Cuántos estadios se usan en el Mundial 2026?",opts:["12","14","16","20"],a:1},
+  {q:"¿Qué estadio de México alberga partidos del Mundial 2026?",opts:["Azteca","Jalisco","Universitario","Nemesio Díez"],a:0},
+  {q:"¿Cuántos partidos se juegan en total en el Mundial 2026?",opts:["64","80","104","128"],a:2},
+  {q:"¿Cuándo comienza el Mundial 2026?",opts:["1 junio","11 junio","15 junio","20 junio"],a:1},
+  {q:"¿En qué grupo está Argentina en el Mundial 2026?",opts:["Grupo H","Grupo I","Grupo J","Grupo K"],a:2},
+  {q:"¿Con quién debuta Argentina en el Mundial 2026?",opts:["Jordania","Argelia","Austria","Bosnia"],a:1},
+  {q:"¿En qué grupo está Brasil en el Mundial 2026?",opts:["Grupo B","Grupo C","Grupo D","Grupo E"],a:1},
+  {q:"¿Con quién debuta Brasil en el Mundial 2026?",opts:["Marruecos","Haití","Escocia","Senegal"],a:0},
+  {q:"¿Qué selección integra el Grupo A junto a México?",opts:["Brasil y Francia","Sudáfrica, Corea del Sur y Rep. Checa","Argentina y España","Alemania e Italia"],a:1},
+  {q:"¿Qué estadio de EEUU alberga la final del Mundial 2026?",opts:["SoFi Stadium","MetLife Stadium","AT&T Stadium","Hard Rock Stadium"],a:1},
+  {q:"¿Quién es el defensor de Argentina en el Mundial 2026 que juega en Inter Miami?",opts:["Lisandro Martínez","Marcos Acuña","Nicolás Otamendi","Gonzalo Montiel"],a:2},
+  {q:"¿Cuántos equipos africanos participan en el Mundial 2026?",opts:["5","7","9","6"],a:2},
+  {q:"¿Cuántos equipos de CONMEBOL participan en el Mundial 2026?",opts:["5","6","8","9"],a:2},
+  {q:"¿Qué país tiene la bandera con una hoja de maple roja?",opts:["Australia","Canadá","Nueva Zelanda","Gran Bretaña"],a:1},
+  {q:"¿Qué país tiene la bandera con una estrella de David?",opts:["Arabia Saudita","Jordania","Israel","Marruecos"],a:2},
+  {q:"¿Qué colores tiene la bandera de Argentina?",opts:["Azul, blanco y rojo","Celeste, blanco y sol","Verde, amarillo y azul","Rojo, blanco y azul"],a:1},
+  {q:"¿Qué animal aparece en la bandera de México?",opts:["Cóndor","Jaguar","Águila con serpiente","Quetzal"],a:2},
+  {q:"¿Qué país tiene la única bandera no rectangular del mundo?",opts:["Suiza","Nepal","Bangladesh","Maldivas"],a:1},
+  {q:"¿Qué bandera tiene el sol con cara de la bandera sudamericana?",opts:["Argentina","Uruguay","ambas","Brasil"],a:2},
+  {q:"¿Qué colores tiene la bandera de Brasil?",opts:["Verde, amarillo y azul","Azul, amarillo y verde","Verde, rojo y blanco","Amarillo, rojo y azul"],a:0},
+  {q:"¿Qué bandera tiene la Union Jack (bandera británica) en su esquina?",opts:["Australia","Nueva Zelanda","ambas","Canadá"],a:2},
+  {q:"¿Cuántas franjas tiene la bandera de EEUU?",opts:["11","13","15","50"],a:1},
+  {q:"¿Cuántas estrellas tiene la bandera de EEUU?",opts:["48","50","52","13"],a:1},
+  {q:"¿Qué bandera tiene el sol rojo sobre fondo blanco?",opts:["China","Japón","Corea","Bangladesh"],a:1},
+  {q:"¿Qué colores tiene la bandera de Alemania?",opts:["Negro, rojo y amarillo","Rojo, blanco y azul","Azul y blanco","Verde y blanco"],a:0},
+  {q:"¿Qué bandera tiene el cedro (árbol) en el centro?",opts:["Irán","Turquía","Líbano","Siria"],a:2},
+  {q:"¿Qué país tiene la bandera más sencilla del mundo (solo color verde)?",opts:["Libia (antes 2011)","Arabia Saudita","Irán","Paquistán"],a:0},
+  {q:"¿Qué colores tiene la bandera de Israel?",opts:["Azul y blanco con Estrella de David","Rojo y blanco","Amarillo y azul","Verde y blanco"],a:0},
+  {q:"¿Qué bandera tiene una media luna y una estrella?",opts:["Irán","Turquía","Irak","Israel"],a:1},
+  {q:"¿Qué colores tiene la bandera de Italia?",opts:["Rojo, blanco y azul","Verde, blanco y rojo","Azul, blanco y verde","Amarillo, rojo y verde"],a:1},
+  {q:"¿Qué bandera tiene el sol azteca?",opts:["México","Perú","Bolivia","Colombia"],a:0},
+  {q:"¿Qué país tiene la bandera con el cóndor de los Andes?",opts:["Chile","Ecuador","Bolivia","Colombia"],a:1},
+  {q:"¿Cuántos colores tiene la bandera de Francia?",opts:["2","3","4","5"],a:1},
+  {q:"¿De qué colores son las franjas de la bandera de Francia?",opts:["Azul, blanco, rojo (vertical)","Rojo, blanco, azul","Azul, blanco, rojo (horizontal)","Verde, blanco, rojo"],a:0},
+  {q:"¿Qué bandera tiene un dragón rojo?",opts:["Gales","Escocia","Irlanda","Inglaterra"],a:0},
+  {q:"¿Cuántas estrellas tiene la bandera de Brasil?",opts:["21","24","27","30"],a:2},
+  {q:"¿Qué bandera tiene los colores panafricanos (rojo, negro, verde)?",opts:["Ghana","Senegal","Costa de Marfil","Nigeria"],a:0},
+  {q:"¿Qué colores tiene la bandera de España?",opts:["Rojo y amarillo (con escudo)","Azul y rojo","Verde, amarillo y rojo","Solo rojo y amarillo"],a:0},
+  {q:"¿Qué país tiene la bandera con la hoz y el martillo (histórica)?",opts:["China","Cuba","URSS/Rusia (soviética)","Corea del Norte"],a:2},
+  {q:"¿Qué color predomina en la bandera de Marruecos?",opts:["Verde","Rojo","Azul","Amarillo"],a:1},
+  {q:"¿Qué bandera tiene los colores azul y blanco en franjas horizontales?",opts:["Grecia","Finlandia","Israel","Suecia"],a:0},
+  {q:"¿Qué colores tiene la bandera de Uruguay?",opts:["Azul, blanco y amarillo","Celeste, blanco y amarillo con sol","Celeste y blanco","Verde y amarillo"],a:1},
+  {q:"¿Qué símbolo tiene la bandera de Suiza?",opts:["Cruz roja sobre fondo blanco","Cruz blanca sobre fondo rojo","Escudo con águila","Sol amarillo"],a:1},
+  {q:"¿Qué bandera tiene una palmera y dos sables?",opts:["Arabia Saudita","Emiratos Árabes","Kuwait","Jordania"],a:0},
+  {q:"¿Qué colores tiene la bandera de Holanda?",opts:["Rojo, blanco y azul (horizontal)","Azul, blanco y rojo","Naranja, blanco y azul","Rojo, azul y amarillo"],a:0},
+  {q:"¿Cuál es el único país con una bandera triangular?",opts:["Nepal","Sri Lanka","Bután","Fiyi"],a:0},
+  {q:"¿Qué colores tiene la bandera de Portugal?",opts:["Rojo y verde con escudo","Azul y blanco","Verde y amarillo","Rojo, amarillo y verde"],a:0},
+  {q:"¿Qué bandera tiene una cruz nórdica roja sobre fondo blanco?",opts:["Suecia","Noruega","Dinamarca","Finlandia"],a:2},
+  {q:"¿En qué año se declaró el Estado de Israel?",opts:["1945","1947","1948","1950"],a:2},
+  {q:"¿Quién fue el primer Primer Ministro de Israel?",opts:["Chaim Weizmann","David Ben Gurión","Moshé Dayan","Golda Meir"],a:1},
+  {q:"¿Quién fue el primer presidente de Israel?",opts:["David Ben Gurión","Chaim Weizmann","Theodor Herzl","Moshé Sharett"],a:1},
+  {q:"¿En qué ciudad está la capital de Israel?",opts:["Tel Aviv","Haifa","Jerusalén","Beer Sheva"],a:2},
+  {q:"¿Cuándo fue la Guerra de los Seis Días?",opts:["1956","1967","1973","1982"],a:1},
+  {q:"¿Cuántos días duró la Guerra de los Seis Días?",opts:["3","6","7","10"],a:1},
+  {q:"¿Qué guerra fue en 1973?",opts:["Guerra de Independencia","Guerra de los Seis Días","Guerra de Yom Kippur","Primera Intifada"],a:2},
+  {q:"¿Por qué se llama la 'Guerra de Yom Kippur'?",opts:["Duró 10 días","Empezó en Yom Kippur","Terminó en Yom Kippur","La inició Israel en Yom Kippur"],a:1},
+  {q:"¿Qué fue la Declaración Balfour?",opts:["Carta británica apoyando el hogar judío en Palestina","Acuerdo de paz de 1948","Resolución de la ONU","Tratado entre Israel y Egipto"],a:0},
+  {q:"¿En qué año fue la Declaración Balfour?",opts:["1907","1917","1927","1937"],a:1},
+  {q:"¿Qué resolución de la ONU aprobó el plan de partición de Palestina?",opts:["Resolución 181","Resolución 242","Resolución 338","Resolución 194"],a:0},
+  {q:"¿En qué año fue la resolución de partición de la ONU?",opts:["1945","1947","1948","1949"],a:1},
+  {q:"¿Quién fue Theodor Herzl?",opts:["Primer PM de Israel","Fundador del sionismo político","Comandante del Ejército","Primer Presidente"],a:1},
+  {q:"¿Qué libro escribió Herzl sobre el estado judío?",opts:["Ha-Tikva","Der Judenstaat","Altneuland","Am Yisrael Chai"],a:1},
+  {q:"¿En qué año fue el primer Congreso Sionista?",opts:["1887","1897","1907","1917"],a:1},
+  {q:"¿En qué ciudad se realizó el primer Congreso Sionista?",opts:["Viena","Basilea","Berlín","Génova"],a:1},
+  {q:"¿Qué significa 'Aliyá'?",opts:["Inmigración a Israel","Oración del shabat","Fiesta judía","Ciudad sagrada"],a:0},
+  {q:"¿Qué es la 'Ley del Retorno' de Israel?",opts:["Ley de defensa nacional","Derecho de todo judío a inmigrar a Israel","Ley de ciudadanía","Acuerdo con los árabes"],a:1},
+  {q:"¿En qué año se aprobó la Ley del Retorno?",opts:["1948","1950","1952","1967"],a:1},
+  {q:"¿Qué país fue el primero en reconocer a Israel?",opts:["URSS","Francia","EEUU","Gran Bretaña"],a:2},
+  {q:"¿Cuántos países atacaron a Israel en la Guerra de Independencia de 1948?",opts:["3","4","5","6"],a:2},
+  {q:"¿Qué es el 'Haganá'?",opts:["Himno de Israel","Fuerza paramilitar judía pre-1948","Policía de Israel","Servicio secreto"],a:1},
+  {q:"¿Qué es el Mossad?",opts:["Ejército de Israel","Servicio de inteligencia exterior de Israel","Policía Nacional","Guardia Presidencial"],a:1},
+  {q:"¿Qué tratado de paz firmó Israel con Egipto en 1979?",opts:["Acuerdos de Oslo","Tratado de Camp David","Acuerdos de Abraham","Declaración de Balfour"],a:1},
+  {q:"¿Quiénes firmaron el Tratado de Camp David de 1979?",opts:["Begin y Sadat (con Carter)","Rabin y Arafat","Netanyahu y Mubarak","Sharon y Abbas"],a:0},
+  {q:"¿En qué año firmó Israel paz con Jordania?",opts:["1979","1988","1994","2000"],a:2},
+  {q:"¿Qué son los Acuerdos de Abraham (2020)?",opts:["Paz Israel-Egipto","Normalización de relaciones Israel con EAU y Baréin","Acuerdo Israel-Jordania","Plan dos estados"],a:1},
+  {q:"¿Qué PM de Israel fue asesinado en 1995?",opts:["Begin","Shamir","Rabin","Peres"],a:2},
+  {q:"¿Quién asesinó a Yitzhak Rabin?",opts:["Un palestino","Un extremista judío israelí","Un oficial del ejército","Un agente extranjero"],a:1},
+  {q:"¿Cuál es la ciudad más poblada de Israel?",opts:["Haifa","Jerusalén","Tel Aviv","Beer Sheva"],a:2},
+  {q:"¿Qué ciudad santa es compartida entre judaísmo, islam y cristianismo?",opts:["Tel Aviv","Haifa","Nazaret","Jerusalén"],a:3},
+  {q:"¿Qué es el Knesset?",opts:["El ejército de Israel","El parlamento de Israel","La corte suprema","La cancillería"],a:1},
+  {q:"¿Cuántos miembros tiene el Knesset?",opts:["100","120","150","180"],a:1},
+  {q:"¿Qué mujer fue primera ministra de Israel?",opts:["Tzipi Livni","Golda Meir","Dalía Itzik","Limor Livnat"],a:1},
+  {q:"¿Cuándo gobernó Golda Meir como primera ministra?",opts:["1955-1963","1969-1974","1977-1983","1984-1990"],a:1},
+  {q:"¿Cuántos libros tiene la Torá?",opts:["3","5","7","10"],a:1},
+  {q:"¿Cómo se llama el primer libro de la Torá?",opts:["Éxodo","Génesis / Bereshit","Levítico","Números"],a:1},
+  {q:"¿Qué es el Shabat?",opts:["Fiesta de Año Nuevo judío","Día de descanso semanal","Ayuno mayor","Pascua judía"],a:1},
+  {q:"¿Cuándo comienza el Shabat?",opts:["Viernes al mediodía","Viernes al atardecer","Sábado por la mañana","Domingo al amanecer"],a:1},
+  {q:"¿Qué es Rosh Hashaná?",opts:["Año Nuevo judío","Pascua judía","Fiesta de las Luces","Día del Perdón"],a:0},
+  {q:"¿Qué es Yom Kippur?",opts:["Año Nuevo judío","Pascua judía","Día del Perdón (ayuno)","Fiesta de Sucot"],a:2},
+  {q:"¿Qué es Pésaj?",opts:["Año Nuevo judío","Pascua judía (liberación de Egipto)","Fiesta de las Luces","Fiesta de las Cabañas"],a:1},
+  {q:"¿Cuántos días dura la fiesta de Pésaj?",opts:["3","5","7","8"],a:3},
+  {q:"¿Qué es Janucá?",opts:["Pascua judía","Fiesta de las Luces (8 noches)","Año Nuevo","Fiesta de las Semanas"],a:1},
+  {q:"¿Cuántas velas se encienden en total durante Janucá?",opts:["8","36","44","54"],a:2},
+  {q:"¿Cómo se llama el candelabro de 9 brazos de Janucá?",opts:["Menorá","Janukiá","Maguén David","Mezuzá"],a:1},
+  {q:"¿Cuántos brazos tiene la Menorá del Templo?",opts:["5","6","7","9"],a:2},
+  {q:"¿Qué es el Talmud?",opts:["Libro de oraciones","Recopilación de ley oral y debate rabínico","El texto del shabat","El libro de los salmos"],a:1},
+  {q:"¿Qué es la Mishná?",opts:["Primera parte escrita de la ley oral judía","Libro de oraciones","El quinto libro de la Torá","Canto religioso"],a:0},
+  {q:"¿Qué es la Mezuzá?",opts:["Oración del shabat","Pequeño estuche con texto sagrado en la puerta","Comida kosher","Tipo de rezos"],a:1},
+  {q:"¿Qué es el Bar Mitzvá?",opts:["Boda judía","Ceremonia de mayoría de edad religiosa (13 años, varón)","Fiesta de Janucá","Circuncisión"],a:1},
+  {q:"¿Cuántos años tiene el varón en el Bar Mitzvá?",opts:["12","13","14","15"],a:1},
+  {q:"¿Cómo se llama la mayoría de edad religiosa de la mujer judía?",opts:["Bar Mitzvá","Bat Mitzvá","Simjá","Kidushín"],a:1},
+  {q:"¿Qué es kosher?",opts:["Tipo de oración","Alimentos permitidos según la ley judía","Festividad de verano","Libro sagrado"],a:1},
+  {q:"¿Qué carne NO es kosher?",opts:["Pollo","Ternera","Cerdo","Cordero"],a:2},
+  {q:"¿Se pueden mezclar carne y lácteos en la alimentación kosher?",opts:["Sí","No","Solo en shabat","Solo en Pésaj"],a:1},
+  {q:"¿Qué es el Seder de Pésaj?",opts:["Cena ritual del primer día de Pésaj","Oración matutina","Libro de salmos","Ayuno"],a:0},
+  {q:"¿Qué pan especial se come en Pésaj?",opts:["Pan de pita","Jalá","Matzá (pan sin levadura)","Pan de centeno"],a:2},
+  {q:"¿Por qué se come matzá en Pésaj?",opts:["Es más nutritiva","Porque el pueblo salió rápido y no leuó el pan","Por tradición gastronómica","Por un decreto rabínico medieval"],a:1},
+  {q:"¿Qué es la Torá en sentido amplio?",opts:["Solo el Pentateuco","Todo el corpus de la ley y tradición judía","Solo los 10 Mandamientos","La Biblia cristiana"],a:1},
+  {q:"¿Dónde están los 10 Mandamientos en la Biblia hebrea?",opts:["Solo en Génesis","En Éxodo y Deuteronomio","En Levítico","En Números"],a:1},
+  {q:"¿Cómo se llama el lugar sagrado para la Torá en la sinagoga?",opts:["Bimá","Arón HaKodesh","Ner Tamid","Maguén David"],a:1},
+  {q:"¿Qué es el Kol Nidré?",opts:["Oración principal de Yom Kippur","Canto de Janucá","Bendición del shabat","Plegaria de Pésaj"],a:0},
+  {q:"¿Qué es el Kaddish?",opts:["Canción de Janucá","Plegaria judía de duelo","Salmo de Pésaj","Oración del amanecer"],a:1},
+  {q:"¿Cuántos mandamientos tiene la ley judía (Mitzvot)?",opts:["10","248","365","613"],a:3},
+  {q:"¿Qué es el Maguén David?",opts:["Espada del rey David","Estrella de David (símbolo del judaísmo)","Escudo del ejército","Medalla religiosa"],a:1},
+  {q:"¿Qué es la sinagoga?",opts:["Templo de Jerusalén","Lugar de reunión y oración judía","Casa del rabino","Escuela religiosa exclusiva"],a:1},
+  {q:"¿Qué es el Kotel (Muro de los Lamentos)?",opts:["Muro del Templo Primero","Muro occidental del Segundo Templo","Muro de la Ciudad Vieja","Muro de Jerusalén Este"],a:1},
+  {q:"¿Cuándo fue destruido el Segundo Templo de Jerusalén?",opts:["70 EC por los romanos","586 AC por los babilonios","135 EC por Adriano","70 AC por los griegos"],a:0},
+  {q:"¿Qué día del calendario judío se recuerda la destrucción del Templo?",opts:["Tishá BeAv","Rosh Hashaná","Yom Kippur","Pésaj"],a:0},
+  {q:"¿Qué es la Halajá?",opts:["Historia judía","Ley judía (normas religiosas)","Tipo de música judía","Festival de verano"],a:1},
+  {q:"¿Quién fue Maimónides?",opts:["Rey de Israel","Filósofo y médico judío medieval","Profeta bíblico","General del ejército"],a:1},
+  {q:"¿En qué ciudad nació Maimónides?",opts:["Jerusalén","Toledo","Córdoba","Cairo"],a:2},
+  {q:"¿Qué es el Purim?",opts:["Fiesta que celebra la salvación de los judíos en Persia","Año Nuevo judío","Fiesta de las Luces","Pascua judía"],a:0},
+  {q:"¿Qué libro bíblico relata la historia de Purim?",opts:["Libro de Ester","Libro de Rut","Libro de Job","Libro de los Reyes"],a:0},
+  {q:"¿Qué es Sucot?",opts:["Fiesta de las Luces","Fiesta de las Cabañas","Día del Perdón","Año Nuevo"],a:1},
+  {q:"¿Cuántos días dura Sucot?",opts:["3","5","7","8"],a:2},
+  {q:"¿Cuál es el idioma sagrado del judaísmo?",opts:["Arameo","Idish","Hebreo","Ladino"],a:2},
+  {q:"¿Qué es el Idish?",opts:["Hebreo moderno","Lengua judeoalemana medieval","Arameo antiguo","Español judío"],a:1},
+  {q:"¿Qué es el Ladino?",opts:["Idish","Español judío sefardí","Hebreo clásico","Arameo"],a:1},
+  {q:"¿Cuántas corrientes principales tiene el judaísmo contemporáneo?",opts:["2","3","4","5"],a:1},
+  {q:"¿Cómo se llama la corriente más tradicional del judaísmo?",opts:["Conservador","Reform","Ortodoxo","Reconstructivista"],a:2},
+  {q:"¿Qué es el Shema Israel?",opts:["Himno de Israel","Oración fundamental del judaísmo que declara la unicidad de Dios","Canto de Pésaj","Saludo tradicional"],a:1},
+  {q:"¿Qué es la Aliá a la Torá?",opts:["Inmigrar a Israel","Ser llamado a leer la Torá en la sinagoga","Estudiar Talmud","Hacer Bar Mitzvá"],a:1},
+  {q:"¿En qué año comenzó la Segunda Guerra Mundial?",opts:["1937","1939","1940","1941"],a:1},
+  {q:"¿En qué año terminó la Segunda Guerra Mundial?",opts:["1943","1944","1945","1946"],a:2},
+  {q:"¿Cuántas personas murieron aproximadamente en el Holocausto?",opts:["1 millón","3 millones","6 millones","10 millones"],a:2},
+  {q:"¿Qué fue el Holocausto?",opts:["Bombardeo de Hiroshima","Genocidio de judíos y otros por el nazismo","Guerra civil española","Hambruna soviética"],a:1},
+  {q:"¿Quién fue el líder del nazismo en Alemania?",opts:["Stalin","Mussolini","Hitler","Franco"],a:2},
+  {q:"¿En qué año cayó el Muro de Berlín?",opts:["1985","1987","1989","1991"],a:2},
+  {q:"¿En qué año se disolvió la Unión Soviética?",opts:["1989","1990","1991","1992"],a:2},
+  {q:"¿Quién fue el primer hombre en pisar la Luna?",opts:["Yuri Gagarin","Buzz Aldrin","Neil Armstrong","Michael Collins"],a:2},
+  {q:"¿En qué año llegó el hombre a la Luna?",opts:["1965","1967","1969","1971"],a:2},
+  {q:"¿Quién fue el primer hombre en el espacio?",opts:["Neil Armstrong","John Glenn","Yuri Gagarin","Valentina Tereshkova"],a:2},
+  {q:"¿En qué año fue el ataque a las Torres Gemelas?",opts:["1999","2000","2001","2002"],a:2},
+  {q:"¿Quién lideró la Revolución Francesa?",opts:["Napoleón","Robespierre","Luis XVI","La burguesía (sin un solo líder)"],a:3},
+  {q:"¿En qué año fue la Revolución Francesa?",opts:["1776","1789","1799","1815"],a:1},
+  {q:"¿Qué imperio dominó gran parte del mundo en el siglo XIX?",opts:["Imperio Español","Imperio Francés","Imperio Británico","Imperio Otomano"],a:2},
+  {q:"¿En qué año se independizó EEUU?",opts:["1770","1776","1783","1789"],a:1},
+  {q:"¿Cuántos países componen la ONU actualmente?",opts:["153","193","213","243"],a:1},
+  {q:"¿En qué año se fundó la ONU?",opts:["1940","1945","1950","1955"],a:1},
+  {q:"¿Quién fue Mandela?",opts:["Presidente de Nigeria","Líder antiapartheid y presidente de Sudáfrica","PM de Kenia","Secretario ONU"],a:1},
+  {q:"¿Cuántos años estuvo Mandela preso?",opts:["17","20","27","31"],a:2},
+  {q:"¿Qué fue el apartheid?",opts:["Sistema económico","Régimen de segregación racial en Sudáfrica","Partido político","Conflicto bélico"],a:1},
+  {q:"¿En qué año cayó el apartheid en Sudáfrica?",opts:["1986","1990","1994","1998"],a:2},
+  {q:"¿Qué descubrió Cristóbal Colón en 1492?",opts:["África","América","Australia","La ruta a las Indias"],a:1},
+  {q:"¿Quién fue Napoleón Bonaparte?",opts:["Rey de Francia","Emperador de Francia y conquistador de Europa","General revolucionario","Almirante naval"],a:1},
+  {q:"¿En qué batalla fue derrotado definitivamente Napoleón?",opts:["Trafalgar","Moscú","Waterloo","Leipzig"],a:2},
+  {q:"¿Cuál es el país más grande del mundo?",opts:["EEUU","China","Canadá","Rusia"],a:3},
+  {q:"¿Cuál es el río más largo del mundo?",opts:["Amazonas","Nilo","Yangtsé","Misisipi"],a:1},
+  {q:"¿Cuál es la montaña más alta del mundo?",opts:["K2","Mont Blanc","Aconcagua","Everest"],a:3},
+  {q:"¿Cuál es el océano más grande?",opts:["Atlántico","Índico","Pacífico","Ártico"],a:2},
+  {q:"¿Cuántos continentes hay?",opts:["5","6","7","8"],a:2},
+  {q:"¿Cuál es el desierto más grande del mundo?",opts:["Sahara","Gobi","Antártida","Kalahari"],a:2},
+  {q:"¿Cuántos huesos tiene el cuerpo humano adulto?",opts:["186","206","226","256"],a:1},
+  {q:"¿Cuál es el planeta más grande del sistema solar?",opts:["Saturno","Urano","Júpiter","Neptuno"],a:2},
+  {q:"¿Cuántos planetas hay en el sistema solar?",opts:["7","8","9","10"],a:1},
+  {q:"¿Cuál es el elemento más abundante en el universo?",opts:["Oxígeno","Carbono","Helio","Hidrógeno"],a:3},
+  {q:"¿Qué científico formuló la teoría de la relatividad?",opts:["Newton","Darwin","Einstein","Hawking"],a:2},
+  {q:"¿Quién descubrió la penicilina?",opts:["Pasteur","Fleming","Curie","Koch"],a:1},
+  {q:"¿Cuántos cromosomas tiene una célula humana normal?",opts:["23","44","46","48"],a:2},
+  {q:"¿Qué significa ADN?",opts:["Ácido Desoxirribonucleico","Ácido Di Nucleico","Aminoácido Natural","Átomo Di Nucleico"],a:0},
+  {q:"¿A qué velocidad viaja la luz?",opts:["200.000 km/s","300.000 km/s","400.000 km/s","150.000 km/s"],a:1},
+  {q:"¿Cuántos países tiene América del Sur?",opts:["10","12","14","16"],a:1},
+  {q:"¿Cuál es la capital de Australia?",opts:["Sydney","Melbourne","Canberra","Brisbane"],a:2},
+  {q:"¿Cuál es el país más pequeño del mundo?",opts:["Mónaco","San Marino","Liechtenstein","Vaticano"],a:3},
+  {q:"¿Cuál es la moneda de Japón?",opts:["Yuan","Won","Yen","Ringgit"],a:2},
+  {q:"¿En qué país está el Coliseo Romano?",opts:["Grecia","España","Francia","Italia"],a:3},
+  {q:"¿Cuántas maravillas del mundo antiguo hay?",opts:["5","6","7","8"],a:2},
+  {q:"¿Cuál es el único país que es también un continente?",opts:["Japón","Indonesia","Nueva Zelanda","Australia"],a:3},
+  {q:"¿Qué idioma tiene más hablantes nativos en el mundo?",opts:["Inglés","Español","Mandarín","Hindi"],a:2},
+  {q:"¿Cuántas letras tiene el alfabeto hebreo?",opts:["20","22","24","26"],a:1},
+  {q:"¿Cuál es el libro más vendido de la historia?",opts:["Harry Potter","Don Quijote","El Señor de los Anillos","La Biblia"],a:3},
+  {q:"¿En qué año fue la primera transmisión de televisión?",opts:["1920","1926","1936","1946"],a:2},
+  {q:"¿Quién pintó la Mona Lisa?",opts:["Miguel Ángel","Rafael","Leonardo da Vinci","Botticelli"],a:2},
+  {q:"¿En qué museo está la Mona Lisa?",opts:["Prado (Madrid)","Louvre (París)","Uffizi (Florencia)","Met (Nueva York)"],a:1},
   {q:"¿Cuántos lados tiene un hexágono?",opts:["5","6","7","8"],a:1},
-  {q:"¿Cuál es la capital de Australia?",opts:["Sídney","Melbourne","Brisbane","Canberra"],a:3},
-  {q:"¿Cuántos huesos tiene el cuerpo humano adulto?",opts:["186","196","206","216"],a:2},
-  {q:"¿Cuál es el elemento químico más abundante en el universo?",opts:["Oxígeno","Helio","Hidrógeno","Carbono"],a:2},
-  {q:"¿Cuánto tarda la luz del Sol en llegar a la Tierra?",opts:["4 minutos","8 minutos","12 minutos","16 minutos"],a:1},
-  {q:"¿Cuál es el país con más idiomas oficiales?",opts:["India","Sudáfrica","Bolivia","Suiza"],a:1},
-  {q:"¿Qué instrumento tiene 88 teclas?",opts:["Órgano","Acordeón","Piano","Clavicémbalo"],a:2},
-  {q:"¿Cuántas cuerdas tiene una guitarra estándar?",opts:["4","5","6","7"],a:2},
-  {q:"¿En qué país se inventó el tango?",opts:["España","Cuba","Uruguay/Argentina","Brasil"],a:2},
-  {q:"¿Cuánto es 15% de 200?",opts:["25","30","35","40"],a:1},
-  {q:"¿Cuál es la raíz cuadrada de 144?",opts:["10","11","12","13"],a:2},
+  {q:"¿Cuántos grados tiene un triángulo?",opts:["90","180","270","360"],a:1},
+  {q:"¿Quién escribió Don Quijote?",opts:["Lope de Vega","Góngora","Cervantes","Quevedo"],a:2},
+  {q:"¿En qué país nació Albert Einstein?",opts:["Austria","Alemania","Suiza","EEUU"],a:1},
+  {q:"¿Qué es la fotosíntesis?",opts:["Respiración animal","Proceso por el que las plantas producen alimento con luz solar","Digestión de minerales","Ciclo del agua"],a:1},
+  {q:"¿Qué es Olami?",opts:["Una ONG de fútbol","Organización mundial de conexión judía joven","Partido político judío","Escuela religiosa ortodoxa"],a:1},
+  {q:"¿En qué barrio de Buenos Aires hay mayor concentración de vida judía?",opts:["Palermo","Belgrano y Villa Crespo","San Telmo","Caballito"],a:1},
+  {q:"¿Cuántos judíos viven aproximadamente en Argentina?",opts:["50.000","180.000","230.000","500.000"],a:2},
+  {q:"¿Cuál es la mayor comunidad judía del mundo hoy?",opts:["Israel","EEUU","Francia","Argentina"],a:0},
+  {q:"¿Qué es la AMIA?",opts:["Partido político","Asociación Mutual Israelita Argentina","ONG cultural","Institución educativa"],a:1},
+  {q:"¿En qué año fue el atentado a la AMIA en Buenos Aires?",opts:["1992","1994","1996","1998"],a:1},
+  {q:"¿Qué es el DAIA?",opts:["Delegación de Asociaciones Israelitas Argentinas","Organismo del Estado","Partido judío","Escuela bilingüe"],a:0},
+  {q:"¿En qué país está la mayor concentración de judíos ashkenazíes?",opts:["Argentina","Israel","EEUU","Rusia"],a:2},
+  {q:"¿Qué significa 'Ashkenazí'?",opts:["Judío de origen árabe","Judío de origen europeo (centro/este Europa)","Judío de Marruecos","Judío de Yemen"],a:1},
+  {q:"¿Qué significa 'Sefardí'?",opts:["Judío europeo","Judío originario de España y el mundo mediterráneo","Judío etíope","Judío americano"],a:1},
+  {q:"¿En qué año llegaron las primeras comunidades judías masivas a Argentina?",opts:["1850s","1880s-1890s","1920s","1940s"],a:1},
+  {q:"¿Cómo se llama la primera colonia agrícola judía de Argentina?",opts:["Moisés Ville","Colonia Montefiore","Villa Clara","Almagro"],a:0},
+  {q:"¿En qué provincia está Moisés Ville?",opts:["Buenos Aires","Entre Ríos","Santa Fe","Córdoba"],a:2},
+  {q:"¿Qué es el IWO?",opts:["Instituto Científico Judío de Argentina","Instituto Judío de Investigación (YIVO)","Organización sionista","Partido judío"],a:0},
+  {q:"¿Cómo se llama el proceso de 'ascenso' espiritual al leer la Torá?",opts:["Aliá","Kidushín","Bimá","Gueulá"],a:0},
+  {q:"¿Cuántos títulos de liga tiene River Plate en Argentina?",opts:["30","36","38","42"],a:1},
+  {q:"¿Cuántos títulos de liga tiene Boca Juniors en Argentina?",opts:["30","34","36","38"],a:1},
+  {q:"¿Qué se conoce como el 'Superclásico' en Argentina?",opts:["Racing vs Independiente","San Lorenzo vs Huracán","Boca vs River","Nacional vs Peñarol"],a:2},
+  {q:"¿Cuál es el estadio de River Plate?",opts:["Estadio Monumental","La Bombonera","Nuevo Gasómetro","El Cilindro"],a:0},
+  {q:"¿Cuál es el estadio de Boca Juniors?",opts:["Estadio Monumental","La Bombonera","Nuevo Gasómetro","El Cilindro"],a:1},
+  {q:"¿Cuántas Copas Libertadores ganó Boca Juniors?",opts:["4","6","7","8"],a:1},
+  {q:"¿Cuántas Copas Libertadores ganó River Plate?",opts:["3","4","5","6"],a:1},
+  {q:"¿Qué seleccionador llevó a Argentina al Mundial de Qatar 2022?",opts:["Sampaoli","Bauza","Scaloni","Menotti"],a:2},
+  {q:"¿En qué club juega Lionel Messi actualmente?",opts:["Barcelona","PSG","Inter Miami","Al Hilal"],a:2},
+  {q:"¿Cuántos Mundiales jugó Messi antes de 2022?",opts:["2","3","4","5"],a:2},
+  {q:"¿Quién fue el DT de Argentina en el Mundial 1978?",opts:["Bilardo","Menotti","Passarella","Kempes"],a:1},
+  {q:"¿Quién fue el DT de Argentina en el Mundial 1986?",opts:["Bilardo","Menotti","Passarella","Sabella"],a:0},
+  {q:"¿Quién fue el máximo goleador de Argentina en el Mundial 1978?",opts:["Luque","Kempes","Ardiles","Tarantini"],a:1},
+  {q:"¿Cuántos goles marcó Kempes en el Mundial 1978?",opts:["4","5","6","7"],a:2},
+  {q:"¿En qué estadio se jugó la final del Mundial 1978?",opts:["Camp Nou","Estadio Monumental","Wembley","Maracaná"],a:1},
+  {q:"¿A qué selección venció Argentina en la final de 1986?",opts:["Brasil","Alemania Occidental","Uruguay","Italia"],a:1},
+  {q:"¿Cuántos goles marcó Maradona en el Mundial 1986?",opts:["4","5","6","7"],a:1},
+  {q:"¿Contra qué selección fue 'La mano de Dios' de Maradona?",opts:["Brasil","Alemania","Inglaterra","Italia"],a:2},
+  {q:"¿Cuál es el apodo de la Selección Argentina?",opts:["La Verde","La Albiceleste","La Roja","La Tri"],a:1},
+  {q:"¿Quién es el goleador histórico de la Selección Argentina?",opts:["Maradona","Batistuta","Messi","Agüero"],a:2},
+  {q:"¿Cuál es el estadio del FC Barcelona?",opts:["Bernabéu","Wanda Metropolitano","Camp Nou / Estadio Olímpico","Anfield"],a:2},
+  {q:"¿Cuál es el estadio del Real Madrid?",opts:["Bernabéu","Camp Nou","Wembley","San Siro"],a:0},
+  {q:"¿Cuántas Champions League tiene el Barcelona?",opts:["3","4","5","6"],a:2},
+  {q:"¿Cuál es el apodo del Manchester United?",opts:["The Citizens","The Red Devils","The Gunners","The Blues"],a:1},
+  {q:"¿Cuál es el estadio del Liverpool?",opts:["Old Trafford","Etihad","Anfield","Goodison Park"],a:2},
+  {q:"¿Cuántas Champions tiene el Bayern Munich?",opts:["4","5","6","7"],a:2},
+  {q:"¿Cuál es el nombre del estadio del Bayern Munich?",opts:["Signal Iduna Park","Allianz Arena","Volksparkstadion","Red Bull Arena"],a:1},
+  {q:"¿Qué club ganó más veces la Serie A italiana?",opts:["Milan","Inter","Roma","Juventus"],a:3},
+  {q:"¿Cuántos títulos de liga tiene la Juventus en Italia?",opts:["27","30","36","38"],a:2},
+  {q:"¿Cuántos títulos de Champions tiene el Milan (AC)?",opts:["5","6","7","8"],a:2},
+  {q:"¿En qué liga juega el PSG?",opts:["Ligue 1","Premier League","Bundesliga","La Liga"],a:0},
+  {q:"¿Cuántos títulos de Ligue 1 tiene el PSG?",opts:["5","8","12","15"],a:2},
+  {q:"¿Qué club tiene el récord de más títulos en la historia del fútbol?",opts:["Real Madrid","Rangers FC","Linfield FC","Juventus"],a:1},
+  {q:"¿Qué es el 'Clásico' en España?",opts:["Atlético vs Getafe","Real Madrid vs Barcelona","Sevilla vs Betis","Valencia vs Villarreal"],a:1},
+  {q:"¿En qué año fue fundado el Real Madrid?",opts:["1895","1902","1910","1920"],a:1},
+  {q:"¿Cuál es el apodo del Arsenal?",opts:["The Reds","The Gunners","The Blues","The Hammers"],a:1},
+  {q:"¿Qué jugador marcó el gol de la 'Manita' al Bayern en semis de CL 2015?",opts:["Messi","Suárez","Neymar","Iniesta"],a:0},
+  {q:"¿Cuántos goles marcó Ronaldo en toda su carrera profesional?",opts:["600","700","800","900"],a:2},
+  {q:"¿Cuántos goles marcó Messi en toda su carrera hasta 2024?",opts:["700","750","800","850"],a:2},
+  {q:"¿Quién es el máximo goleador de la historia de La Liga española?",opts:["Ronaldo","Messi","Zarra","Raúl"],a:1},
+  {q:"¿Cuál es el mar más salado del mundo?",opts:["Mar Rojo","Mar Caspio","Mar Muerto","Mar Mediterráneo"],a:2},
+  {q:"¿En qué frontera está el Mar Muerto?",opts:["Israel-Líbano","Israel-Jordania (y Cisjordania)","Israel-Egipto","Israel-Siria"],a:1},
+  {q:"¿Cuál es el río más importante de Israel?",opts:["Éufrates","Jordán","Nilo","Litani"],a:1},
+  {q:"¿En qué lago desemboca el río Jordán por el norte?",opts:["Mar de Galilea / Kinneret","Mar Muerto","Lago Tiberíades (mismo que el anterior)","Lago Hula"],a:0},
+  {q:"¿Cuál es el desierto del sur de Israel?",opts:["Sahara","Neguev","Sinaí","Arábigo"],a:1},
+  {q:"¿Qué ciudad israelí es conocida como 'La ciudad blanca' por su arquitectura Bauhaus?",opts:["Jerusalén","Haifa","Tel Aviv","Beer Sheva"],a:2},
+  {q:"¿Qué ciudad israelí está en el norte y tiene un famoso puerto?",opts:["Eilat","Haifa","Beer Sheva","Ashkelon"],a:1},
+  {q:"¿Cuál es la ciudad portuaria de Israel en el Mar Rojo?",opts:["Haifa","Tel Aviv","Eilat","Ashkelon"],a:2},
+  {q:"¿Con cuántos países hace frontera Israel?",opts:["3","4","5","6"],a:1},
+  {q:"¿Cuáles son los países que hacen frontera con Israel?",opts:["Egipto, Jordania, Siria, Líbano (y territorios palestinos)","Irak, Irán, Arabia Saudita, Egipto","Turquía, Siria, Jordania, Egipto","Solo Egipto y Jordania"],a:0},
+  {q:"¿En qué mes judío cae Rosh Hashaná?",opts:["Nisan","Tishrei","Sivan","Av"],a:1},
+  {q:"¿Cuántos días dura el Año Nuevo judío?",opts:["1","2","3","7"],a:1},
+  {q:"¿Cuántos días dura el Yom Kippur?",opts:["1 (ayuno de 25 horas)","2","3","Toda la semana"],a:0},
+  {q:"¿Qué significa 'Shanah Tovah'?",opts:["Buen Shabat","Feliz Año Nuevo","Buenas fiestas","Paz y bien"],a:1},
+  {q:"¿Qué significa 'Shabbat Shalom'?",opts:["Feliz Año Nuevo","Buenas fiestas","Paz en el Shabat","Buen Shabat (saludo)"],a:3},
+  {q:"¿Qué es el Omer?",opts:["Período de 49 días entre Pésaj y Shavuot","Ayuno de verano","Celebración del Templo","Mes del calendario hebreo"],a:0},
+  {q:"¿Qué es Shavuot?",opts:["Fiesta de las Semanas (entrega de la Torá)","Año Nuevo","Fiesta de las Luces","Pascua judía"],a:0},
+  {q:"¿Cuándo se come jalá?",opts:["Solo en Pésaj","En Shabat y festividades","Solo en Rosh Hashaná","Todos los días"],a:1},
+  {q:"¿Qué se hace con la jalá el viernes al atardecer?",opts:["Se quema","Se recita una bendición (Kidush) y se come","Se guarda hasta el sábado","Se reparte a vecinos"],a:1},
+  {q:"¿Qué es el Kidush?",opts:["Oración sobre el vino para santificar el shabat","Ayuno de Yom Kippur","Canto de Janucá","Rezo matutino"],a:0},
+  {q:"¿Qué fruta se come en Rosh Hashaná con miel?",opts:["Uva","Higo","Manzana","Granada"],a:2},
+  {q:"¿Por qué se come manzana con miel en Rosh Hashaná?",opts:["Por su origen bíblico","Para simbolizar un año dulce","Por tradición medieval","Por razones de salud"],a:1},
+  {q:"¿Qué instrumento se toca en Rosh Hashaná?",opts:["Trompeta","Shofar (cuerno de carnero)","Tambor","Laúd"],a:1},
+  {q:"¿De qué animal se hace el shofar?",opts:["Toro","Cabra","Carnero (ram)","Ciervo"],a:2},
+  {q:"¿Qué significa 'Teshuvá'?",opts:["Arrepentimiento y retorno a Dios","Oración de la mañana","Rezo de Pésaj","Saludo festivo"],a:0},
+  {q:"¿En qué idioma se reza principalmente en la sinagoga?",opts:["Arameo","Idish","Hebreo","Ladino"],a:2},
+  {q:"¿Qué es la circuncisión en el judaísmo (Brit Milá)?",opts:["Ritual de pureza en agua","Pacto de Abraham con Dios (a los 8 días del nacimiento)","Bar Mitzvá","Ritual de conversión"],a:1},
+  {q:"¿A qué edad se hace el Brit Milá?",opts:["Al mes","A los 8 días","Al año","A los 3 años"],a:1},
+  {q:"¿Qué es la Mikvé?",opts:["Baño ritual de purificación","Sinagoga pequeña","Escuela talmúdica","Tipo de oración"],a:0},
+  {q:"¿Qué es el Tzedaká?",opts:["Tipo de oración","Caridad / justicia social en el judaísmo","Fiesta de primavera","Ayuno voluntario"],a:1},
+  {q:"¿Quién fue Moisés en la Biblia?",opts:["Fundador de Israel","Profeta que sacó a los judíos de Egipto y recibió la Torá","Primer rey de Israel","Constructor del Templo"],a:1},
+  {q:"¿Quién fue el primer rey de Israel según la Biblia?",opts:["David","Salomón","Saúl","Samuel"],a:2},
+  {q:"¿Quién fue el rey que construyó el Primer Templo de Jerusalén?",opts:["David","Salomón","Ezequías","Josías"],a:1},
+  {q:"¿Quién fue Abraham según la tradición judía?",opts:["Primer profeta","Padre del pueblo judío (primer monoteísta)","Rey de Israel","Constructor del Templo"],a:1},
+  {q:"¿Cuántos hijos tuvo Abraham según la Biblia?",opts:["1","2","3","12"],a:1},
+  {q:"¿Quién fue Isaac?",opts:["Hijo de Abraham","Hermano de Abraham","Nieto de Abraham","Padre de Abraham"],a:0},
+  {q:"¿Quién fue Jacob / Israel según la Biblia?",opts:["Hijo de Isaac, patriarca de las 12 tribus","Primer rey","Constructor del Tabernáculo","Profeta del exilio"],a:0},
+  {q:"¿Cuántas tribus de Israel hay según la tradición bíblica?",opts:["10","11","12","13"],a:2},
+  {q:"¿Quién fue José en la Biblia?",opts:["Hijo de Abraham","Hijo de Jacob que fue vendido a Egipto","Hermano de Moisés","Primer sacerdote"],a:1},
+  {q:"¿Quién fue el profeta que precedió a Moisés?",opts:["Abraham","Aarón","Ninguno (Moisés fue el primero)","Samuel"],a:0},
+  {q:"¿Quién fue Débora en la Biblia?",opts:["Madre de Moisés","Profetisa y jueza de Israel","Reina de Saba","Esposa de David"],a:1},
+  {q:"¿Quién mató a Goliat según la Biblia?",opts:["Saúl","Jonathan","David","Moisés"],a:2},
+  {q:"¿Qué significado tiene el nombre 'Israel'?",opts:["Tierra prometida","El que lucha con Dios","Pueblo elegido","Monte sagrado"],a:1},
+  {q:"¿Quién fue Ester en la Biblia?",opts:["Esposa de Moisés","Reina judía que salvó a su pueblo en Persia","Profetisa","Madre de Salomón"],a:1},
+  {q:"¿Quién fue Rut según la Biblia?",opts:["Princesa de Israel","Moabita que se convirtió al judaísmo y fue bisabuela de David","Esposa del rey Saúl","Sacerdotisa del Templo"],a:1},
+  {q:"¿Qué rey fue conocido por su sabiduría en la Biblia?",opts:["David","Saúl","Salomón","Ezequías"],a:2},
+  {q:"¿Quién inventó el teléfono?",opts:["Edison","Tesla","Graham Bell","Marconi"],a:2},
+  {q:"¿Quién inventó la bombilla eléctrica?",opts:["Tesla","Edison","Bell","Faraday"],a:1},
+  {q:"¿Quién inventó internet (la red ARPANET)?",opts:["Bill Gates","Tim Berners-Lee","DARPA (agencia militar EEUU)","Steve Jobs"],a:2},
+  {q:"¿Quién creó la World Wide Web (WWW)?",opts:["Bill Gates","Steve Jobs","Tim Berners-Lee","Mark Zuckerberg"],a:2},
+  {q:"¿En qué año fue lanzado el primer iPhone?",opts:["2005","2007","2009","2011"],a:1},
+  {q:"¿Quién fundó Apple?",opts:["Bill Gates","Steve Jobs (y Wozniak)","Elon Musk","Jeff Bezos"],a:1},
+  {q:"¿Quién fundó Microsoft?",opts:["Bill Gates (y Allen)","Steve Jobs","Zuckerberg","Bezos"],a:0},
+  {q:"¿Quién fundó Meta (Facebook)?",opts:["Bill Gates","Elon Musk","Jack Dorsey","Mark Zuckerberg"],a:3},
+  {q:"¿En qué año se lanzó YouTube?",opts:["2003","2005","2007","2009"],a:1},
+  {q:"¿En qué año se fundó Amazon?",opts:["1991","1994","1997","2000"],a:1},
+  {q:"¿Qué es la inteligencia artificial?",opts:["Un robot físico","Software que simula capacidades cognitivas humanas","Hardware de computación","Un videojuego"],a:1},
+  {q:"¿Quién lanzó ChatGPT?",opts:["Google","Meta","OpenAI","Microsoft"],a:2},
+  {q:"¿En qué año fue lanzado ChatGPT?",opts:["2021","2022","2023","2024"],a:1},
+  {q:"¿Cuál es el sistema operativo más usado en el mundo en PCs?",opts:["macOS","Linux","Windows","Android"],a:2},
+  {q:"¿Quién fundó Tesla Motors?",opts:["Elon Musk (junto a otros)","Jeff Bezos","Bill Gates","Larry Page"],a:0},
+  {q:"¿En qué deporte se usa un birdie?",opts:["Tenis","Golf","Béisbol","Cricket"],a:1},
+  {q:"¿Cuántos jugadores tiene un equipo de básquet?",opts:["4","5","6","7"],a:1},
+  {q:"¿Cuántos puntos vale un triple en básquet?",opts:["2","3","4","1"],a:1},
+  {q:"¿En qué deporte se usa el término 'deuce'?",opts:["Tenis","Fútbol","Golf","Béisbol"],a:0},
+  {q:"¿Cuántos rings tiene un partido de box olímpico?",opts:["Ninguno (cuadrilátero)","3","4","5"],a:0},
+  {q:"¿Cuántos atletas tiene un equipo de voleibol?",opts:["5","6","7","8"],a:1},
+  {q:"¿En qué país nació el tenis?",opts:["Francia","EEUU","Gran Bretaña","Australia"],a:2},
+  {q:"¿Cuántos Grand Slams existen en el tenis?",opts:["3","4","5","6"],a:1},
+  {q:"¿Cuántos Grand Slams tiene Novak Djokovic?",opts:["20","22","24","25"],a:2},
+  {q:"¿Qué país organizó los Juegos Olímpicos de 2024?",opts:["EEUU","Japón","Francia","Reino Unido"],a:2},
+  {q:"¿En qué ciudad fueron los JJ.OO. de 2024?",opts:["Lyon","Marsella","París","Burdeos"],a:2},
+  {q:"¿Cuántos aros tiene la bandera olímpica?",opts:["4","5","6","7"],a:1},
+  {q:"¿Cuántos años hay entre cada Juegos Olímpicos de verano?",opts:["2","4","5","6"],a:1},
+  {q:"¿Quién fue el atleta más ganador de la historia olímpica?",opts:["Usain Bolt","Carl Lewis","Michael Phelps","Mark Spitz"],a:2},
+  {q:"¿Cuántas medallas de oro ganó Michael Phelps en total?",opts:["15","18","23","28"],a:2},
+  {q:"¿Cuál es el record mundial de los 100 metros planos?",opts:["9,55 s","9,58 s","9,63 s","9,70 s"],a:1},
+  {q:"¿Quién tiene el record mundial de los 100 metros planos?",opts:["Carl Lewis","Asafa Powell","Usain Bolt","Yohan Blake"],a:2},
+  {q:"¿En qué país es más popular el béisbol?",opts:["Brasil","México","EEUU","Cuba"],a:2},
+  {q:"¿Qué es el cricket?",opts:["Deporte originario de Australia","Deporte de raqueta","Deporte de bate y pelota originario de Inglaterra","Deporte acuático"],a:2},
+  {q:"¿Cuántos jugadores tiene un equipo de rugby?",opts:["11","13","15","17"],a:2},
+  {q:"¿Qué país dominó el rugby mundial en los Mundiales?",opts:["Australia","Inglaterra","Sudáfrica","Nueva Zelanda"],a:3},
+  {q:"¿Qué es el Superbowl?",opts:["Final de la NBA","Final de la NFL (fútbol americano)","Copa del Mundo de Rugby","Torneo de baseball"],a:1},
+  {q:"¿Cuántos puntos vale un touchdown en fútbol americano?",opts:["4","6","7","8"],a:1},
+  {q:"¿En qué deporte está la 'velocidad de escape'?",opts:["Ciclismo","Automovilismo","Física/astronáutica","Atletismo"],a:2},
+  {q:"¿En qué país se inventó el básquet?",opts:["EEUU","Canadá","Reino Unido","Brasil"],a:0},
+  {q:"¿Cuántos equipos participan en la NBA?",opts:["28","30","32","34"],a:1},
+  {q:"¿Qué equipo de la NBA ganó más títulos?",opts:["Lakers","Warriors","Celtics","Bulls"],a:2},
+  {q:"¿Cuántos títulos de NBA tiene Michael Jordan?",opts:["4","5","6","7"],a:2},
+  {q:"¿Cuántos puntos anotó por partido en promedio Wilt Chamberlain en su mejor temporada?",opts:["40","44","50","55"],a:2},
+  {q:"¿Quién tiene más títulos de la NBA como jugador?",opts:["MJ","LeBron","Bill Russell","Kareem Abdul-Jabbar"],a:2},
+  {q:"¿Qué sigla es la liga de fútbol americano?",opts:["NFC","NLF","NFL","MLS"],a:2},
+  {q:"¿Cuántas estrellas tiene el logo de la UEFA Champions League?",opts:["7","8","10","11"],a:1},
+  {q:"¿Qué selección ganó la primera Copa América?",opts:["Argentina","Brasil","Uruguay","Chile"],a:2},
+  {q:"¿En qué año se jugó la primera Copa América?",opts:["1910","1916","1920","1924"],a:1},
+  {q:"¿Cuántas veces ganó Uruguay la Copa América?",opts:["12","14","15","16"],a:0},
+  {q:"¿Cuántas veces ganó Argentina la Copa América?",opts:["13","14","15","16"],a:2},
+  {q:"¿Cuántas veces ganó Brasil la Copa América?",opts:["7","8","9","10"],a:2},
+  {q:"¿Qué selección ganó más Copas Africanas de Naciones?",opts:["Egipto","Senegal","Costa de Marfil","Ghana"],a:0},
+  {q:"¿Cuántas veces ganó Egipto la Copa Africana de Naciones?",opts:["5","6","7","8"],a:2},
+  {q:"¿En qué año ganó Senegal su primera Copa Africana de Naciones?",opts:["2000","2011","2019","2022"],a:3},
+  {q:"¿Cuál es el volcán más alto de América del Sur?",opts:["Cotopaxi","Chimborazo","Ojos del Salado","Aconcagua"],a:2},
+  {q:"¿Cuál es la cascada más alta del mundo?",opts:["Cataratas del Iguazú","Salto Ángel (Venezuela)","Niágara","Victoria (África)"],a:1},
+  {q:"¿Qué país tiene más lagos del mundo?",opts:["Rusia","Brasil","EEUU","Canadá"],a:3},
+  {q:"¿Cuántos países tiene África?",opts:["44","54","64","74"],a:1},
+  {q:"¿Cuál es el país más poblado de África?",opts:["Egipto","Etiopía","Sudáfrica","Nigeria"],a:3},
+  {q:"¿Cuál es la ciudad más poblada del mundo?",opts:["Shanghái","Tokio","Mumbai","Ciudad de México"],a:1},
+  {q:"¿Cuál es el país más poblado del mundo?",opts:["China","India","EEUU","Indonesia"],a:1},
+  {q:"¿Qué país tiene más petróleo del mundo?",opts:["Arabia Saudita","Rusia","EEUU","Venezuela"],a:3},
+  {q:"¿Cuántos idiomas oficiales tiene Suiza?",opts:["2","3","4","5"],a:2},
+  {q:"¿Cuáles son los idiomas oficiales de Suiza?",opts:["Francés e italiano","Alemán, francés, italiano y romanche","Alemán y francés","Alemán, francés e italiano"],a:1},
+  {q:"¿Cuál es la capital de Canadá?",opts:["Toronto","Montreal","Vancouver","Ottawa"],a:3},
+  {q:"¿Cuál es la capital de Brasil?",opts:["São Paulo","Río de Janeiro","Brasilia","Salvador"],a:2},
+  {q:"¿Cuál es el río más caudaloso del mundo?",opts:["Nilo","Yangtsé","Congo","Amazonas"],a:3},
+  {q:"¿En qué continente está Madagascar?",opts:["Asia","América del Sur","África","Oceanía"],a:2},
+  {q:"¿Cuántos husos horarios tiene Rusia?",opts:["9","11","13","15"],a:1},
+  {q:"¿Qué país tiene el mayor número de islas?",opts:["Indonesia","Japón","Suecia","Grecia"],a:0},
+  {q:"¿Cuál es la lengua oficial de Brasil?",opts:["Español","Portugués","Inglés","Francés"],a:1},
+  {q:"¿En qué país está el Amazonas (mayor parte)?",opts:["Colombia","Perú","Venezuela","Brasil"],a:3},
+  {q:"¿Cuál es el punto más profundo de los océanos?",opts:["Fosa de Puerto Rico","Fosa de las Marianas","Fosa de Tonga","Fosa de Kermadec"],a:1},
+  {q:"¿A cuántos metros de profundidad está la Fosa de las Marianas?",opts:["7.000 m","9.000 m","11.000 m","13.000 m"],a:2},
+  {q:"¿Cuál es el animal terrestre más rápido?",opts:["León","Guepardo","Antílope","Avestruz"],a:1},
+  {q:"¿A qué velocidad puede correr un guepardo?",opts:["80 km/h","100 km/h","120 km/h","140 km/h"],a:2},
+  {q:"¿Cuál es el animal más grande del mundo?",opts:["Elefante africano","Tiburón ballena","Ballena azul","Calamar gigante"],a:2},
+  {q:"¿Cuánto puede pesar una ballena azul?",opts:["50 t","100 t","150 t","200 t"],a:2},
+  {q:"¿Cuántos corazones tiene un pulpo?",opts:["1","2","3","4"],a:2},
+  {q:"¿Cuántos lados tiene un octágono?",opts:["6","7","8","9"],a:2},
+  {q:"¿Cuánto es la raíz cuadrada de 144?",opts:["10","11","12","13"],a:2},
+  {q:"¿Cuánto es π (pi) aproximado?",opts:["3,14","3,16","3,12","3,18"],a:0},
+  {q:"¿Qué gas produce la fotosíntesis como subproducto?",opts:["CO2","Nitrógeno","Oxígeno","Hidrógeno"],a:2},
+  {q:"¿Cuánto tarda la Tierra en dar una vuelta al sol?",opts:["265 días","355 días","365 días","375 días"],a:2},
+  {q:"¿Cuánto tarda la Luna en orbitar la Tierra?",opts:["7 días","14 días","28 días","30 días"],a:2},
+  {q:"¿Cuántos satélites naturales tiene la Tierra?",opts:["0","1","2","3"],a:1},
+  {q:"¿Cuál es el planeta más cercano al sol?",opts:["Venus","Tierra","Mercurio","Marte"],a:2},
+  {q:"¿Cuál es el planeta más alejado del sol en el sistema solar?",opts:["Urano","Saturno","Plutón (enano)","Neptuno"],a:3},
+  {q:"¿Cuántos años tiene el universo aproximadamente?",opts:["4.600 millones","9.000 millones","13.800 millones","20.000 millones"],a:2},
+  {q:"¿Cuántos años tiene la Tierra?",opts:["2.000 millones","3.500 millones","4.500 millones","6.000 millones"],a:2},
+  {q:"¿Cuál es el metal más abundante en la corteza terrestre?",opts:["Hierro","Cobre","Aluminio","Silicio"],a:2},
+  {q:"¿A qué temperatura hierve el agua a nivel del mar?",opts:["90°C","95°C","100°C","105°C"],a:2},
+  {q:"¿A qué temperatura se congela el agua?",opts:["0°C","2°C","-5°C","-10°C"],a:0},
+  {q:"¿Cuántos huesos tiene el cráneo humano?",opts:["6","8","22","28"],a:2},
+  {q:"¿Cuál es el órgano más grande del cuerpo humano?",opts:["Hígado","Pulmón","Piel","Cerebro"],a:2},
+  {q:"¿Cuántos litros de sangre tiene el cuerpo humano adulto promedio?",opts:["3","5","7","9"],a:1},
+  {q:"¿Cuántos latidos por minuto tiene el corazón en reposo?",opts:["40-50","60-100","100-120","120-160"],a:1},
+  {q:"¿Qué vitamina produce el cuerpo con la luz solar?",opts:["Vitamina A","Vitamina B12","Vitamina C","Vitamina D"],a:3},
+  {q:"¿Cuántas horas duerme en promedio un adulto?",opts:["4-5","6-8","8-10","10-12"],a:1},
+  {q:"¿Cuántos dientes permanentes tiene un adulto?",opts:["28","30","32","36"],a:2},
+  {q:"¿Cuántas vértebras tiene la columna vertebral humana?",opts:["24","30","33","36"],a:2},
+  {q:"¿Qué parte del cerebro controla el equilibrio?",opts:["Cerebro","Cerebelo","Hipotálamo","Bulbo raquídeo"],a:1},
+  {q:"¿Cuántos pares de cromosomas tiene el ser humano?",opts:["21","22","23","24"],a:2},
+  {q:"¿Cuál es la unidad básica de la vida?",opts:["Molécula","Átomo","Célula","Gen"],a:2},
+  {q:"¿Cuántas células tiene el cuerpo humano aproximadamente?",opts:["1 billón","10 billones","37 billones","100 billones"],a:2},
+  {q:"¿Qué es el ADN mitocondrial?",opts:["ADN del núcleo celular","ADN heredado solo de la madre","ADN del padre","ADN artificial"],a:1},
+  {q:"¿Quién formuló la teoría de la evolución por selección natural?",opts:["Newton","Lamarck","Darwin","Mendel"],a:2},
+  {q:"¿Qué libro publicó Darwin en 1859?",opts:["El origen de las especies","La selección natural","La evolución","El gen egoísta"],a:0},
+  {q:"¿Quién fue Gregor Mendel?",opts:["Padre de la genética (experimentos con guisantes)","Descubridor del ADN","Inventor del microscopio","Premio Nobel de Química"],a:0},
+  {q:"¿Cuántos elementos tiene la tabla periódica actualmente?",opts:["100","108","118","126"],a:2},
+  {q:"¿Cuál es el elemento más pesado de la tabla periódica?",opts:["Uranio","Plutonio","Oganesón","Californio"],a:2},
+  {q:"¿Cuál es el símbolo químico del oro?",opts:["Go","Or","Au","Ag"],a:2},
+  {q:"¿Cuál es el símbolo químico de la plata?",opts:["Pl","Si","Sl","Ag"],a:3},
+  {q:"¿Cuál es el símbolo químico del hierro?",opts:["Hi","He","Fe","Ir"],a:2},
+  {q:"¿Qué gas forma la mayor parte del aire?",opts:["Oxígeno","CO2","Nitrógeno","Argón"],a:2},
+  {q:"¿Cuánto oxígeno tiene el aire aproximadamente?",opts:["10%","21%","30%","50%"],a:1},
+  {q:"¿Cuál es la estrella más cercana al sol?",opts:["Sirio","Próxima Centauri","Betelgeuse","Vega"],a:1},
+  {q:"¿A cuántos años luz está Próxima Centauri?",opts:["1,3","4,2","8,6","12,5"],a:1},
+  {q:"¿Cuántas galaxias hay en el universo observable (estimación)?",opts:["1 millón","100 millones","2 billones","100 billones"],a:2},
+  {q:"¿Cómo se llama nuestra galaxia?",opts:["Andrómeda","Magallanes","Vía Láctea","Virgo"],a:2},
+  {q:"¿Cuánto mide de diámetro la Vía Láctea?",opts:["10.000 años luz","50.000 años luz","100.000 años luz","1 millón de años luz"],a:2},
+  {q:"¿Cuántos años luz tarda la luz en cruzar la Vía Láctea?",opts:["10.000","50.000","100.000","500.000"],a:2},
+  {q:"¿Qué es un agujero negro?",opts:["Una estrella muerta fría","Región espacial con gravedad tan intensa que nada puede escapar","Un planeta sin atmósfera","Una nube de gas"],a:1},
+  {q:"¿Quién describió matemáticamente los agujeros negros?",opts:["Newton","Einstein","Hawking","Schwarzschild (primero)"],a:3},
+  {q:"¿Qué es la materia oscura?",opts:["Materia que absorbe luz","Materia que no emite ni refleja luz pero tiene masa","Gas interestelar","Rocas en el espacio"],a:1},
+  {q:"¿Qué porcentaje del universo es materia ordinaria?",opts:["5%","25%","50%","75%"],a:0},
+  {q:"¿Qué filósofo griego fue maestro de Alejandro Magno?",opts:["Platón","Sócrates","Aristóteles","Epicuro"],a:2},
+  {q:"¿Quién fue Sócrates?",opts:["Matemático griego","Filósofo ateniense que bebió cicuta","Rey de Macedonia","Poeta épico"],a:1},
+  {q:"¿Quién escribió la Ilíada y la Odisea?",opts:["Virgilio","Sófocles","Homero","Eurípides"],a:2},
+  {q:"¿Cuánto duró la Guerra de Troya según la mitología?",opts:["3 años","5 años","10 años","20 años"],a:2},
+  {q:"¿Quién fue Alejandro Magno?",opts:["Rey romano","Conquistador macedonio que llegó hasta India","Filósofo griego","General persa"],a:1},
+  {q:"¿Qué civilización construyó las pirámides de Giza?",opts:["Sumeria","Babilonia","Egipto Antiguo","Fenicia"],a:2},
+  {q:"¿Cuántas pirámides de Giza hay?",opts:["2","3","4","5"],a:1},
+  {q:"¿Qué es el Coliseo de Roma?",opts:["Palacio imperial","Anfiteatro para gladiadores","Templo romano","Foro político"],a:1},
+  {q:"¿En qué año fue construido el Coliseo Romano?",opts:["72-80 DC","100-120 DC","200-210 DC","300-310 DC"],a:0},
+  {q:"¿Quién fue Julio César?",opts:["Primer emperador romano","General y dictador romano asesinado en 44 AC","Rey de Roma","Filósofo romano"],a:1},
+  {q:"¿En qué año fue asesinado Julio César?",opts:["100 AC","55 AC","44 AC","27 AC"],a:2},
+  {q:"¿Qué es el Coloso de Rodas?",opts:["Estatua griega en la isla de Rodas","Ciudad griega antigua","Barco de guerra","Templo de Zeus"],a:0},
+  {q:"¿Quién fue Cleopatra?",opts:["Reina de Grecia","Última reina del Egipto ptolemaico","Reina de Roma","Emperatriz persa"],a:1},
+  {q:"¿En qué ciudad está la Torre Eiffel?",opts:["Bruselas","Lyon","París","Marsella"],a:2},
+  {q:"¿En qué año fue construida la Torre Eiffel?",opts:["1879","1889","1899","1909"],a:1},
+  {q:"¿Cuánto mide de altura la Torre Eiffel?",opts:["220 m","300 m (aprox)","330 m","400 m"],a:2},
+  {q:"¿Qué es el Big Ben?",opts:["Palacio de Buckingham","Torre del reloj del Parlamento británico","Puente de Londres","Catedral anglicana"],a:1},
+  {q:"¿En qué ciudad está el Big Ben?",opts:["Edimburgo","Dublín","Londres","Manchester"],a:2},
+  {q:"¿Qué es la Sagrada Familia?",opts:["Catedral gótica en Madrid","Basílica de Gaudí en Barcelona","Iglesia en Sevilla","Palacio real en Valencia"],a:1},
+  {q:"¿Quién diseñó la Sagrada Familia?",opts:["Miró","Dalí","Gaudí","Picasso"],a:2},
+  {q:"¿Qué es el Taj Mahal?",opts:["Palacio del sultán","Mausoleo de mármol blanco en la India","Templo hindú","Fortaleza militar"],a:1},
+  {q:"¿En qué ciudad está el Taj Mahal?",opts:["Delhi","Mumbai","Agra","Jaipur"],a:2},
+  {q:"¿Qué país tiene Machu Picchu?",opts:["Bolivia","Ecuador","Perú","Colombia"],a:2},
+  {q:"¿Qué civilización construyó Machu Picchu?",opts:["Azteca","Maya","Inca","Olmeca"],a:2},
+  {q:"¿Quién conquistó el Imperio Azteca?",opts:["Pizarro","Magallanes","Hernán Cortés","Colón"],a:2},
+  {q:"¿Quién conquistó el Imperio Inca?",opts:["Hernán Cortés","Francisco Pizarro","Vasco de Gama","Álvarez Cabral"],a:1},
+  {q:"¿En qué año llegó Colón a América?",opts:["1488","1492","1498","1504"],a:1},
+  {q:"¿En qué país está el Canal de Panamá?",opts:["Colombia","México","Panamá","Costa Rica"],a:2},
+  {q:"¿En qué año se inauguró el Canal de Panamá?",opts:["1904","1914","1924","1934"],a:1},
+  {q:"¿Cuántos kilómetros mide el Canal de Panamá?",opts:["40 km","80 km","120 km","160 km"],a:1},
 ];
 
 // Elegir N preguntas aleatorias distintas para el usuario del día
 function getTriviaDelDia(uid, n) {
-  var hoy = new Date().toISOString().slice(0,10); // "2026-06-14"
-  var seed = uid + hoy;
-  // Seeded shuffle usando el uid+fecha como seed
+  var hoy = new Date().toISOString().slice(0,10);
+  // Seed robusto: combina uid y fecha de forma que cada día produce un valor bien distinto
+  var seedStr = hoy + "|" + uid;
+  var s = 0;
+  for (var i = 0; i < seedStr.length; i++) {
+    s = (s * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+  // xorshift32 — cada paso produce un resultado muy diferente
+  function rand() {
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s = s >>> 0;
+    return s;
+  }
   var arr = TRIVIA_BANK.slice();
-  var hash = 0;
-  for (var i=0; i<seed.length; i++) { hash = ((hash<<5)-hash)+seed.charCodeAt(i); hash|=0; }
-  for (var i2=arr.length-1; i2>0; i2--) {
-    hash = ((hash<<5)-hash)+i2; hash|=0;
-    var j = Math.abs(hash) % (i2+1);
-    var tmp=arr[i2]; arr[i2]=arr[j]; arr[j]=tmp;
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = rand() % (i + 1);
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
   }
   return arr.slice(0, n);
 }
@@ -20523,6 +21003,282 @@ function getTriviaDelDia(uid, n) {
 // ══════════════════════════════════════════════════════════════════
 // TRIVIA VIEW
 // ══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// VERDAD O MITO — BANCO DE AFIRMACIONES
+// ═══════════════════════════════════════════════════════════════════════════
+const MITO_BANK = [
+  {s:"El fútbol fue inventado en Inglaterra.",v:true,e:"El fútbol moderno nació en Inglaterra en 1863, cuando se fundó la Football Association."},
+  {s:"La FIFA fue fundada en 1904 en París.",v:true,e:"La FIFA se fundó el 21 de mayo de 1904 en París con 7 federaciones europeas."},
+  {s:"Un partido de fútbol dura 100 minutos.",v:false,e:"Un partido oficial dura 90 minutos (dos tiempos de 45), más el tiempo adicional."},
+  {s:"El VAR se usó por primera vez en un Mundial en Rusia 2018.",v:true,e:"El VAR debutó en un Mundial en Rusia 2018, siendo un hito tecnológico del fútbol."},
+  {s:"Cristiano Ronaldo tiene más Balones de Oro que Messi.",v:false,e:"Messi tiene 8 Balones de Oro, Ronaldo tiene 5. Messi es el máximo ganador histórico."},
+  {s:"El Real Madrid es el club con más Champions League.",v:true,e:"El Real Madrid ganó 15 Champions League, más que cualquier otro club del mundo."},
+  {s:"Brasil ganó 6 Mundiales.",v:false,e:"Brasil ganó 5 Mundiales: 1958, 1962, 1970, 1994 y 2002."},
+  {s:"Argentina ganó su tercer Mundial en Qatar 2022.",v:true,e:"Argentina ganó en Qatar 2022, su tercer título mundial tras 1978 y 1986."},
+  {s:"Miroslav Klose es el máximo goleador de la historia de los Mundiales.",v:true,e:"Klose marcó 16 goles en Mundiales (2002, 2006, 2010 y 2014), récord histórico."},
+  {s:"El penal se ejecuta desde 12 metros.",v:false,e:"El punto de penal está a 11 metros del arco, no 12."},
+  {s:"España ganó 2 Mundiales.",v:false,e:"España ganó un solo Mundial, en Sudáfrica 2010, venciendo a Holanda en la final."},
+  {s:"Pelé ganó 3 Mundiales con Brasil.",v:true,e:"Pelé ganó el Mundial en 1958, 1962 y 1970, siendo el único jugador con 3 títulos mundiales."},
+  {s:"Messi marcó 7 goles en el Mundial de Qatar 2022.",v:true,e:"Messi anotó 7 goles en Qatar 2022, siendo el máximo goleador argentino en un Mundial."},
+  {s:"La final del Mundial 2026 se juega en el estadio MetLife de Nueva York/NJ.",v:true,e:"El MetLife Stadium albergará la gran final del Mundial 2026."},
+  {s:"El Mundial 2026 tiene 48 selecciones participantes.",v:true,e:"Es la primera edición expandida a 48 equipos, organizada por EEUU, Canadá y México."},
+  {s:"Mbappé marcó 3 goles en la final del Mundial 2022.",v:true,e:"Mbappé hizo un hat-trick en la final de Qatar 2022, pero Francia perdió en penales."},
+  {s:"Alemania ganó 5 Mundiales.",v:false,e:"Alemania ganó 4 Mundiales: 1954, 1974, 1990 y 2014."},
+  {s:"Maradona marcó dos goles contra Inglaterra en 1986: uno con la mano y el Gol del Siglo.",v:true,e:"Los dos goles más famosos de la historia fueron en el mismo partido, cuartos de final México 86."},
+  {s:"La Copa América es el torneo de selecciones más antiguo del mundo.",v:true,e:"La Copa América se disputa desde 1916, siendo el torneo de selecciones más antiguo del fútbol."},
+  {s:"Un jugador puede ser expulsado sin recibir tarjeta amarilla previa.",v:true,e:"La tarjeta roja directa se da por infracciones graves sin necesidad de amarilla previa."},
+  {s:"Israel declaró su independencia el 14 de mayo de 1948.",v:true,e:"David Ben Gurión proclamó el Estado de Israel el 14 de mayo de 1948."},
+  {s:"La Guerra de los Seis Días duró exactamente 6 días.",v:true,e:"La guerra entre Israel y sus vecinos árabes duró del 5 al 10 de junio de 1967."},
+  {s:"La Guerra de Yom Kippur ocurrió en 1967.",v:false,e:"La Guerra de Yom Kippur fue en 1973, no en 1967. Comenzó el 6 de octubre, día de Yom Kippur."},
+  {s:"Golda Meir fue la primera mujer primera ministra de Israel.",v:true,e:"Golda Meir gobernó Israel de 1969 a 1974, siendo la primera y única mujer PM de Israel."},
+  {s:"El Knesset tiene 120 miembros.",v:true,e:"El Knesset, el parlamento unicameral de Israel, tiene exactamente 120 miembros."},
+  {s:"Israel firmó la paz con Egipto antes que con Jordania.",v:true,e:"La paz con Egipto fue en 1979 (Camp David) y con Jordania en 1994."},
+  {s:"Theodor Herzl nació en Israel.",v:false,e:"Herzl nació en Budapest en 1860. Fue el fundador del sionismo político moderno."},
+  {s:"El primer Congreso Sionista se realizó en Basilea, Suiza, en 1897.",v:true,e:"Herzl organizó el Primer Congreso Sionista en Basilea el 29 de agosto de 1897."},
+  {s:"Israel tiene frontera con Arabia Saudita.",v:false,e:"Israel no tiene frontera directa con Arabia Saudita. Sus vecinos son Egipto, Jordania, Siria y Líbano."},
+  {s:"El Mossad es el servicio de inteligencia interior de Israel.",v:false,e:"El Mossad es el servicio de inteligencia EXTERIOR. El Shin Bet es el servicio interior."},
+  {s:"Yitzhak Rabin fue asesinado en 1995 por un extremista judío israelí.",v:true,e:"Rabin fue asesinado el 4 de noviembre de 1995 por Yigal Amir, un estudiante de extrema derecha."},
+  {s:"La Declaración Balfour fue emitida por Francia.",v:false,e:"La Declaración Balfour fue emitida por el gobierno BRITÁNICO en 1917, firmada por el ministro Balfour."},
+  {s:"Tel Aviv es la capital oficial de Israel.",v:false,e:"La capital de Israel es Jerusalén, aunque muchos países mantienen sus embajadas en Tel Aviv."},
+  {s:"Los Acuerdos de Abraham de 2020 normalizaron relaciones entre Israel y varios países árabes.",v:true,e:"Israel normalizó relaciones con EAU, Baréin, Sudán y Marruecos en los Acuerdos de Abraham."},
+  {s:"El Mar Muerto está en la frontera entre Israel y Siria.",v:false,e:"El Mar Muerto está en la frontera entre Israel/Cisjordania y Jordania, no Siria."},
+  {s:"La Torá tiene 5 libros.",v:true,e:"La Torá tiene 5 libros: Génesis, Éxodo, Levítico, Números y Deuteronomio."},
+  {s:"El Shabat comienza el viernes al atardecer.",v:true,e:"El Shabat comienza con la puesta del sol del viernes y termina con las primeras estrellas del sábado."},
+  {s:"En Pésaj se come pan con levadura.",v:false,e:"En Pésaj está prohibido comer chametz (levadura). Se come matzá, pan sin levadura."},
+  {s:"Janucá dura 8 noches.",v:true,e:"Janucá, la Fiesta de las Luces, dura 8 noches en conmemoración del milagro del aceite en el Templo."},
+  {s:"El shofar es un instrumento musical hecho de hueso.",v:false,e:"El shofar está hecho de cuerno de carnero (u otros animales kosher), no de hueso."},
+  {s:"La ley judía prohíbe mezclar carne y leche.",v:true,e:"La kashrut prohíbe mezclar carne con lácteos, basándose en el versículo sobre el cabrito y la leche de su madre."},
+  {s:"El cerdo es kosher si se prepara de cierta manera.",v:false,e:"El cerdo nunca es kosher porque no tiene pezuñas hendidas y no rumia. Ninguna preparación lo hace permitido."},
+  {s:"Yom Kippur es el Año Nuevo judío.",v:false,e:"Yom Kippur es el Día del Perdón. El Año Nuevo judío es Rosh Hashaná, 10 días antes."},
+  {s:"La Menorá del Templo tenía 7 brazos.",v:true,e:"La Menorá del Templo tenía 7 brazos. La janukiá de Janucá tiene 9."},
+  {s:"El Bar Mitzvá se celebra cuando el varón cumple 13 años.",v:true,e:"A los 13 años, el varón judío alcanza la mayoría de edad religiosa."},
+  {s:"El judaísmo tiene 613 mandamientos.",v:true,e:"La tradición rabínica cuenta 613 mitzvot: 248 positivos y 365 negativos."},
+  {s:"El Talmud fue escrito antes que la Torá.",v:false,e:"La Torá es la base del judaísmo. El Talmud fue compilado siglos después."},
+  {s:"En Rosh Hashaná se come manzana con miel.",v:true,e:"La tradición de comer manzana con miel simboliza el deseo de un año dulce."},
+  {s:"El Kol Nidré es una plegaria de Pésaj.",v:false,e:"El Kol Nidré es la oración más solemne de Yom Kippur, no de Pésaj."},
+  {s:"Maimónides nació en Córdoba, España.",v:true,e:"Moisés ben Maimón (Maimónides) nació en Córdoba en 1138."},
+  {s:"El Purim celebra la salvación de los judíos en el Imperio Persa.",v:true,e:"Purim conmemora la historia del libro de Ester, cuando la reina Ester salvó al pueblo judío de Hamán."},
+  {s:"El ayuno de Yom Kippur dura 24 horas exactas.",v:false,e:"El ayuno de Yom Kippur dura aproximadamente 25 horas, desde antes del atardecer hasta la noche siguiente."},
+  {s:"El Shema Israel es considerado la oración más importante del judaísmo.",v:true,e:"El Shema declara la unicidad de Dios y es central en el judaísmo desde tiempos bíblicos."},
+  {s:"En el judaísmo no existe el concepto de conversión.",v:false,e:"Sí existe la conversión (guiur) al judaísmo, aunque varía según la corriente religiosa."},
+  {s:"La Segunda Guerra Mundial comenzó en 1939.",v:true,e:"Alemania invadió Polonia el 1 de septiembre de 1939, dando inicio a la Segunda Guerra Mundial."},
+  {s:"El Holocausto causó la muerte de aproximadamente 6 millones de judíos.",v:true,e:"El Holocausto fue el genocidio sistemático de 6 millones de judíos europeos por el régimen nazi."},
+  {s:"La bomba atómica fue lanzada sobre Berlín.",v:false,e:"Las bombas atómicas fueron lanzadas sobre Hiroshima (6 agosto 1945) y Nagasaki (9 agosto 1945) en Japón."},
+  {s:"Neil Armstrong fue el primer hombre en pisar la Luna en 1969.",v:true,e:"Neil Armstrong pisó la Luna el 20 de julio de 1969 durante la misión Apolo 11."},
+  {s:"La Revolución Francesa ocurrió en 1789.",v:true,e:"La Revolución Francesa comenzó en 1789 con la toma de la Bastilla el 14 de julio."},
+  {s:"Cristóbal Colón llegó a América en 1492.",v:true,e:"Colón llegó a las Américas el 12 de octubre de 1492."},
+  {s:"El Muro de Berlín cayó en 1991.",v:false,e:"El Muro de Berlín cayó el 9 de noviembre de 1989. La URSS se disolvió en 1991."},
+  {s:"Nelson Mandela estuvo 27 años preso.",v:true,e:"Mandela estuvo encarcelado desde 1964 hasta 1990, un total de 27 años."},
+  {s:"La ONU fue fundada en 1945.",v:true,e:"La ONU fue fundada el 24 de octubre de 1945, tras el fin de la Segunda Guerra Mundial."},
+  {s:"El primer hombre en el espacio fue Neil Armstrong.",v:false,e:"El primero fue Yuri Gagarin (URSS) el 12 de abril de 1961. Armstrong fue el primero en la Luna."},
+  {s:"El Canal de Panamá fue inaugurado en 1914.",v:true,e:"El Canal de Panamá se inauguró el 15 de agosto de 1914, conectando el Atlántico con el Pacífico."},
+  {s:"El Titanic se hundió en 1912.",v:true,e:"El RMS Titanic se hundió el 15 de abril de 1912 en el Atlántico Norte durante su viaje inaugural."},
+  {s:"La Torre Eiffel fue construida para los Juegos Olímpicos de París.",v:false,e:"La Torre Eiffel fue construida para la Exposición Universal de 1889, no para las Olimpiadas."},
+  {s:"China es el país más poblado del mundo en 2024.",v:false,e:"India superó a China en 2023 como el país más poblado del mundo."},
+  {s:"Rusia es el país más grande del mundo en superficie.",v:true,e:"Rusia tiene 17,1 millones de km², siendo el país más grande del mundo."},
+  {s:"El Gran Muralla China puede verse desde el espacio a simple vista.",v:false,e:"Este es un mito popular. La Muralla es demasiado estrecha para verse a simple vista desde el espacio."},
+  {s:"Los vikingos usaban cascos con cuernos.",v:false,e:"Los cascos con cuernos son un mito del siglo XIX. Los vikingos reales usaban cascos simples."},
+  {s:"Los murciélagos son ciegos.",v:false,e:"Los murciélagos pueden ver, aunque muchas especies usan principalmente la ecolocalización."},
+  {s:"El ser humano usa solo el 10% de su cerebro.",v:false,e:"Este es un mito. Los humanos usamos prácticamente todas las áreas del cerebro."},
+  {s:"Los diamantes se forman de carbono.",v:true,e:"Los diamantes son la forma más pura del carbono, formados bajo altísima presión y temperatura."},
+  {s:"Shakespeare nació y murió el mismo día del año.",v:true,e:"William Shakespeare nació el 23 de abril de 1564 y murió el 23 de abril de 1616."},
+  {s:"El idioma más hablado nativamente en el mundo es el inglés.",v:false,e:"El mandarín es el idioma con más hablantes nativos, seguido por el español y el inglés."},
+  {s:"Australia es el único país que es también un continente.",v:true,e:"Australia es la única nación-continente del mundo."},
+];
+
+function getMitoDelDia(uid, n) {
+  var hoy = new Date().toISOString().slice(0,10);
+  var seedStr = hoy + "|" + uid;
+  var s = 0;
+  for (var i = 0; i < seedStr.length; i++) {
+    s = (s * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+  function rand() {
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s = s >>> 0;
+    return s;
+  }
+  var arr = MITO_BANK.slice();
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = rand() % (i + 1);
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr.slice(0, n);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VERDAD O MITO VIEW
+// ═══════════════════════════════════════════════════════════════════════════
+function MitoView({ user, toast }) {
+  var hoy = new Date().toISOString().slice(0,10);
+  var storageKey = "gm_mito_" + user.uid + "_" + hoy;
+  var savedState = getLS(storageKey, null);
+  var N = 10; var SECS = 8; var PTS_OK = 3;
+
+  var [phase, setPhase] = useState(savedState ? "done" : "intro");
+  var [afirmaciones, setAfirmaciones] = useState(null);
+  var [idx, setIdx] = useState(0);
+  var [timeLeft, setTimeLeft] = useState(SECS);
+  var [answered, setAnswered] = useState(null);
+  var [results, setResults] = useState([]);
+  var [score, setScore] = useState(0);
+  var timerRef = useRef(null);
+
+  var mitoRanking = useMemo(function() {
+    return getLS("gm_users",[])
+      .filter(function(u){ return !u.admin && (u.ptsMito||0) > 0; })
+      .sort(function(a,b){ return (b.ptsMito||0)-(a.ptsMito||0); })
+      .slice(0,10);
+  }, [phase]);
+
+  function startGame() {
+    var qs = getMitoDelDia(user.uid, N);
+    setAfirmaciones(qs); setIdx(0); setTimeLeft(SECS);
+    setAnswered(null); setResults([]); setScore(0); setPhase("playing");
+  }
+
+  useEffect(function() {
+    if (phase !== "playing" || answered !== null) return;
+    if (timeLeft <= 0) { handleAnswer(null); return; }
+    timerRef.current = setTimeout(function() { setTimeLeft(function(t){ return t-1; }); }, 1000);
+    return function() { clearTimeout(timerRef.current); };
+  }, [phase, timeLeft, answered]);
+
+  function handleAnswer(choice) {
+    if (answered !== null || !afirmaciones) return;
+    clearTimeout(timerRef.current);
+    var af = afirmaciones[idx];
+    var correct = choice !== null && choice === af.v;
+    var newScore = correct ? score + PTS_OK : score;
+    var newResults = results.concat([{s:af.s,v:af.v,e:af.e,correct:correct,answered:choice}]);
+    setAnswered(choice);
+    if (correct) setScore(newScore);
+    setResults(newResults);
+    setTimeout(function() {
+      if (idx >= N - 1) { finishGame(newScore, newResults); }
+      else { setIdx(function(i){ return i+1; }); setAnswered(null); setTimeLeft(SECS); }
+    }, 900);
+  }
+
+  function finishGame(finalScore, finalResults) {
+    var result = { score: finalScore, date: hoy, total: N * PTS_OK, results: finalResults };
+    setLS(storageKey, result);
+    var users = getLS("gm_users", []);
+    var i = users.findIndex(function(u){ return u.uid===user.uid; });
+    if (i !== -1) { users[i].ptsMito = (users[i].ptsMito||0) + finalScore; setLS("gm_users", users); }
+    toast("Verdad o Mito completado! +" + finalScore + " pts", "success");
+    setPhase("done");
+  }
+
+  var medal = function(i){ return i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1); };
+  var mcolor = function(i){ return i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#2a4a5a"; };
+
+  var RankingList = function() {
+    if (mitoRanking.length === 0) return null;
+    return React.createElement('div', {style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:12,padding:16}},
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a",letterSpacing:1,marginBottom:10}}, "RANKING VERDAD O MITO"),
+      mitoRanking.map(function(u,i){
+        return React.createElement('div', {key:u.uid,style:{display:"flex",alignItems:"center",gap:10,padding:"7px 8px",borderRadius:7,background:u.uid===user.uid?"rgba(251,191,36,.07)":"transparent"}},
+          React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:900,color:mcolor(i),minWidth:24,textAlign:"center"}}, medal(i)),
+          React.createElement('div', {style:{flex:1,fontSize:".88rem",color:u.uid===user.uid?"#fbbf24":"#e2e8f0"}}, u.equipo||u.nombre),
+          React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#fbbf24"}}, u.ptsMito||0)
+        );
+      })
+    );
+  };
+
+  if (phase === "intro") return React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:16,padding:"0 4px"}},
+    React.createElement('div', {style:{background:"linear-gradient(135deg,#1a0a2e,#0d1b2a)",border:"1px solid rgba(251,191,36,.2)",borderRadius:14,padding:"28px 20px",textAlign:"center"}},
+      React.createElement('div', {style:{fontSize:"3rem",marginBottom:10}}, "🎭"),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.5rem",fontWeight:700,color:"#fbbf24",letterSpacing:1,marginBottom:8}}, "VERDAD O MITO"),
+      React.createElement('div', {style:{fontSize:".85rem",color:"#7a8ba8",marginBottom:18,lineHeight:1.7}}, N+" afirmaciones · "+SECS+" segundos · "+PTS_OK+" pts por acierto"),
+      React.createElement('div', {style:{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:20}},
+        React.createElement('span', {style:{background:"rgba(251,191,36,.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,.25)",borderRadius:20,padding:"4px 12px",fontSize:".78rem"}}, "⚽ Fútbol"),
+        React.createElement('span', {style:{background:"rgba(74,222,128,.08)",color:"#4ade80",border:"1px solid rgba(74,222,128,.2)",borderRadius:20,padding:"4px 12px",fontSize:".78rem"}}, "✡️ Judaísmo"),
+        React.createElement('span', {style:{background:"rgba(96,165,250,.08)",color:"#60a5fa",border:"1px solid rgba(96,165,250,.2)",borderRadius:20,padding:"4px 12px",fontSize:".78rem"}}, "🌍 Historia"),
+        React.createElement('span', {style:{background:"rgba(167,139,250,.08)",color:"#a78bfa",border:"1px solid rgba(167,139,250,.2)",borderRadius:20,padding:"4px 12px",fontSize:".78rem"}}, "🇮🇱 Israel")
+      ),
+      React.createElement('button', {onClick:startGame,style:{padding:"13px 40px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#d97706,#fbbf24)",color:"#07111e",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.15rem",cursor:"pointer",letterSpacing:1}}, "EMPEZAR")
+    ),
+    React.createElement(RankingList, null)
+  );
+
+  if (phase === "done") {
+    var res = getLS(storageKey, {score:0,total:N*PTS_OK,results:[]});
+    var pct = Math.round((res.score/(res.total||30))*100);
+    return React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:12,padding:"0 4px"}},
+      React.createElement('div', {style:{background:"linear-gradient(135deg,#1a0a2e,#0d1b2a)",border:"1px solid rgba(251,191,36,.2)",borderRadius:14,padding:"24px 20px",textAlign:"center"}},
+        React.createElement('div', {style:{fontSize:"2.5rem",marginBottom:8}}, pct>=80?"🌟":pct>=50?"🎯":"💪"),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#fbbf24",letterSpacing:1,marginBottom:4}}, "COMPLETADO!"),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.8rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||30))),
+        React.createElement('div', {style:{fontSize:".82rem",color:"#5a7a8a",marginBottom:6}}, "Aciertos: "+(res.results||[]).filter(function(r){return r.correct;}).length+" de "+N),
+        React.createElement('div', {style:{fontSize:".78rem",color:"#3a5a6a"}}, "Volvé mañana para nuevas afirmaciones")
+      ),
+      (res.results||[]).length > 0 && React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:8}},
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a",letterSpacing:1,padding:"0 4px",marginBottom:2}}, "RESULTADOS Y EXPLICACIONES"),
+        (res.results||[]).map(function(r,i){
+          return React.createElement('div', {key:i,style:{background:r.correct?"rgba(74,222,128,.06)":"rgba(239,68,68,.06)",border:"1px solid "+(r.correct?"rgba(74,222,128,.2)":"rgba(239,68,68,.2)"),borderRadius:10,padding:"12px 14px"}},
+            React.createElement('div', {style:{display:"flex",alignItems:"flex-start",gap:10}},
+              React.createElement('div', {style:{fontSize:"1.2rem",minWidth:24}}, r.correct?"✅":"❌"),
+              React.createElement('div', {style:{flex:1}},
+                React.createElement('div', {style:{fontSize:".88rem",color:"#e2e8f0",fontWeight:600,marginBottom:4}}, r.s),
+                React.createElement('div', {style:{marginBottom:6}},
+                  React.createElement('span', {style:{background:r.v?"rgba(74,222,128,.15)":"rgba(239,68,68,.15)",color:r.v?"#4ade80":"#ef4444",borderRadius:6,padding:"2px 10px",fontSize:".75rem",fontWeight:700}}, r.v?"VERDAD":"MITO"),
+                  r.answered===null&&React.createElement('span', {style:{marginLeft:8,background:"rgba(251,191,36,.1)",color:"#fbbf24",borderRadius:6,padding:"2px 10px",fontSize:".75rem"}}, "Sin tiempo")
+                ),
+                React.createElement('div', {style:{fontSize:".78rem",color:"#7a8ba8",lineHeight:1.6}}, r.e)
+              )
+            )
+          );
+        })
+      ),
+      React.createElement(RankingList, null)
+    );
+  }
+
+  if (!afirmaciones||!afirmaciones[idx]) return null;
+  var af = afirmaciones[idx];
+  var timerPct = (timeLeft/SECS)*100;
+  var timerColor = timeLeft>4?"#fbbf24":timeLeft>2?"#f97316":"#ef4444";
+  var lastResult = results[results.length-1];
+
+  return React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:12,padding:"0 4px"}},
+    React.createElement('div', {style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",color:"#5a7a8a"}}, "Afirmación "+(idx+1)+" de "+N),
+      React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1rem",fontWeight:700,color:"#fbbf24"}}, score+" pts")
+    ),
+    React.createElement('div', {style:{display:"flex",gap:4}},
+      afirmaciones.map(function(_,i){
+        var r=results[i];
+        return React.createElement('div', {key:i,style:{flex:1,height:4,borderRadius:2,background:i===idx?timerColor:r?(r.correct?"#4ade80":"#ef4444"):"#1a2d40"}});
+      })
+    ),
+    React.createElement('div', {style:{background:"#0a1525",borderRadius:4,height:6,overflow:"hidden"}},
+      React.createElement('div', {style:{height:"100%",borderRadius:4,transition:"width .9s linear",width:timerPct+"%",background:"linear-gradient(90deg,"+(timeLeft>4?"#d97706,#fbbf24":timeLeft>2?"#ea580c,#f97316":"#dc2626,#ef4444")+")"}})
+    ),
+    React.createElement('div', {style:{background:"linear-gradient(135deg,#1a0a2e,#0d1b2a)",border:"1px solid rgba(251,191,36,.2)",borderRadius:14,padding:"24px 20px"}},
+      React.createElement('div', {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+        React.createElement('span', {style:{background:"rgba(251,191,36,.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,.2)",borderRadius:20,padding:"3px 12px",fontSize:".75rem",fontFamily:"Oswald,sans-serif",fontWeight:700}}, "VERDAD O MITO"),
+        React.createElement('span', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.5rem",fontWeight:900,color:timerColor}}, timeLeft+"s")
+      ),
+      React.createElement('div', {style:{fontSize:"1.05rem",color:"#e2e8f0",lineHeight:1.7,fontWeight:500,marginBottom:20,minHeight:60}}, '"'+af.s+'"'),
+      React.createElement('div', {style:{display:"flex",gap:12}},
+        React.createElement('button', {
+          onClick:function(){handleAnswer(true);}, disabled:answered!==null,
+          style:{flex:1,padding:"14px 8px",borderRadius:10,border:"2px solid",borderColor:answered===null?"#4ade80":af.v?"#4ade80":"rgba(74,222,128,.2)",background:answered===null?"rgba(74,222,128,.1)":af.v?"rgba(74,222,128,.25)":"transparent",color:answered===null?"#4ade80":af.v?"#4ade80":"#2a4a3a",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",cursor:"pointer",opacity:answered!==null&&!af.v?0.4:1}
+        }, "VERDAD"),
+        React.createElement('button', {
+          onClick:function(){handleAnswer(false);}, disabled:answered!==null,
+          style:{flex:1,padding:"14px 8px",borderRadius:10,border:"2px solid",borderColor:answered===null?"#ef4444":!af.v?"#ef4444":"rgba(239,68,68,.2)",background:answered===null?"rgba(239,68,68,.1)":!af.v?"rgba(239,68,68,.25)":"transparent",color:answered===null?"#ef4444":!af.v?"#ef4444":"#4a1a1a",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",cursor:"pointer",opacity:answered!==null&&af.v?0.4:1}
+        }, "MITO")
+      )
+    ),
+    answered!==null&&lastResult&&React.createElement('div', {style:{background:lastResult.correct?"rgba(74,222,128,.08)":"rgba(239,68,68,.08)",border:"1px solid "+(lastResult.correct?"rgba(74,222,128,.2)":"rgba(239,68,68,.2)"),borderRadius:10,padding:"10px 14px",textAlign:"center",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1rem",color:lastResult.correct?"#4ade80":"#ef4444"}},
+      lastResult.correct?"CORRECTO! +"+PTS_OK+" pts":"INCORRECTO"+(answered===null?" (sin tiempo)":"")
+    )
+  );
+}
+
+
 function TriviaView({ user, toast }) {
   var hoy = new Date().toISOString().slice(0,10);
   var storageKey = "gm_trivia_" + user.uid + "_" + hoy;
@@ -20583,7 +21339,7 @@ function TriviaView({ user, toast }) {
     var correct = optIdx === q.a;
     setSelected(optIdx);
     setRevealed(true);
-    if (correct) setScore(function(s){ return s+3; });
+    if (correct) setScore(function(s){ return s+5; });
     setAnswers(function(prev){ return prev.concat([{correct:correct}]); });
     setTimeout(nextQuestion, 1600);
   }
@@ -20603,7 +21359,7 @@ function TriviaView({ user, toast }) {
   function finishTrivia() {
     var pts = score + (selected !== null && preguntas[qIdx] && selected === preguntas[qIdx].a ? 3 : 0);
     // Guardar resultado del día
-    var result = { score: pts, date: hoy, total: N_QUESTIONS*3 };
+    var result = { score: pts, date: hoy, total: N_QUESTIONS*5 };
     setLS(storageKey, result);
     // Actualizar ptsTrivia del usuario
     var users = getLS("gm_users", []);
@@ -20653,12 +21409,12 @@ function TriviaView({ user, toast }) {
 
   // ── DONE (ya jugó hoy) ──
   if (phase === "done") {
-    var res = getLS(storageKey, {score:0,total:30});
+    var res = getLS(storageKey, {score:0,total:50});
     return React.createElement('div', {className:"trivia-wrap"},
       React.createElement('div', {className:"trivia-header",style:{textAlign:"center",padding:"24px 20px"}},
         React.createElement('div', {style:{fontSize:"2.5rem",marginBottom:8}}, res.score >= 24 ? "🌟" : res.score >= 15 ? "🎯" : "💪"),
         React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#a78bfa",letterSpacing:1,marginBottom:4}}, "¡TRIVIA COMPLETADA!"),
-        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.5rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||30))),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.5rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||50))),
         React.createElement('div', {style:{fontSize:".82rem",color:"#5a7a8a"}}, "Volvé mañana para nuevas preguntas 🧠"),
         React.createElement('div', {style:{marginTop:12,fontSize:".78rem",color:"#3a5a6a"}}, "Tus puntos de trivia se suman al ranking comunitario")
       ),
@@ -22117,6 +22873,7 @@ function GranMoishe() {
   // ── MAIN APP ──
   const TABS=[
     {id:"trivia",icon:"🧠",label:"Trivia"},
+    {id:"mito",icon:"🎭",label:"Mito"},
     {id:"equipo",icon:"🏟",label:"Equipo"},
     {id:"mercado",icon:"🛒",label:"Mercado"},
     {id:"ligas",icon:"🏆",label:"Ligas"},
@@ -22277,6 +23034,8 @@ function GranMoishe() {
           , tab==="ligas"&&React.createElement(LigasView, { user: user, toast: toast,})
           /* ── TRIVIA ── */
           , tab==="trivia"&&React.createElement(TriviaView, { user: user, toast: toast,})
+          /* ── MITO ── */
+          , tab==="mito"&&React.createElement(MitoView, { user: user, toast: toast,})
           /* ── PRODE ── */
           , tab==="prode"&&React.createElement(ProdeView, { user: user, toast: toast,})
           /* ── LOGROS ── */
@@ -22346,4 +23105,3 @@ function triggerInstall() {
 </script>
 </body>
 </html>
-  
