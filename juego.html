@@ -23101,7 +23101,7 @@ function BottomAdBar({ ads }) {
 function GranMoishe() {
   const [user,setUser]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
-  const [tab,setTab]=useState("trivia");
+  const [tab,setTab]=useState("equipo");
   const [modal,setModal]=useState(null);
   const [fullAd,setFullAd]=useState(null);
   const [pushAd,setPushAd]=useState(null);
@@ -23330,11 +23330,11 @@ function GranMoishe() {
 
   // ── MAIN APP ──
   const TABS=[
+    {id:"equipo",icon:"🏟",label:"Equipo"},
+    {id:"mercado",icon:"🛒",label:"Mercado"},
     {id:"trivia",icon:"🧠",label:"Trivia"},
     {id:"mito",icon:"🎭",label:"Mito"},
     {id:"historial",icon:"📊",label:"Historial"},
-    {id:"equipo",icon:"🏟",label:"Equipo"},
-    {id:"mercado",icon:"🛒",label:"Mercado"},
     {id:"ligas",icon:"🏆",label:"Ligas"},
     {id:"prode",icon:"🎯",label:"Prode"},
     {id:"ranking",icon:"📈",label:"Ranking"},
