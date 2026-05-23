@@ -19885,176 +19885,188 @@ function LigasView({ user, toast }) {
 }
 
 function RankingView({ user }) {
-  const [tab, setTab] = useState("usuarios");
+  const [tab, setTab] = useState("total");
 
   const allUsers = useMemo(() => DB.getUsers().filter(u => !u.admin && u.pagado !== false), []);
 
-  // Sort users by pts, use prode pts as tiebreaker
-  const userRanking = useMemo(() =>
-    [...allUsers].sort((a, b) => {
-      if ((b.pts||0) !== (a.pts||0)) return (b.pts||0) - (a.pts||0);
-      return (b.ptsProd||0) - (a.ptsProd||0);
-    }), [allUsers]);
+  // Enriquecer cada user con ptsProd y ptsTotal
+  const enriched = useMemo(() => allUsers.map(function(u) {
+    const pickData = getLS("gm_prode_" + u.uid, {});
+    const ptsProd = WC2026_FIXTURE.reduce(function(acc, m) {
+      return acc + (calcProdePoints(pickData[m.id], m) || 0);
+    }, 0);
+    const exactos = WC2026_FIXTURE.filter(function(m) {
+      return calcProdePoints(pickData[m.id], m) === 3;
+    }).length;
+    const totalPicks = Object.keys(pickData).length;
+    const ptsEq = u.pts || 0;
+    const ptsTri = u.ptsTrivia || 0;
+    return Object.assign({}, u, { ptsProd, exactos, totalPicks, ptsEq, ptsTri, ptsTotal: ptsEq + ptsProd + ptsTri });
+  }), [allUsers]);
 
-  // Community ranking: sum pts (equipo) + pts prode per community
+  // Rankings individuales
+  const rankTotal    = useMemo(() => [...enriched].sort((a,b) => b.ptsTotal - a.ptsTotal || b.ptsEq - a.ptsEq), [enriched]);
+  const rankEquipo   = useMemo(() => [...enriched].sort((a,b) => b.ptsEq - a.ptsEq || b.ptsProd - a.ptsProd), [enriched]);
+  const rankTrivia   = useMemo(() => [...enriched].sort((a,b) => b.ptsTri - a.ptsTri), [enriched]);
+  const rankProde    = useMemo(() => [...enriched].sort((a,b) => b.ptsProd - a.ptsProd || b.exactos - a.exactos), [enriched]);
+
+  // Ranking comunidades: promedio del total de sus miembros
   const communityRanking = useMemo(() => {
     const map = {};
-    allUsers.forEach(u => {
+    enriched.forEach(u => {
       const c = u.comunidad || "Sin comunidad";
-      if (!map[c]) map[c] = { comunidad: c, pts: 0, ptsProd: 0, ptsTotal: 0, count: 0 };
-      // Calcular puntos prode leyendo desde localStorage (igual que tab Prode)
-      const pickData = getLS("gm_prode_" + u.uid, {});
-      const ptsProd = WC2026_FIXTURE.reduce(function(acc, m) {
-        return acc + (calcProdePoints(pickData[m.id], m) || 0);
-      }, 0);
-      map[c].pts     += (u.pts || 0);
-      map[c].ptsProd += ptsProd;
-      map[c].ptsTotal += (u.pts || 0) + ptsProd;
+      if (!map[c]) map[c] = { comunidad: c, ptsEq: 0, ptsProd: 0, ptsTri: 0, ptsTotal: 0, count: 0 };
+      map[c].ptsEq    += u.ptsEq;
+      map[c].ptsProd  += u.ptsProd;
+      map[c].ptsTri   += u.ptsTri;
+      map[c].ptsTotal += u.ptsTotal;
       map[c].count++;
     });
     return Object.values(map).sort((a, b) => b.ptsTotal - a.ptsTotal);
-  }, [allUsers]);
+  }, [enriched]);
 
-  const myPos = userRanking.findIndex(u => u.uid === user.uid) + 1;
-  const myUser = allUsers.find(u => u.uid === user.uid);
+  const myUser  = enriched.find(u => u.uid === user.uid);
+  const myPosTotal = rankTotal.findIndex(u => u.uid === user.uid) + 1;
 
-  const medalColor = i => i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#4a6a5a";
+  const medal = i => i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+  const mcolor = i => i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4a6a5a";
 
-  return React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14,padding:"0 4px"} },
+  const TABS_RK = [
+    { id:"total",       label:"🏆 Total"      },
+    { id:"equipo",      label:"🏟 Equipo"      },
+    { id:"trivia",      label:"🧠 Trivia"      },
+    { id:"prode",       label:"🎯 Prode"       },
+    { id:"comunidades", label:"🤝 Comunidades" },
+  ];
 
-    // My position strip
-    myUser && React.createElement('div', { style: {background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:14} },
-      React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:"2rem",fontWeight:900,color:myPos===1?"#FFD700":myPos===2?"#C0C0C0":myPos===3?"#CD7F32":"#4ade80",minWidth:50,textAlign:"center"} },
-        myPos===1?"🥇":myPos===2?"🥈":myPos===3?"🥉":"#"+myPos
+  // Row genérica
+  function Row({ u, i, isMe, mainPts, mainLabel, sub }) {
+    return React.createElement('div', { key: u.uid, style: {
+      display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+      background: isMe ? "rgba(74,222,128,.07)" : "rgba(255,255,255,.02)",
+      border:"1px solid", borderColor: isMe ? "rgba(74,222,128,.25)" : "rgba(255,255,255,.04)",
+      borderRadius:8
+    }},
+      React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1.05rem",minWidth:32,textAlign:"center",color:mcolor(i)} }, medal(i)),
+      React.createElement('div', { style:{flex:1} },
+        React.createElement('div', { style:{fontWeight:600,fontSize:".88rem",color:"#e2e8f0"} }, u.equipo||u.nombre),
+        React.createElement('div', { style:{fontSize:".71rem",color:"#5a7a8a",marginTop:1} }, sub)
       ),
-      React.createElement('div', { style: {flex:1} },
-        React.createElement('div', { style: {fontWeight:700,color:"#e2e8f0",fontSize:".95rem"} }, myUser.equipo),
-        React.createElement('div', { style: {fontSize:".75rem",color:"#5a7a8a",marginTop:2} }, myUser.nombre+" "+myUser.apellido+" · "+myUser.comunidad)
+      React.createElement('div', { style:{textAlign:"right"} },
+        React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.15rem",color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, mainPts),
+        React.createElement('div', { style:{fontSize:".63rem",color:"#3a5a4a"} }, mainLabel)
+      )
+    );
+  }
+
+  return React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:14,padding:"0 4px"} },
+
+    // Mi posición (total)
+    myUser && React.createElement('div', { style:{background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:14} },
+      React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontSize:"2rem",fontWeight:900,color:myPosTotal===1?"#FFD700":myPosTotal===2?"#C0C0C0":myPosTotal===3?"#CD7F32":"#4ade80",minWidth:50,textAlign:"center"} },
+        medal(myPosTotal-1)
       ),
-      React.createElement('div', { style: {textAlign:"right"} },
-        React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:"1.6rem",fontWeight:900,color:"#4ade80"} }, myUser.pts||0),
-        React.createElement('div', { style: {fontSize:".68rem",color:"#3a5a4a"} }, "pts"),
-        React.createElement('div', { style: {fontSize:".65rem",color:"#2a4a3a",marginTop:1} }, "de "+userRanking.length+" participantes")
+      React.createElement('div', { style:{flex:1} },
+        React.createElement('div', { style:{fontWeight:700,color:"#e2e8f0",fontSize:".95rem"} }, myUser.equipo),
+        React.createElement('div', { style:{fontSize:".72rem",color:"#5a7a8a",marginTop:2} },
+          myUser.nombre+" "+myUser.apellido+" · "+myUser.comunidad
+        ),
+        React.createElement('div', { style:{display:"flex",gap:10,marginTop:6,flexWrap:"wrap"} },
+          React.createElement('span',{style:{fontSize:".72rem",color:"#4ade80"}}, "🏟 "+myUser.ptsEq+" eq"),
+          React.createElement('span',{style:{fontSize:".72rem",color:"#a78bfa"}}, "🧠 "+myUser.ptsTri+" tri"),
+          React.createElement('span',{style:{fontSize:".72rem",color:"#60a5fa"}}, "🎯 "+myUser.ptsProd+" pro"),
+        )
+      ),
+      React.createElement('div', { style:{textAlign:"right"} },
+        React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontSize:"1.8rem",fontWeight:900,color:"#4ade80"} }, myUser.ptsTotal),
+        React.createElement('div', { style:{fontSize:".65rem",color:"#3a5a4a"} }, "total"),
+        React.createElement('div', { style:{fontSize:".65rem",color:"#2a4a3a",marginTop:1} }, "de "+rankTotal.length+" participantes")
       )
     ),
 
-    // Tabs
-    React.createElement('div', { style: {display:"flex",gap:6,flexWrap:"wrap"} },
-      [
-        { id:"usuarios",    label:"Individual" },
-        { id:"prode",       label:"Prode" },
-        { id:"comunidades", label:"Comunidades" },
-      ].map(function(t) {
-        return React.createElement('button', { key:t.id, onClick:()=>setTab(t.id), style: {
-          padding:"8px 18px", borderRadius:20, border:"1px solid",
+    // Sub-tabs
+    React.createElement('div', { style:{display:"flex",gap:5,flexWrap:"wrap"} },
+      TABS_RK.map(function(t) {
+        return React.createElement('button', { key:t.id, onClick:()=>setTab(t.id), style:{
+          padding:"7px 12px", borderRadius:20, border:"1px solid",
           borderColor: tab===t.id ? "#4ade80" : "#1a3a28",
           background: tab===t.id ? "rgba(74,222,128,.12)" : "transparent",
           color: tab===t.id ? "#4ade80" : "#3a5a4a",
-          fontFamily:"Oswald,sans-serif", fontWeight:700, fontSize:".85rem", cursor:"pointer"
+          fontFamily:"Oswald,sans-serif", fontWeight:700, fontSize:".78rem", cursor:"pointer", whiteSpace:"nowrap"
         }}, t.label);
       })
     ),
 
-    // Users ranking
-    tab === "usuarios" && React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:4} },
-      userRanking.length === 0
-        ? React.createElement('div', { style: {textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"} }, "Aun no hay participantes con puntos")
-        : userRanking.map((u, i) =>
-          React.createElement('div', { key: u.uid, style: {
-            display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-            background: u.uid===user.uid ? "rgba(74,222,128,.07)" : "rgba(255,255,255,.02)",
-            border:"1px solid", borderColor: u.uid===user.uid ? "rgba(74,222,128,.25)" : "rgba(255,255,255,.04)",
-            borderRadius:8
-          }},
-            React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1rem",minWidth:30,textAlign:"center",color:medalColor(i)} }, i<3?"★"+(i+1):"#"+(i+1)),
-            React.createElement('div', { style: {flex:1} },
-              React.createElement('div', { style: {fontWeight:600,fontSize:".88rem",color:"#e2e8f0"} }, u.equipo),
-              React.createElement('div', { style: {fontSize:".72rem",color:"#5a7a8a",marginTop:1} }, u.nombre+" "+u.apellido+" · "+u.comunidad)
-            ),
-            React.createElement('div', { style: {textAlign:"right"} },
-              React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color: i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, u.pts||0),
-              React.createElement('div', { style: {fontSize:".65rem",color:"#3a5a4a"} }, "pts")
-            )
-          )
-        )
+    // ── TOTAL ──
+    tab==="total" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      rankTotal.length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Aún no hay puntos")
+        : rankTotal.map((u,i)=>React.createElement(Row,{key:u.uid,u,i,isMe:u.uid===user.uid,
+            mainPts:u.ptsTotal, mainLabel:"total",
+            sub:u.nombre+" "+u.apellido+" · "+u.comunidad+" · 🏟"+u.ptsEq+" 🧠"+u.ptsTri+" 🎯"+u.ptsProd}))
     ),
 
-    // Prode ranking
-    tab === "prode" && React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:4} },
-      (function() {
-        const prodeRanking = [...allUsers].map(function(u) {
-          const prodeKey = "gm_prode_" + u.uid;
-          const pickData = getLS(prodeKey, {});
-          const ptsProd = WC2026_FIXTURE.reduce(function(acc, m) {
-            const pts = calcProdePoints(pickData[m.id], m);
-            return acc + (pts || 0);
-          }, 0);
-          const exactos = WC2026_FIXTURE.filter(function(m) {
-            return calcProdePoints(pickData[m.id], m) === 3;
-          }).length;
-          const picks = Object.keys(pickData).length;
-          return Object.assign({}, u, { ptsProd: ptsProd, exactos: exactos, totalPicks: picks });
-        }).sort(function(a, b) {
-          if (b.ptsProd !== a.ptsProd) return b.ptsProd - a.ptsProd;
-          return b.exactos - a.exactos;
-        });
+    // ── EQUIPO ──
+    tab==="equipo" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      rankEquipo.length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Sin puntos de equipo")
+        : rankEquipo.map((u,i)=>React.createElement(Row,{key:u.uid,u,i,isMe:u.uid===user.uid,
+            mainPts:u.ptsEq, mainLabel:"pts equipo",
+            sub:u.nombre+" "+u.apellido+" · "+u.comunidad}))
+    ),
 
-        if (prodeRanking.length === 0)
-          return React.createElement('div', { style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"} }, "Sin participantes");
+    // ── TRIVIA ──
+    tab==="trivia" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      rankTrivia.filter(u=>u.ptsTri>0).length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Nadie jugó trivia aún")
+        : rankTrivia.filter(u=>u.ptsTri>0).map((u,i)=>React.createElement(Row,{key:u.uid,u,i,isMe:u.uid===user.uid,
+            mainPts:u.ptsTri, mainLabel:"pts trivia",
+            sub:u.nombre+" "+u.apellido+" · "+u.comunidad}))
+    ),
 
-        return prodeRanking.map(function(u, i) {
-          const isMe = u.uid === user.uid;
-          return React.createElement('div', { key: u.uid, style: {
-            display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-            background: isMe ? "rgba(74,222,128,.07)" : "rgba(255,255,255,.02)",
-            border:"1px solid", borderColor: isMe ? "rgba(74,222,128,.25)" : "rgba(255,255,255,.04)",
+    // ── PRODE ──
+    tab==="prode" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      rankProde.filter(u=>u.ptsProd>0||u.totalPicks>0).length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Sin pronósticos aún")
+        : rankProde.filter(u=>u.ptsProd>0||u.totalPicks>0).map((u,i)=>React.createElement(Row,{key:u.uid,u,i,isMe:u.uid===user.uid,
+            mainPts:u.ptsProd, mainLabel:"pts prode",
+            sub:u.nombre+" "+u.apellido+" · "+u.totalPicks+" pronósticos · "+u.exactos+" exactos"}))
+    ),
+
+    // ── COMUNIDADES ──
+    tab==="comunidades" && React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:4}},
+      React.createElement('div',{style:{fontSize:".72rem",color:"#3a5a4a",padding:"4px 8px",marginBottom:2}},
+        "Puntaje total acumulado de todos los miembros de cada comunidad (equipo + trivia + prode)"
+      ),
+      communityRanking.length===0
+        ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Sin datos")
+        : communityRanking.map((c,i)=>
+          React.createElement('div',{key:c.comunidad,style:{
+            display:"flex",alignItems:"center",gap:12,padding:"12px 14px",
+            background:myUser&&myUser.comunidad===c.comunidad?"rgba(74,222,128,.07)":"rgba(255,255,255,.02)",
+            border:"1px solid",borderColor:myUser&&myUser.comunidad===c.comunidad?"rgba(74,222,128,.25)":"rgba(255,255,255,.04)",
             borderRadius:8
           }},
-            React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1rem",minWidth:30,textAlign:"center",
-              color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4a6a5a"} },
-              i<3 ? "★"+(i+1) : "#"+(i+1)
-            ),
-            React.createElement('div', { style:{flex:1} },
-              React.createElement('div', { style:{fontWeight:600,fontSize:".88rem",color:"#e2e8f0"} }, u.equipo),
-              React.createElement('div', { style:{fontSize:".72rem",color:"#5a7a8a",marginTop:1} },
-                u.nombre+" "+u.apellido+" · "+u.totalPicks+" pronósticos · "+u.exactos+" exactos"
+            React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1.05rem",minWidth:32,textAlign:"center",color:mcolor(i)}},medal(i)),
+            React.createElement('div',{style:{flex:1}},
+              React.createElement('div',{style:{fontWeight:700,fontSize:".9rem",color:"#e2e8f0"}},c.comunidad),
+              React.createElement('div',{style:{fontSize:".7rem",color:"#5a7a8a",marginTop:3,display:"flex",gap:10,flexWrap:"wrap"}},
+                React.createElement('span',null,c.count+" participante"+(c.count!==1?"s":"")),
+                React.createElement('span',{style:{color:"#4ade80"}},"🏟 "+c.ptsEq),
+                React.createElement('span',{style:{color:"#a78bfa"}},"🧠 "+c.ptsTri),
+                React.createElement('span',{style:{color:"#60a5fa"}},"🎯 "+c.ptsProd),
               )
             ),
-            React.createElement('div', { style:{textAlign:"right"} },
-              React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",
-                color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, u.ptsProd),
-              React.createElement('div', { style:{fontSize:".65rem",color:"#3a5a4a"} }, "pts prode")
-            )
-          );
-        });
-      })()
-    ),
-
-    // Communities ranking
-    tab === "comunidades" && React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:4} },
-      communityRanking.length === 0
-        ? React.createElement('div', { style: {textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"} }, "Sin datos de comunidades")
-        : communityRanking.map((c, i) =>
-          React.createElement('div', { key: c.comunidad, style: {
-            display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-            background: myUser && myUser.comunidad===c.comunidad ? "rgba(74,222,128,.07)" : "rgba(255,255,255,.02)",
-            border:"1px solid", borderColor: myUser && myUser.comunidad===c.comunidad ? "rgba(74,222,128,.25)" : "rgba(255,255,255,.04)",
-            borderRadius:8
-          }},
-            React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1rem",minWidth:30,textAlign:"center",color:medalColor(i)} }, i<3?"★"+(i+1):"#"+(i+1)),
-            React.createElement('div', { style: {flex:1} },
-              React.createElement('div', { style: {fontWeight:600,fontSize:".88rem",color:"#e2e8f0"} }, c.comunidad),
-              React.createElement('div', { style: {fontSize:".72rem",color:"#5a7a8a",marginTop:1} }, c.count+" participante"+(c.count!==1?"s":""))
-            ),
-            React.createElement('div', { style: {textAlign:"right"} },
-              React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color: i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"} }, c.ptsTotal),
-              React.createElement('div', { style: {fontSize:".65rem",color:"#3a5a4a"} }, c.pts+" eq · "+c.ptsProd+" prode")
+            React.createElement('div',{style:{textAlign:"right"}},
+              React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.3rem",color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#4ade80"}},c.ptsTotal),
+              React.createElement('div',{style:{fontSize:".63rem",color:"#3a5a4a"}},"total")
             )
           )
         )
     )
   );
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN PANEL
@@ -22334,3 +22346,4 @@ function triggerInstall() {
 </script>
 </body>
 </html>
+  
