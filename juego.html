@@ -20663,6 +20663,51 @@ function ProfileView({ user, toast }) {
         )
         , React.createElement('button', { className: "btn-save", onClick: save, disabled: saving,}, saving?"Guardando...":"Guardar cambios")
       )
+
+      // ── MIS CUENTAS ──
+      , (function(){
+          var linked = getLS("gm_users",[]).filter(function(u){ return !u.admin && u.email===user.email; });
+          if (linked.length <= 1) return null;
+          return React.createElement('div',{style:{marginTop:16,background:"rgba(251,191,36,.05)",border:"1px solid rgba(251,191,36,.2)",borderRadius:12,padding:16}},
+            React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:".8rem",fontWeight:700,color:"#fbbf24",letterSpacing:1,marginBottom:12}}, "👥 MIS CUENTAS"),
+            React.createElement('div',{style:{display:"flex",flexDirection:"column",gap:8}},
+              linked.map(function(u){
+                var isActive = u.uid === user.uid;
+                return React.createElement('div',{key:u.uid,style:{
+                  display:"flex",alignItems:"center",gap:12,padding:"10px 14px",
+                  borderRadius:10,border:"1px solid",
+                  borderColor: isActive?"rgba(74,222,128,.4)":"rgba(255,255,255,.06)",
+                  background: isActive?"rgba(74,222,128,.08)":"rgba(255,255,255,.02)"
+                }},
+                  React.createElement('div',{style:{
+                    width:36,height:36,borderRadius:"50%",flexShrink:0,
+                    background:isActive?"rgba(74,222,128,.2)":"rgba(255,255,255,.06)",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1rem",
+                    color:isActive?"#4ade80":"#5a7a8a"
+                  }}, (u.equipo||u.nombre)[0].toUpperCase()),
+                  React.createElement('div',{style:{flex:1}},
+                    React.createElement('div',{style:{fontWeight:700,fontSize:".88rem",color:isActive?"#4ade80":"#e2e8f0"}},
+                      u.equipo, isActive?" (activa)":""
+                    ),
+                    React.createElement('div',{style:{fontSize:".7rem",color:"#4a6a5a",marginTop:2}},
+                      u.playerId+" · "+u.comunidad
+                    )
+                  ),
+                  !isActive && React.createElement('button',{
+                    onClick:function(){ setLS("gm_session",u); window.location.reload(); },
+                    style:{padding:"7px 14px",borderRadius:8,border:"1px solid rgba(251,191,36,.4)",
+                      background:"rgba(251,191,36,.1)",color:"#fbbf24",
+                      fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}
+                  }, "Cambiar ⇄")
+                )
+              })
+            ),
+            React.createElement('div',{style:{marginTop:10,fontSize:".7rem",color:"#2a4a3a",textAlign:"center"}},
+              "Cambiar de cuenta no cierra la sesión"
+            )
+          )
+        })()
     )
   );
 }
@@ -23389,21 +23434,44 @@ function GranMoishe() {
             , React.createElement('div', { className: "hdr-av",}, (user.nombre||user.email)[0].toUpperCase())
             , React.createElement('div', { className: "hdr-ui",}, React.createElement('div', { className: "hdr-un",}, user.nombre||user.email.split("@")[0]), React.createElement('div', { className: "hdr-ut",}, user.equipo||"Sin equipo", " · "  , user.comunidad))
           )
-          , getLS("gm_users",[]).filter(u=>u.dni===user.dni&&u.uid!==user.uid).length>0&&(
-        React.createElement('div', { style: {position:"relative"}, className: "acct-switcher-wrap",}
-          , React.createElement('button', { className: "hdr-user", style: {cursor:"pointer",gap:5}, onClick: ()=>setShowAcctMenu(p=>!p),}
-            , React.createElement('div', { className: "hdr-av",}, "⇄")
-            , React.createElement('div', { className: "hdr-ui",}, React.createElement('div', { className: "hdr-un", style: {fontSize:".7rem"},}, "Cambiar cuenta" ))
-          )
-          , showAcctMenu&&React.createElement('div', { style: {position:"absolute",top:"100%",right:0,zIndex:300,background:"#0d1b2a",border:"1px solid #1a3a28",borderRadius:10,padding:8,minWidth:200,display:"flex",flexDirection:"column",gap:4},}
-            , getLS("gm_users",[]).filter(u=>u.dni===user.dni&&u.uid!==user.uid).map(u=>(
-              React.createElement('button', { key: u.uid, onClick: ()=>{setLS("gm_session",u);window.location.reload();}, style: {background:"rgba(255,255,255,.04)",border:"1px solid #1a2d40",color:"#e2e8f0",borderRadius:7,padding:"7px 12px",textAlign:"left",cursor:"pointer",fontSize:".8rem"},}
-                , React.createElement('strong', null, u.nombre), React.createElement('br', null), React.createElement('span', { style: {fontSize:".7rem",color:"#4a6a5a"},}, u.equipo, " · "  , u.comunidad)
+          , (()=>{
+          const relatedAccounts = getLS("gm_users",[]).filter(u=>u.uid!==user.uid&&!u.admin&&(u.email===user.email||(u.dni&&u.dni===user.dni)));
+          return relatedAccounts.length>0&&(
+            React.createElement('div', { style: {position:"relative"}, className: "acct-switcher-wrap",}
+              , React.createElement('button', { className: "hdr-user", style: {cursor:"pointer",gap:5}, onClick: ()=>setShowAcctMenu(p=>!p),}
+                , React.createElement('div', { className: "hdr-av", style:{background:"rgba(251,191,36,.2)",color:"#fbbf24",fontSize:"1rem"}}, "⇄")
+                , React.createElement('div', { className: "hdr-ui",},
+                    React.createElement('div', { className: "hdr-un", style: {fontSize:".7rem",color:"#fbbf24"}}, "Cambiar cuenta"),
+                    React.createElement('div', { style:{fontSize:".6rem",color:"#3a5a4a"}}, relatedAccounts.length+" cuenta"+(relatedAccounts.length>1?"s":"")+" más")
+                  )
               )
-            ))
-          )
-        )
-      )
+              , showAcctMenu&&React.createElement('div', { style: {position:"absolute",top:"110%",right:0,zIndex:300,background:"#0d1b2a",border:"1px solid rgba(251,191,36,.25)",borderRadius:12,padding:10,minWidth:220,display:"flex",flexDirection:"column",gap:6,boxShadow:"0 8px 32px rgba(0,0,0,.6)"},}
+                , React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:".7rem",color:"#5a7a8a",letterSpacing:1,padding:"0 4px 4px",borderBottom:"1px solid #1a2d40",marginBottom:2}},"CAMBIAR CUENTA")
+                , relatedAccounts.map(u=>(
+                    React.createElement('button', { key: u.uid, onClick: ()=>{setLS("gm_session",u);window.location.reload();}, style: {
+                      display:"flex",alignItems:"center",gap:10,
+                      background:"rgba(255,255,255,.03)",border:"1px solid #1a2d40",
+                      color:"#e2e8f0",borderRadius:8,padding:"10px 12px",
+                      textAlign:"left",cursor:"pointer",width:"100%"
+                    },}
+                      , React.createElement('div',{style:{width:32,height:32,borderRadius:"50%",background:"rgba(74,222,128,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:".85rem",color:"#4ade80",flexShrink:0}},
+                          (u.nombre||u.email)[0].toUpperCase()
+                        )
+                      , React.createElement('div',{style:{flex:1}},
+                          React.createElement('div',{style:{fontWeight:700,fontSize:".85rem"}},u.equipo||u.nombre),
+                          React.createElement('div',{style:{fontSize:".7rem",color:"#4a6a5a",marginTop:1}},u.nombre+" "+u.apellido+" · "+u.comunidad)
+                        )
+                    )
+                  ))
+                , React.createElement('div',{style:{borderTop:"1px solid #1a2d40",marginTop:2,paddingTop:6}},
+                    React.createElement('div',{style:{fontSize:".65rem",color:"#2a4a3a",textAlign:"center",lineHeight:1.5}},
+                      "Cambiar no cierra tu sesión"
+                    )
+                  )
+              )
+            )
+          );
+        })()
       , React.createElement('button', { className: "btn-logout", onClick: async()=>{await Auth.signOut();setUser(null);window.location.href='index.html';}, title: "Salir",}, "⏏")
         )
       )
