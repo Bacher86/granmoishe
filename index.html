@@ -535,7 +535,7 @@
 
     <div class="modal-title" id="modalTitle">Ingresar</div>
     <div class="modal-price" id="modalPrice" style="display:none;">
-    1 cuenta: $10.000 · 2: $16.000 · 3: $24.000 · 4: $28.000 · 5: $30.000
+    1 cuenta: $15.000 · 2: $25.000 · 3: $30.000 · 4: $40.000 · 5: $45.000
   </div>
     <div class="mf" id="modalForm"></div>
     <div class="auth-err" id="authErr" style="display:none;"></div>
@@ -876,7 +876,7 @@ function renderForm() {
   const isReg = authMode==='register';
   document.getElementById('modalTitle').textContent = isReg?'Crear cuenta':'Ingresar';
   document.getElementById('modalPrice').style.display = isReg?'block':'none';
-  const _PRECIOS=[0,10000,16000,24000,28000,30000]; document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + _PRECIOS[window._cantidad||1].toLocaleString('es-AR')) : 'Ingresar';
+  const _PRECIOS=[0,15000,25000,30000,40000,45000]; document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + _PRECIOS[window._cantidad||1].toLocaleString('es-AR')) : 'Ingresar';
   document.getElementById('btnSwitch').textContent = isReg?'¿Ya tenés cuenta? Ingresá':'¿No tenés cuenta? Registrate';
   const coms = getComs();
   document.getElementById('modalForm').innerHTML = isReg ? `
@@ -1025,10 +1025,10 @@ function setCantidad(n) {
   }
   // Actualizar precio
   const pt = document.getElementById('precioTotal');
-  const PRECIOS=[0,10000,16000,24000,28000,30000]; if (pt) pt.textContent = '$' + PRECIOS[n].toLocaleString('es-AR');
+  const PRECIOS=[0,15000,25000,30000,40000,45000]; if (pt) pt.textContent = '$' + PRECIOS[n].toLocaleString('es-AR');
   // Actualizar botón submit
   const bs = document.getElementById('btnSubmit');
-  const PRECIOS2=[0,10000,16000,24000,28000,30000]; if (bs) bs.textContent = 'Registrarse · $' + PRECIOS2[n].toLocaleString('es-AR');
+  const PRECIOS2=[0,15000,25000,30000,40000,45000]; if (bs) bs.textContent = 'Registrarse · $' + PRECIOS2[n].toLocaleString('es-AR');
   // Mostrar/ocultar cuentas extra
   const ce = document.getElementById('cuentasExtra');
   const eaf = document.getElementById('extraAccountsForm');
@@ -1214,7 +1214,7 @@ async function submitAuth() {
   // Mostrar modal de pago
   closeModal();
   const totalCuentas = registeredUsers.length;
-  const _TABLA=[0,10000,16000,24000,28000,30000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*10000;
+  const _TABLA=[0,15000,25000,30000,40000,45000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*15000;
   document.getElementById('payId').textContent = registeredUsers.map(u=>u.playerId).join(' · ');
   document.getElementById('paySubject').textContent = `Comprobante · ${nombre} ${apellido} · ${registeredUsers.map(u=>u.playerId).join(', ')}`;
   // Actualizar monto en el modal de pago si existe el elemento
