@@ -239,16 +239,17 @@
     <div class="hero-title-wrap">
       <div class="hero-title">Gran <span>Moishe</span></div>
     </div>
-    <p class="hero-tagline">No es azar. Es <strong>conocimiento.</strong><br>Fantasy · Trivia · Prode · Comunidad</p>
+    <p class="hero-tagline">No es azar. Es <strong>conocimiento.</strong><br>Trivia · Verdad o Mito · Fantasy · Resultados · Comunidad</p>
     <div class="hero-ctas">
       <button class="cta-main" onclick="openModal('register')">⚽ Sumate al torneo</button>
       <button class="cta-sec"  onclick="openModal('login')">Ya tengo cuenta</button>
     </div>
     <div class="features">
-      <div class="feat" style="border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.07)"><div class="feat-icon">🧠</div><div class="feat-title" style="color:#a78bfa">Trivia diaria</div><div class="feat-desc">10 preguntas cada día. 20 segundos. Fútbol, cultura judía y general</div></div>
+      <div class="feat" style="border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.07)"><div class="feat-icon">🧠</div><div class="feat-title" style="color:#a78bfa">Trivia diaria</div><div class="feat-desc">10 preguntas cada día. 5 pts cada una. Fútbol, cultura judía y general</div></div>
+      <div class="feat" style="border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.07)"><div class="feat-icon">🎭</div><div class="feat-title" style="color:#fbbf24">Verdad o Mito</div><div class="feat-desc">10 afirmaciones por día. 8 segundos para decidir. Verdad o mentira</div></div>
       <div class="feat" style="border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.07)"><div class="feat-icon">⚽</div><div class="feat-title" style="color:#4ade80">Fantasy football</div><div class="feat-desc">Armá tu XI con jugadores reales de 48 selecciones</div></div>
-      <div class="feat" style="border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.07)"><div class="feat-icon">🎯</div><div class="feat-title" style="color:#60a5fa">Prode de partidos</div><div class="feat-desc">Pronosticá resultados antes de cada partido</div></div>
-      <div class="feat"><div class="feat-icon">🔮</div><div class="feat-title">Predicciones</div><div class="feat-desc">Campeón y goleador del torneo — se bloquean al inicio</div></div>
+      <div class="feat" style="border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.07)"><div class="feat-icon">🎯</div><div class="feat-title" style="color:#60a5fa">Resultados del partido</div><div class="feat-desc">Predecí el marcador de cada partido del Mundial</div></div>
+      <div class="feat"><div class="feat-icon">🔮</div><div class="feat-title">Elección del campeón</div><div class="feat-desc">Elegí quién gana el Mundial y quién es el goleador — se bloquean al inicio</div></div>
       <div class="feat"><div class="feat-icon">🏘</div><div class="feat-title">Ligas privadas</div><div class="feat-desc">Creá tu liga con código y competí con amigos</div></div>
       <div class="feat"><div class="feat-icon">🏆</div><div class="feat-title">Premios</div><div class="feat-desc">Por fecha y campeón final de comunidad</div></div>
     </div>
@@ -281,7 +282,7 @@
       <p style="font-size:.88rem;color:var(--gris);line-height:1.7;margin-bottom:16px;">
         Cada día hay <strong style="color:#e2e8f0">10 preguntas nuevas</strong> sobre fútbol, cultura judía y cultura general.
         Tenés <strong style="color:#e2e8f0">20 segundos</strong> por pregunta — sin tiempo para googlear.
-        <strong style="color:#a78bfa">3 puntos</strong> por cada acierto.
+        <strong style="color:#a78bfa">5 puntos</strong> por cada acierto.
       </p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <span style="padding:4px 12px;border-radius:20px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);font-size:.72rem;color:#a78bfa;font-weight:700;">⚽ Fútbol</span>
@@ -304,13 +305,30 @@
     <div style="background:linear-gradient(135deg,rgba(96,165,250,.1),rgba(96,165,250,.03));border:2px solid rgba(96,165,250,.25);border-radius:18px;padding:28px 24px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:-10px;right:-10px;font-size:5rem;opacity:.06;">🎯</div>
       <div style="font-size:2.2rem;margin-bottom:14px;">🎯</div>
-      <div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:#60a5fa;margin-bottom:10px;letter-spacing:.5px;">PRODE Y PREDICCIONES</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:#60a5fa;margin-bottom:10px;letter-spacing:.5px;">RESULTADOS Y ANÁLISIS</div>
       <p style="font-size:.88rem;color:var(--gris);line-height:1.7;">
-        Pronosticá el resultado de cada partido antes de que empiece.
-        Elegí el campeón y el goleador del Mundial.
-        <strong style="color:#e2e8f0">+3 puntos</strong> por resultado exacto,
-        <strong style="color:#e2e8f0">+1 punto</strong> por ganador correcto.
+        Analizá cada partido del Mundial y registrá tu predicción de marcador antes de que empiece.
+        Elegí el campeón y el goleador del torneo.
+        <strong style="color:#e2e8f0">+3 puntos</strong> por marcador exacto,
+        <strong style="color:#e2e8f0">+1 punto</strong> por resultado correcto.
       </p>
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(251,191,36,.03));border:2px solid rgba(251,191,36,.3);border-radius:18px;padding:28px 24px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-10px;right:-10px;font-size:5rem;opacity:.06;">🎭</div>
+      <div style="font-size:2.2rem;margin-bottom:14px;">🎭</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:#fbbf24;margin-bottom:10px;letter-spacing:.5px;">VERDAD O MITO</div>
+      <p style="font-size:.88rem;color:var(--gris);line-height:1.7;margin-bottom:16px;">
+        Cada día <strong style="color:#e2e8f0">10 afirmaciones</strong> sobre fútbol, historia de Israel, religión judía e historia mundial.
+        Tenés <strong style="color:#e2e8f0">8 segundos</strong> para decidir si es verdad o mentira.
+        <strong style="color:#fbbf24">3 puntos</strong> por acierto. Al terminar, explicación de cada respuesta.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="padding:4px 12px;border-radius:20px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);font-size:.72rem;color:#fbbf24;font-weight:700;">⚽ Fútbol</span>
+        <span style="padding:4px 12px;border-radius:20px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);font-size:.72rem;color:#4ade80;font-weight:700;">✡️ Judaísmo</span>
+        <span style="padding:4px 12px;border-radius:20px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);font-size:.72rem;color:#60a5fa;font-weight:700;">🌍 Historia</span>
+        <span style="padding:4px 12px;border-radius:20px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);font-size:.72rem;color:#a78bfa;font-weight:700;">🇮🇱 Israel</span>
+      </div>
     </div>
 
   </div>
@@ -327,7 +345,7 @@
   <div class="steps">
     <div class="step" data-n="01"><div class="step-icon">📝</div><div class="step-title">Registrate</div><div class="step-desc">Creá tu cuenta, recibís tu ID único y enviás el comprobante de pago para activarla.</div></div>
     <div class="step" data-n="02"><div class="step-icon">🛒</div><div class="step-title">Armá tu equipo</div><div class="step-desc">Elegí 15 jugadores de 48 selecciones. Definí tu capitán y formación táctica.</div></div>
-    <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido. Hacé la trivia diaria, el prode y escalá en el ranking.</div></div>
+    <div class="step" data-n="03"><div class="step-icon">⚽</div><div class="step-title">Competí</div><div class="step-desc">Seguí los puntos partido a partido. Hacé la trivia diaria, el Verdad o Mito, registrá tus predicciones de partidos y escalá en el ranking.</div></div>
     <div class="step" data-n="04"><div class="step-icon">🏅</div><div class="step-title">Ganás</div><div class="step-desc">Premios para los ganadores por cada fecha y un gran premio para el campeón final de la comunidad.</div></div>
   </div>
 </div>
@@ -368,33 +386,33 @@
 </div>
 
 <div class="wrap" style="padding-top:0;">
-  <div class="sec-label">Prode</div>
-  <div class="sec-title">Pronosticá cada <span>partido</span></div>
+  <div class="sec-label">Resultados</div>
+  <div class="sec-title">Predecí cada <span>partido</span></div>
   <p style="color:var(--gris);font-size:.92rem;line-height:1.7;max-width:600px;margin-bottom:28px;">
-    Además de tu equipo fantasy, podés pronosticar el resultado de cada partido del Mundial antes de que empiece. El prode <strong style="color:var(--celeste);">suma puntos a tu puntaje total</strong> y sirve como <strong style="color:var(--dorado-clr);">desempate</strong> en caso de igualdad en el ranking.
+    Además de tu equipo fantasy, podés registrar tu predicción de marcador para cada partido del Mundial antes de que empiece. Los resultados <strong style="color:var(--celeste);">suman puntos a tu puntaje total</strong> y sirven como <strong style="color:var(--dorado-clr);">desempate</strong> en caso de igualdad en el ranking.
   </p>
   <div class="scoring-grid" style="max-width:600px;">
     <div class="score-card" style="border-color:rgba(74,222,128,.2);">
-      <div class="sc-title" style="color:#4ade80;">🎯 Resultado exacto</div>
-      <div class="sc-row"><span>Acertás el marcador exacto</span><span class="green">+3 pts</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 2-1 y termina 2-1</div>
+      <div class="sc-title" style="color:#4ade80;">🎯 Marcador exacto</div>
+      <div class="sc-row"><span>El marcador es exactamente el que indicaste</span><span class="green">+3 pts</span></div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: indicás 2-1 y termina 2-1</div>
     </div>
     <div class="score-card" style="border-color:rgba(96,165,250,.2);">
-      <div class="sc-title" style="color:#60a5fa;">✅ Ganador correcto</div>
-      <div class="sc-row"><span>Acertás quién gana (o empate)</span><span class="blue">+1 pt</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: pronosticás 1-0 y termina 3-0</div>
+      <div class="sc-title" style="color:#60a5fa;">✅ Resultado correcto</div>
+      <div class="sc-row"><span>Acertás quién gana o si hay empate</span><span class="blue">+1 pt</span></div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Ej: indicás 1-0 y termina 3-0</div>
     </div>
     <div class="score-card" style="border-color:rgba(239,68,68,.15);">
       <div class="sc-title" style="color:#ef4444;">❌ Sin acierto</div>
       <div class="sc-row"><span>No acertás el resultado</span><span class="red">+0 pts</span></div>
-      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Los pronósticos cierran 10 min antes del partido</div>
+      <div class="sc-row" style="border:none;padding-top:8px;font-size:.72rem;color:var(--gris);">Las predicciones cierran 10 min antes del partido</div>
     </div>
   </div>
   <div style="margin-top:20px;background:rgba(200,151,58,.08);border:1px solid rgba(200,151,58,.2);border-radius:12px;padding:16px 20px;max-width:600px;display:flex;align-items:flex-start;gap:12px;">
     <span style="font-size:1.4rem;">⚖️</span>
     <div>
-      <div style="font-weight:700;color:var(--dorado-clr);margin-bottom:4px;font-size:.9rem;">Desempate por Prode</div>
-      <div style="font-size:.8rem;color:var(--gris);line-height:1.6;">En caso de igualdad de puntos en el ranking, el prode decide. Más puntos de prode = mejor posición.</div>
+      <div style="font-weight:700;color:var(--dorado-clr);margin-bottom:4px;font-size:.9rem;">Desempate por Resultados</div>
+      <div style="font-size:.8rem;color:var(--gris);line-height:1.6;">En caso de igualdad de puntos en el ranking, los resultados de partidos deciden. Más puntos de resultados = mejor posición.</div>
     </div>
   </div>
 </div>
@@ -414,7 +432,7 @@
     <div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:20px;">
       <div style="font-size:1.6rem;margin-bottom:10px;">🏅</div>
       <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Logros y Badges</div>
-      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">17 logros desbloqueables: primer fichaje, top 10, galácticos, fundador de liga, adivino del prode y más. Cada logro se notifica en el momento.</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">17 logros desbloqueables: primer fichaje, top 10, galácticos, fundador de liga, maestro de resultados y más. Cada logro se notifica en el momento.</div>
     </div>
 
     <div style="background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.15);border-radius:14px;padding:20px;">
@@ -426,7 +444,7 @@
     <div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:14px;padding:20px;">
       <div style="font-size:1.6rem;margin-bottom:10px;">📈</div>
       <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Ranking en tiempo real</div>
-      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Tu posición en el ranking global siempre visible en el header. Rankings individuales, por comunidad y prode separados.</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Tu posición en el ranking global siempre visible. 5 rankings separados: Total, Equipo, Trivia, Verdad o Mito, Resultados y Comunidades.</div>
     </div>
 
     <div style="background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.15);border-radius:14px;padding:20px;">
@@ -444,12 +462,18 @@
     <div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:20px;">
       <div style="font-size:1.6rem;margin-bottom:10px;">🧠</div>
       <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Trivia Diaria</div>
-      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">10 preguntas por día sobre fútbol, cultura judía y cultura general. 20 segundos para responder cada una. 3 puntos por acierto que suman al ranking comunitario.</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">10 preguntas por día sobre fútbol, cultura judía, historia de Israel y cultura general. 20 segundos por pregunta. <strong style="color:#a78bfa">5 puntos</strong> por acierto — máximo 50 pts diarios.</div>
+    </div>
+
+    <div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:20px;">
+      <div style="font-size:1.6rem;margin-bottom:10px;">🎭</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Verdad o Mito</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">10 afirmaciones por día: ¿es verdad o mito? Solo 8 segundos para decidir. Fútbol, judaísmo, historia de Israel e historia mundial. <strong style="color:#fbbf24">3 puntos</strong> por acierto. Al final, explicación de cada respuesta.</div>
     </div>
 
     <div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:20px;">
       <div style="font-size:1.6rem;margin-bottom:10px;">🔮</div>
-      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Predicciones del Torneo</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Elección del Campeón</div>
       <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Antes del inicio elegís quién gana el Mundial y quién es el goleador. Se bloquean al arrancar el torneo. Si acertás, bonus de puntos al final.</div>
     </div>
 
@@ -487,7 +511,7 @@
     </div>
     <div style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);border-radius:14px;padding:20px;text-align:center;">
       <div style="font-size:1.8rem;margin-bottom:8px;">🎯</div>
-      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:.95rem;margin-bottom:4px;">Premio Prode</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:.95rem;margin-bottom:4px;">Premio Resultados</div>
       <div style="font-size:.8rem;color:var(--gris);line-height:1.5;">Premio especial para el mejor pronosticador del torneo</div>
     </div>
   </div>
@@ -905,7 +929,7 @@ function renderForm() {
     <div class="field">
       <div class="terms-box">
         <strong>Términos y Condiciones de Participación</strong><br><br>
-        La plataforma es un <strong>Concurso de Destreza y Conocimiento Estadístico Deportivo</strong>. El pago de la inscripción otorga el derecho de acceso a la plataforma tecnológica y la participación en el certamen de pronósticos. Los premios se otorgan en base a la puntuación por aciertos, <strong>no existiendo factores de azar involucrados</strong>.<br><br>
+        La plataforma es un <strong>Concurso de Destreza y Conocimiento Estadístico Deportivo</strong>. El pago de la inscripción otorga el derecho de acceso a la plataforma tecnológica y la participación en el certamen de análisis deportivo. Los premios se otorgan en base a la puntuación por aciertos, <strong>no existiendo factores de azar involucrados</strong>.<br><br>
         <strong>Solo pueden participar mayores de 18 años.</strong> Al registrarte declarás tener 18 años o más y aceptás estos términos.
         <div class="terms-check">
           <input type="checkbox" id="f_terminos" onchange="onTerminosChange()"/>
