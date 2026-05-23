@@ -17806,8 +17806,8 @@ const MAX_SQUAD = 15; // 11 + 4 subs
 const MAX_XI = 11;
 const MAX_SUBS = 4;
 const MAX_PER_COUNTRY = 3;
-const ACCOUNT_PRICE = 10000; // precio base 1 cuenta
-const PRICE_TABLE = [0, 10000, 16000, 24000, 28000, 30000];
+const ACCOUNT_PRICE = 15000; // precio base 1 cuenta
+const PRICE_TABLE = [0, 15000, 25000, 30000, 40000, 45000];
 
 const SCORING = {
   win: 5, draw: 3, loss: 1,
@@ -19152,7 +19152,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
   const handleSetCantidad=(n)=>{
     setCantidad(n);
     const arr=[];
-    for(let i=1;i<n;i++) arr.push({email:"",password:"",equipo:""});
+    for(let i=1;i<n;i++) arr.push({equipo:""});
     setExtras(arr);
   };
 
@@ -19174,7 +19174,6 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
     // validate extras
     if(isReg&&extras.length>0){
       for(let i=0;i<extras.length;i++){
-        if(!extras[i].email||!extras[i].password){setErr(`Completá email y contraseña para la cuenta ${i+2}`);return;}
         if(!extras[i].equipo){setErr(`Completá el nombre de equipo para la cuenta ${i+2}`);return;}
       }
     }
@@ -19187,7 +19186,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
     for(let i=0;i<extras.length;i++){
       const ex=extras[i];
       const r2=await onSubmit({
-        email:ex.email, password:ex.password, equipo:ex.equipo,
+        email:f.email, password:f.password, equipo:ex.equipo,
         dni:f.dni, nombre:f.nombre, apellido:f.apellido,
         pais:f.pais, celular:f.celular, fecha_nac:f.fecha_nac,
         comunidad:comunidadFinal, comunidadDir:f.comunidadDir, comunidadContacto:f.comunidadContacto
@@ -19222,7 +19221,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
           
         )
         , React.createElement('div', { className: "auth-title",}, isReg?"Crear cuenta":"Ingresar")
-        , isReg&&React.createElement('div', { className: "auth-price",}, "1 cuenta: $10.000 · 2: $16.000 · 3: $24.000 · 4: $28.000 · 5: $30.000")
+        , isReg&&React.createElement('div', { className: "auth-price",}, "1 cuenta: $15.000 · 2: $25.000 · 3: $30.000 · 4: $40.000 · 5: $45.000")
 
         , React.createElement('div', { className: "auth-form",}
 
@@ -19296,9 +19295,8 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
             , React.createElement('div', { style: {fontSize:".72rem",letterSpacing:1,color:"#4a6a5a",textTransform:"uppercase",fontWeight:600},}, "Cuentas adicionales (mismo DNI)")
             , extras.map((ex,i)=>React.createElement('div', { key: i, style: {background:"rgba(255,255,255,.03)",border:"1px solid rgba(74,222,128,.1)",borderRadius:8,padding:12,display:"flex",flexDirection:"column",gap:8},}
               , React.createElement('div', { style: {fontSize:".75rem",color:"#4ade80",fontWeight:700,marginBottom:4},}, `Cuenta ${i+2}`)
+              , React.createElement('div', { style:{fontSize:".72rem",color:"#5a7a8a",marginBottom:4}}, "Usa el mismo email y contraseña que la cuenta principal.")
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Nombre del equipo · Cuenta ${i+2} *`), React.createElement('input', { value: ex.equipo, onChange: e=>setExtra(i,"equipo",e.target.value), placeholder: "Mi Segundo Equipo",}))
-              , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Email · Cuenta ${i+2} *`), React.createElement('input', { type: "email", value: ex.email, onChange: e=>setExtra(i,"email",e.target.value), placeholder: "otro@email.com",}))
-              , React.createElement('div', { className: "pf",}, React.createElement('label', null, `Contraseña · Cuenta ${i+2} *`), React.createElement('input', { type: "password", value: ex.password, onChange: e=>setExtra(i,"password",e.target.value), placeholder: "••••••••",}))
             ))
           )
         )
