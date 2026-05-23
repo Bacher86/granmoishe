@@ -20041,11 +20041,61 @@ function ApiPanel({ toast }) {
     toast("🧠 Puntos de trivia reiniciados a 0", "success");
   };
 
-    const reiniciar = () => {
-    if(!window.confirm("⚠️ Borra TODOS los puntos. ¿Confirmar?")) return;
+  const reiniciarMito = () => {
+    if (!window.confirm("¿Reiniciar puntos de Verdad o Mito de TODOS los usuarios? Esta acción no se puede deshacer.")) return;
+    const users = getLS("gm_users", []);
+    const updated = users.map(u => ({ ...u, ptsMito: 0 }));
+    setLS("gm_users", updated);
+    toast("🎭 Puntos de Verdad o Mito reiniciados a 0", "success");
+  };
+
+  const reiniciarPuntosJugadores = () => {
+    if (!window.confirm("⚠️ Esto pone en 0 los puntos de TODOS los jugadores (gm_player_stats, gm_match_stats, gm_published_matches) y los pts de todos los usuarios.\n\nNO toca los partidos cargados ni los equipos armados.\n\n¿Confirmar?")) return;
+    savePS({});
+    savePublished({});
+    saveMatchStats({});
+    saveProdePublished({});
+    setLS("gm_stats_by_name", {});
+    const users = getLS("gm_users", []);
+    const updated = users.map(u => ({ ...u, pts: 0 }));
+    setLS("gm_users", updated);
+    toast("✅ Puntos de jugadores reiniciados a 0. Partidos intactos.", "success");
+  };
+
+  const reiniciarResultadosPartidos = () => {
+    if (!window.confirm("⚠️ Esto borra TODOS los resultados cargados (scores, goles, asistencias, tarjetas) de todos los partidos.\n\nNO toca los puntos de los usuarios ni los equipos.\n\n¿Confirmar?")) return;
+    // Limpiar scores de los partidos en cache
+    const mts = getLS("gm_matches_cache", []);
+    const cleaned = mts.map(m => ({
+      ...m,
+      score_home: null, score_away: null,
+      status: "SCHEDULED",
+      goals: [], assists: [], yellowCards: [], redCards: [],
+    }));
+    setMatches(cleaned);
+    setLS("gm_matches_cache", cleaned);
+    // Limpiar stats y publicados
+    savePS({});
+    savePublished({});
+    saveMatchStats({});
+    saveProdePublished({});
+    setLS("gm_stats_by_name", {});
+    // Resetear pts de usuarios
+    const users = getLS("gm_users", []);
+    const updated = users.map(u => ({ ...u, pts: 0 }));
+    setLS("gm_users", updated);
+    toast("🗑 Resultados y puntos reiniciados. Fixture y equipos intactos.", "success");
+  };
+
+  const reiniciar = () => {
+    if(!window.confirm("⚠️ REINICIO TOTAL: borra puntos, partidos cargados, stats y resultados. NO toca los equipos armados.\n\n¿Confirmar?")) return;
     savePS({}); savePublished({}); saveMatchStats({}); saveProdePublished({});
+    setLS("gm_stats_by_name", {});
     setMatches([]); setLS("gm_matches_cache",[]);
-    toast("🔄 Reiniciado","success");
+    const users = getLS("gm_users", []);
+    const updated = users.map(u => ({ ...u, pts: 0 }));
+    setLS("gm_users", updated);
+    toast("🔄 Reinicio total completado","success");
   };
 
   const borrarSquads = () => {
@@ -20208,15 +20258,30 @@ function ApiPanel({ toast }) {
       React.createElement("button", {onClick:exportarUsuarios, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #60a5fa",background:"rgba(96,165,250,.12)",color:"#60a5fa",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "📥 Descargar CSV")
     ),
 
-    // Reiniciar + Borrar squads
+    // ── ZONA DE RESETS ──
     React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:8}},
-      React.createElement("div", {style:{background:"rgba(239,68,68,.08)",border:"2px solid rgba(239,68,68,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+
+      React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:".75rem",color:"#5a7a8a",letterSpacing:2,padding:"4px 2px"}}, "ZONA DE CONTROL — RESETS"),
+
+      // 1. Reiniciar solo puntos de jugadores (mantiene partidos y equipos)
+      React.createElement("div", {style:{background:"rgba(251,191,36,.06)",border:"2px solid rgba(251,191,36,.3)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
         React.createElement("div", null,
-          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#ef4444",letterSpacing:1}}, "🔄 REINICIAR PUNTOS"),
-          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra puntos, partidos y stats. No toca los equipos armados.")
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#fbbf24",letterSpacing:1}}, "🏅 REINICIAR PUNTOS DE JUGADORES"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Pone a 0 los pts de todos los usuarios y borra stats. Mantiene partidos cargados y equipos armados.")
         ),
-        React.createElement("button", {onClick:reiniciar, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #ef4444",background:"rgba(239,68,68,.15)",color:"#ef4444",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🔄 Reiniciar puntos")
+        React.createElement("button", {onClick:reiniciarPuntosJugadores, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #fbbf24",background:"rgba(251,191,36,.15)",color:"#fbbf24",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🏅 Reiniciar pts jugadores")
       ),
+
+      // 2. Limpiar resultados de partidos (mantiene fixture y equipos)
+      React.createElement("div", {style:{background:"rgba(249,115,22,.06)",border:"2px solid rgba(249,115,22,.3)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#f97316",letterSpacing:1}}, "🗑 LIMPIAR RESULTADOS DE PARTIDOS"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra scores, goles, asistencias y tarjetas cargados. Resetea pts. Mantiene el fixture y los equipos.")
+        ),
+        React.createElement("button", {onClick:reiniciarResultadosPartidos, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #f97316",background:"rgba(249,115,22,.15)",color:"#f97316",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🗑 Limpiar resultados")
+      ),
+
+      // 3. Borrar equipos de usuarios
       React.createElement("div", {style:{background:"rgba(239,68,68,.05)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
         React.createElement("div", null,
           React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#f87171",letterSpacing:1}}, "🗑 BORRAR EQUIPOS DE USUARIOS"),
@@ -20224,12 +20289,32 @@ function ApiPanel({ toast }) {
         ),
         React.createElement("button", {onClick:borrarSquads, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #f87171",background:"rgba(248,113,113,.1)",color:"#f87171",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🗑 Borrar equipos")
       ),
+
+      // 4. Reiniciar Trivia
       React.createElement("div", {style:{background:"rgba(167,139,250,.06)",border:"1px solid rgba(167,139,250,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
         React.createElement("div", null,
           React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#a78bfa",letterSpacing:1}}, "🧠 REINICIAR PUNTOS DE TRIVIA"),
-          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Pone a 0 los ptsTrivia de todos los usuarios. No borra historial de preguntas del día.")
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Pone a 0 los ptsTrivia de todos los usuarios.")
         ),
         React.createElement("button", {onClick:reiniciarTrivia, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #a78bfa",background:"rgba(167,139,250,.15)",color:"#a78bfa",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🧠 Reiniciar Trivia")
+      ),
+
+      // 5. Reiniciar Verdad o Mito
+      React.createElement("div", {style:{background:"rgba(251,191,36,.04)",border:"1px solid rgba(251,191,36,.2)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#fbbf24",letterSpacing:1}}, "🎭 REINICIAR VERDAD O MITO"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Pone a 0 los ptsMito de todos los usuarios.")
+        ),
+        React.createElement("button", {onClick:reiniciarMito, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #fbbf24",background:"rgba(251,191,36,.12)",color:"#fbbf24",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🎭 Reiniciar Mito")
+      ),
+
+      // 6. Reinicio total (nuclear)
+      React.createElement("div", {style:{background:"rgba(239,68,68,.08)",border:"2px solid rgba(239,68,68,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#ef4444",letterSpacing:1}}, "☢️ REINICIO TOTAL"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra TODO: puntos, resultados, stats y partidos cargados. Solo quedan los usuarios y equipos.")
+        ),
+        React.createElement("button", {onClick:reiniciar, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #ef4444",background:"rgba(239,68,68,.15)",color:"#ef4444",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "☢️ Reinicio total")
       )
     ),
 
