@@ -18010,7 +18010,22 @@ function StatsPanel() {
   const ads   = DB.getAds();
   const paid    = users.filter(u=>u.pagado).length;
   const blocked = users.filter(u=>u.bloqueado).length;
+  const cl = n => (n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
 
+  // ── Comunidades ──
+  const byComunidad = useMemo(()=>{
+    const m={};
+    users.forEach(u=>{
+      const com = u.comunidad||"Sin comunidad";
+      if(!m[com]) m[com]={ total:0, pagados:0, pts:0 };
+      m[com].total++;
+      if(u.pagado) m[com].pagados++;
+      m[com].pts += (u.pts||0)+(u.ptsTrivia||0)+(u.ptsMito||0)+(u.ptsProd||0);
+    });
+    return Object.entries(m).sort((a,b)=>b[1].total-a[1].total);
+  },[users]);
+
+  // ── Edades ──
   const byAge = useMemo(()=>{
     const b={"10-17":0,"18-24":0,"25-34":0,"35-44":0,"45-54":0,"55+":0};
     users.forEach(u=>{ const a=parseInt(u.edad)||0;
@@ -18021,60 +18036,159 @@ function StatsPanel() {
     return Object.entries(b).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
   },[users]);
 
-  const byComunidad = useMemo(()=>{
-    const m={};
-    users.forEach(u=>{ if(u.comunidad) m[u.comunidad]=(m[u.comunidad]||0)+1; });
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
-  },[users]);
+  // ── Ads stats ──
+  const totalViews  = ads.reduce((s,a)=>s+(a.views||0),0);
+  const totalClicks = ads.reduce((s,a)=>s+(a.clicks||0),0);
+  const totalShares = ads.reduce((s,a)=>s+(a.shares||0),0);
+  const totalCtr    = totalViews>0 ? (totalClicks/totalViews*100).toFixed(1) : "0.0";
+
+  // ── Engagement juego ──
+  const conEquipo   = users.filter(u=>{ try{ return JSON.parse(localStorage.getItem("gm_squad_"+u.uid)||"[]").length>0; }catch(e){return false;} }).length;
+  const jugTrivia   = users.filter(u=>Object.keys(localStorage).some(k=>k.startsWith("gm_trivia_"+u.uid+"_"))).length;
+  const jugMito     = users.filter(u=>Object.keys(localStorage).some(k=>k.startsWith("gm_mito_"+u.uid+"_"))).length;
+  const hoy         = new Date().toISOString().slice(0,10);
+  const activHoy    = users.filter(u=>Object.keys(localStorage).some(k=>(k.startsWith("gm_trivia_"+u.uid+"_"+hoy)||k.startsWith("gm_mito_"+u.uid+"_"+hoy)))).length;
 
   const kpis = [
-    ["👥","Total usuarios", users.length,              "#4ade80"],
-    ["✅","Pagados",         paid,                      "#22c55e"],
-    ["❌","Sin pagar",       users.length-paid,         "#ef4444"],
-    ["🔒","Bloqueados",      blocked,                   "#f59e0b"],
-    ["📢","Ads activas",     ads.filter(a=>a.active).length, "#60a5fa"],
-    ["👁","Vistas totales",  ads.reduce((s,a)=>s+(a.views||0),0), "#a78bfa"],
+    ["👥","Usuarios",       users.length,     "#4ade80"],
+    ["✅","Pagados",         paid,             "#22c55e"],
+    ["❌","Sin pagar",       users.length-paid,"#ef4444"],
+    ["🏘","Comunidades",    byComunidad.length,"#fbbf24"],
+    ["⚽","Con equipo",     conEquipo,         "#60a5fa"],
+    ["🧠","Jugaron trivia", jugTrivia,         "#a78bfa"],
+    ["🎭","Jugaron mito",   jugMito,           "#f97316"],
+    ["🔥","Activos hoy",    activHoy,          "#4ade80"],
+    ["📢","Ads activas",    ads.filter(a=>a.active).length,"#60a5fa"],
+    ["👁","Vistas ads",     totalViews,        "#a78bfa"],
+    ["🖱","Clicks ads",     totalClicks,       "#fbbf24"],
+    ["📤","Compartidos",    totalShares,       "#4ade80"],
   ];
-  const cl = n => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");
 
-  return React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:14}},
-    React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}},
+  const sectionTitle = t => React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontSize:".75rem",fontWeight:700,color:"#3a5a6a",letterSpacing:2,textTransform:"uppercase",margin:"4px 0 8px"}},t);
+
+  return React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:16}},
+
+    // KPIs grid
+    React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8}},
       kpis.map(([ic,lb,v,col]) =>
         React.createElement("div", {key:lb, className:"ap-kpi", style:{borderColor:col+"44"}},
-          React.createElement("div", {style:{fontSize:"1.1rem"}}, ic),
-          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.6rem",fontWeight:700,color:col,margin:"4px 0"}}, cl(v)),
-          React.createElement("div", {style:{fontSize:".6rem",letterSpacing:1,color:"#4a6a7a",textTransform:"uppercase"}}, lb)
+          React.createElement("div", {style:{fontSize:"1rem"}}, ic),
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.5rem",fontWeight:700,color:col,margin:"4px 0"}}, cl(v)),
+          React.createElement("div", {style:{fontSize:".58rem",letterSpacing:1,color:"#4a6a7a",textTransform:"uppercase"}}, lb)
         )
       )
     ),
+
+    // ── COMUNIDADES ──
     React.createElement("div", {className:"ap-card"},
-      React.createElement("div", {className:"apc-t"}, "📅 Distribución de edades"),
+      sectionTitle("🏘 Comunidades participantes"),
+      byComunidad.length===0
+        ? React.createElement("div",{style:{color:"#4a6a7a",fontSize:".8rem",padding:"8px 0"}},"Sin datos")
+        : React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            byComunidad.map(([com,d],i)=>{
+              const pct = Math.round(d.total/Math.max(users.length,1)*100);
+              const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":null;
+              return React.createElement("div",{key:com,style:{
+                display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
+                background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.05)",borderRadius:10
+              }},
+                React.createElement("div",{style:{minWidth:24,textAlign:"center",fontSize:"1rem"}}, medal||React.createElement("span",{style:{fontFamily:"Oswald,sans-serif",color:"#3a5a6a",fontSize:".8rem"}},"#"+(i+1))),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:600,fontSize:".9rem",color:"#e2e8f0",marginBottom:3}},com),
+                  React.createElement("div",{style:{background:"#0a1525",borderRadius:3,height:4,overflow:"hidden"}},
+                    React.createElement("div",{style:{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#1a4a8a,#4ade80)",borderRadius:3}})
+                  )
+                ),
+                React.createElement("div",{style:{display:"flex",gap:14,textAlign:"center"}},
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color:"#4ade80"}},d.total),
+                    React.createElement("div",{style:{fontSize:".58rem",color:"#3a5a6a",letterSpacing:1}},"MIEMBROS")
+                  ),
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color:"#22c55e"}},d.pagados),
+                    React.createElement("div",{style:{fontSize:".58rem",color:"#3a5a6a",letterSpacing:1}},"PAGADOS")
+                  ),
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color:"#fbbf24"}},cl(d.pts)),
+                    React.createElement("div",{style:{fontSize:".58rem",color:"#3a5a6a",letterSpacing:1}},"PTS TOTAL")
+                  )
+                )
+              );
+            })
+          )
+    ),
+
+    // ── ADS ──
+    React.createElement("div", {className:"ap-card"},
+      sectionTitle("📢 Estadísticas de publicidades"),
+      // Totales
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}},
+        [["👁","Vistas",totalViews,"#a78bfa"],["🖱","Clicks",totalClicks,"#fbbf24"],["📤","Compartidos",totalShares,"#4ade80"],["📊","CTR",totalCtr+"%","#60a5fa"]].map(([ic,lb,v,col])=>
+          React.createElement("div",{key:lb,style:{background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.05)",borderRadius:10,padding:"10px",textAlign:"center"}},
+            React.createElement("div",{style:{fontSize:".9rem",marginBottom:4}},ic),
+            React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.2rem",color:col}},v),
+            React.createElement("div",{style:{fontSize:".6rem",color:"#3a5a6a",letterSpacing:1}},lb)
+          )
+        )
+      ),
+      // Por anuncio
+      ads.length===0
+        ? React.createElement("div",{style:{color:"#4a6a7a",fontSize:".8rem"}},"Sin publicidades")
+        : React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            [...ads].sort((a,b)=>(b.views||0)-(a.views||0)).map(ad=>{
+              const ctr = (ad.views||0)>0?((ad.clicks||0)/(ad.views||1)*100).toFixed(1):"0.0";
+              const maxV = Math.max(...ads.map(a=>a.views||0),1);
+              const pct  = Math.round((ad.views||0)/maxV*100);
+              return React.createElement("div",{key:ad.id,style:{
+                padding:"12px 14px",background:"rgba(255,255,255,.02)",
+                border:"1px solid rgba(255,255,255,.04)",borderRadius:10
+              }},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}},
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:600,fontSize:".85rem",color:"#e2e8f0",display:"flex",alignItems:"center",gap:6}},
+                      ad.nombre,
+                      React.createElement("span",{style:{
+                        fontSize:".65rem",padding:"2px 7px",borderRadius:4,
+                        background:ad.active?"rgba(74,222,128,.12)":"rgba(239,68,68,.12)",
+                        color:ad.active?"#4ade80":"#ef4444"
+                      }},ad.active?"ACTIVA":"PAUSADA"),
+                      ad.compartir&&React.createElement("span",{style:{fontSize:".65rem",padding:"2px 7px",borderRadius:4,background:"rgba(251,191,36,.12)",color:"#fbbf24"}},"📤 COMPARTIR")
+                    ),
+                    React.createElement("div",{style:{fontSize:".7rem",color:"#3a5a6a",marginTop:2}},ad.tier?.toUpperCase()+" · "+ad.slot)
+                  )
+                ),
+                React.createElement("div",{style:{background:"#0a1525",borderRadius:3,height:4,overflow:"hidden",marginBottom:8}},
+                  React.createElement("div",{style:{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#6d28d9,#a78bfa)",borderRadius:3}})
+                ),
+                React.createElement("div",{style:{display:"flex",gap:16,flexWrap:"wrap"}},
+                  [["👁","Vistas",ad.views||0,"#a78bfa"],["🖱","Clicks",ad.clicks||0,"#fbbf24"],["📤","Compartidos",ad.shares||0,"#4ade80"],["📊","CTR",ctr+"%","#60a5fa"]].map(([ic,lb,v,col])=>
+                    React.createElement("div",{key:lb,style:{textAlign:"center"}},
+                      React.createElement("div",{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".95rem",color:col}},v),
+                      React.createElement("div",{style:{fontSize:".58rem",color:"#3a5a6a",letterSpacing:1}},ic+" "+lb)
+                    )
+                  )
+                )
+              );
+            })
+          )
+    ),
+
+    // ── EDADES ──
+    React.createElement("div", {className:"ap-card"},
+      sectionTitle("📅 Distribución de edades"),
       byAge.length===0
-        ? React.createElement("div", {style:{color:"#4a6a7a",fontSize:".8rem",padding:"8px 0"}}, "Sin datos de edad")
-        : byAge.map(([rng,n]) => {
-            const pct = Math.round(n/Math.max(users.length,1)*100);
-            return React.createElement("div", {key:rng, className:"ap-br"},
-              React.createElement("div", {className:"apbr-l"}, rng+" años"),
-              React.createElement("div", {className:"apbr-tr"},
-                React.createElement("div", {className:"apbr-f", style:{width:pct+"%",background:"#fbbf24"}})
+        ? React.createElement("div",{style:{color:"#4a6a7a",fontSize:".8rem",padding:"8px 0"}},"Sin datos de edad")
+        : byAge.map(([rng,n])=>{
+            const pct=Math.round(n/Math.max(users.length,1)*100);
+            return React.createElement("div",{key:rng,className:"ap-br"},
+              React.createElement("div",{className:"apbr-l"},rng+" años"),
+              React.createElement("div",{className:"apbr-tr"},
+                React.createElement("div",{className:"apbr-f",style:{width:pct+"%",background:"#fbbf24"}})
               ),
-              React.createElement("div", {className:"apbr-v"}, n),
-              React.createElement("div", {style:{fontSize:".7rem",color:"#4a6a7a",minWidth:34}}, pct+"%")
+              React.createElement("div",{className:"apbr-v"},n),
+              React.createElement("div",{style:{fontSize:".7rem",color:"#4a6a7a",minWidth:34}},pct+"%")
             );
           })
-    ),
-    React.createElement("div", {className:"ap-card"},
-      React.createElement("div", {className:"apc-t"}, "🏘 Comunidades"),
-      byComunidad.length===0
-        ? React.createElement("div", {style:{color:"#4a6a7a",fontSize:".8rem",padding:"8px 0"}}, "Sin datos")
-        : React.createElement("div", {style:{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}},
-            byComunidad.map(([com,n]) =>
-              React.createElement("div", {key:com, style:{background:"rgba(255,255,255,.04)",border:"1px solid #1a2d40",borderRadius:8,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}},
-                React.createElement("span", {style:{fontWeight:600,fontSize:".85rem"}}, com),
-                React.createElement("span", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1rem",color:"#4ade80",background:"rgba(74,222,128,.12)",borderRadius:4,padding:"1px 7px"}}, n)
-              )
-            )
-          )
     )
   );
 }
