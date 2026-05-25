@@ -20163,6 +20163,38 @@ function ApiPanel({ toast }) {
     toast("🎭 Puntos de Verdad o Mito reiniciados a 0", "success");
   };
 
+  const rotarPreguntasTrivia = () => {
+    if (!window.confirm("¿Rotar preguntas de Trivia?\n\nEsto borra el registro de 'ya jugué hoy' y cambia el set de preguntas para TODOS los usuarios.\n\nNO borra los puntos acumulados.\n\n¿Confirmar?")) return;
+    const users = getLS("gm_users", []);
+    let borradas = 0;
+    users.forEach(u => {
+      Object.keys(localStorage).filter(k => k.startsWith("gm_trivia_" + u.uid + "_")).forEach(k => {
+        localStorage.removeItem(k);
+        borradas++;
+      });
+    });
+    // Incrementar semilla global para que el próximo set sea diferente
+    const seed = (getLS("gm_trivia_seed", 0) + 1);
+    setLS("gm_trivia_seed", seed);
+    toast("🧠 Trivia rotada (set #" + seed + ") — " + borradas + " registros borrados. Los usuarios verán preguntas nuevas.", "success");
+  };
+
+  const rotarPreguntasMito = () => {
+    if (!window.confirm("¿Rotar preguntas de Verdad o Mito?\n\nEsto borra el registro de 'ya jugué hoy' y cambia el set de afirmaciones para TODOS los usuarios.\n\nNO borra los puntos acumulados.\n\n¿Confirmar?")) return;
+    const users = getLS("gm_users", []);
+    let borradas = 0;
+    users.forEach(u => {
+      Object.keys(localStorage).filter(k => k.startsWith("gm_mito_" + u.uid + "_")).forEach(k => {
+        localStorage.removeItem(k);
+        borradas++;
+      });
+    });
+    // Incrementar semilla global para que el próximo set sea diferente
+    const seed = (getLS("gm_mito_seed", 0) + 1);
+    setLS("gm_mito_seed", seed);
+    toast("🎭 Verdad o Mito rotado (set #" + seed + ") — " + borradas + " registros borrados. Los usuarios verán afirmaciones nuevas.", "success");
+  };
+
   const reiniciarPuntosJugadores = () => {
     if (!window.confirm("⚠️ Esto pone en 0 los puntos de TODOS los jugadores (gm_player_stats, gm_match_stats, gm_published_matches) y los pts de todos los usuarios.\n\nNO toca los partidos cargados ni los equipos armados.\n\n¿Confirmar?")) return;
     savePS({});
@@ -20420,6 +20452,22 @@ function ApiPanel({ toast }) {
           React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Pone a 0 los ptsMito de todos los usuarios.")
         ),
         React.createElement("button", {onClick:reiniciarMito, style:{padding:"9px 18px",borderRadius:7,border:"1px solid #fbbf24",background:"rgba(251,191,36,.12)",color:"#fbbf24",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🎭 Reiniciar Mito")
+      ),
+
+      React.createElement("div", {style:{background:"rgba(74,222,128,.05)",border:"2px solid rgba(74,222,128,.3)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#4ade80",letterSpacing:1}}, "🔄 ROTAR PREGUNTAS DE TRIVIA"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra el registro de hoy para que todos puedan jugar un set nuevo. No borra puntos acumulados.")
+        ),
+        React.createElement("button", {onClick:rotarPreguntasTrivia, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #4ade80",background:"rgba(74,222,128,.15)",color:"#4ade80",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🔄 Rotar Trivia")
+      ),
+
+      React.createElement("div", {style:{background:"rgba(74,222,128,.05)",border:"2px solid rgba(74,222,128,.25)",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+        React.createElement("div", null,
+          React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontWeight:700,color:"#4ade80",letterSpacing:1}}, "🔄 ROTAR PREGUNTAS DE VERDAD O MITO"),
+          React.createElement("div", {style:{fontSize:".75rem",color:"#8a9ab0",marginTop:2}}, "Borra el registro de hoy para que todos puedan jugar un set nuevo de afirmaciones. No borra puntos acumulados.")
+        ),
+        React.createElement("button", {onClick:rotarPreguntasMito, style:{padding:"9px 18px",borderRadius:7,border:"2px solid #4ade80",background:"rgba(74,222,128,.12)",color:"#4ade80",fontFamily:"Oswald,sans-serif",fontSize:".88rem",fontWeight:700,cursor:"pointer"}}, "🔄 Rotar Mito")
       ),
 
       // 6. Reinicio total (nuclear)
