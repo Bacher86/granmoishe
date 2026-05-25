@@ -21407,13 +21407,12 @@ const TRIVIA_BANK = [
 // Elegir N preguntas aleatorias distintas para el usuario del día
 function getTriviaDelDia(uid, n) {
   var hoy = new Date().toISOString().slice(0,10);
-  // Seed robusto: combina uid y fecha de forma que cada día produce un valor bien distinto
-  var seedStr = hoy + "|" + uid;
+  var rotSeed = localStorage.getItem("gm_trivia_seed") || "0";
+  var seedStr = hoy + "|" + uid + "|" + rotSeed;
   var s = 0;
   for (var i = 0; i < seedStr.length; i++) {
     s = (s * 31 + seedStr.charCodeAt(i)) >>> 0;
   }
-  // xorshift32 — cada paso produce un resultado muy diferente
   function rand() {
     s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s = s >>> 0;
     return s;
@@ -21515,7 +21514,8 @@ const MITO_BANK = [
 
 function getMitoDelDia(uid, n) {
   var hoy = new Date().toISOString().slice(0,10);
-  var seedStr = hoy + "|" + uid;
+  var rotSeed = localStorage.getItem("gm_mito_seed") || "0";
+  var seedStr = hoy + "|" + uid + "|" + rotSeed;
   var s = 0;
   for (var i = 0; i < seedStr.length; i++) {
     s = (s * 31 + seedStr.charCodeAt(i)) >>> 0;
