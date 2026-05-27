@@ -19194,7 +19194,7 @@ function getCommunities() {
 function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
   const isReg = mode==="register";
   const [cantidad,setCantidad]=useState(1);
-  const [f,setF]=useState({email:"",password:"",dni:"",nombre:"",apellido:"",equipo:"",pais:"Argentina",celular:"",fecha_nac:"",comunidad:"Macabi",comunidadCustom:"",comunidadDir:"",comunidadContacto:""});
+  const [f,setF]=useState({email:"",password:"",dni:"",nombre:"",apellido:"",equipo:"",pais:"Argentina",celular:"",fecha_nac:"",comunidad:"Weitzman Orjadash",comunidadCustom:"",comunidadDir:"",comunidadContacto:""});
   // extra accounts: array of {email, password, equipo}
   const [extras,setExtras]=useState([]);
   const [err,setErr]=useState("");
@@ -19215,16 +19215,16 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
   };
 
   const comunidades = getCommunities();
-  const comunidadFinal = f.comunidad==="__otra__" ? f.comunidadCustom : f.comunidad;
+  const comunidadFinal = "Weitzman Orjadash";
   const totalPrecio = PRICE_TABLE[cantidad] || cantidad * ACCOUNT_PRICE;
 
   const submit=async()=>{
     if(!f.email||!f.password){setErr("Completá email y contraseña");return;}
     if(isReg&&!f.dni){setErr("El DNI es obligatorio");return;}
     if(isReg&&!f.celular){setErr("El celular es obligatorio");return;}
-    if(isReg&&!f.fecha_nac){setErr("La fecha de nacimiento es obligatoria");return;}
+    
     if(isReg&&!f.nombre){setErr("Completá tu nombre");return;}
-    if(isReg&&f.comunidad==="__otra__"&&!f.comunidadCustom.trim()){setErr("Escribí el nombre de tu comunidad");return;}
+    
     // validate extras
     if(isReg&&extras.length>0){
       for(let i=0;i<extras.length;i++){
@@ -19248,12 +19248,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
       if(_optionalChain([r2,'optionalAccess',_=>_.user])) registeredUsers.push(r2.user);
     }
     // Save custom community if needed
-    if(f.comunidad==="__otra__"&&f.comunidadCustom.trim()){
-      const saved=getLS("gm_comunidades",[]);
-      if(!saved.includes(f.comunidadCustom.trim())){
-        setLS("gm_comunidades",[...saved,f.comunidadCustom.trim()]);
-      }
-    }
+    
     setLoading(false);
     setPayUsers(registeredUsers);
   };
@@ -19326,21 +19321,16 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "País *" ), React.createElement('select', { value: f.pais, onChange: e=>set("pais",e.target.value),}, PAISES_RES.map(p=>React.createElement('option', { key: p,}, p))))
               , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Celular / WhatsApp *" ), React.createElement('input', { type: "tel", value: f.celular, onChange: e=>set("celular",e.target.value), placeholder: "+54 11 1234-5678",}))
             )
-            , React.createElement('div', { className: "pf", style: {maxWidth:200},}, React.createElement('label', null, "Fecha de nacimiento *" ), React.createElement('input', { type: "date", max: "2010-01-01", value: f.fecha_nac, onChange: e=>set("fecha_nac",e.target.value),}))
+            , React.createElement('div', { className: "pf", style: {maxWidth:200},}, React.createElement('label', null, "Fecha de nacimiento *" ), React.createElement('input', { type: "date", value: f.fecha_nac, onChange: e=>set("fecha_nac",e.target.value),}))
 
             /* ── COMUNIDAD ── */
             , React.createElement('div', { className: "pf",}
-              , React.createElement('label', null, "Comunidad / Club *")
-              , React.createElement('select', { value: f.comunidad, onChange: e=>set("comunidad",e.target.value),}
-                , comunidades.map(c=>React.createElement('option', { key: c, value: c,}, c))
-                , React.createElement('option', { value: "__otra__",}, "➕ Otra (escribila)")
-              )
-              , f.comunidad==="__otra__"&&React.createElement('input', { value: f.comunidadCustom, onChange: e=>set("comunidadCustom",e.target.value), placeholder: "Escribí el nombre de tu comunidad", style: {marginTop:6},})
+              , React.createElement('label', null, "Comunidad")
+              , React.createElement('input', { value: "Weitzman Orjadash", readOnly: true, style:{opacity:.6,cursor:"not-allowed"},})
               , React.createElement('div', { style: {fontSize:".7rem",color:"#4a6a5a",marginTop:4},}, "ℹ️ Las comunidades de la lista fueron escritas por otros participantes. Si la tuya no aparece, seleccioná \"Otra\" y escribila — aparecerá para todos luego.")
             )
             , React.createElement('div', { className: "ps-row2",}
-              , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Dirección de la comunidad"   ), React.createElement('input', { value: f.comunidadDir, onChange: e=>set("comunidadDir",e.target.value), placeholder: "Av. Corrientes 1234"  ,}))
-              , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Contacto director/a" ), React.createElement('input', { value: f.comunidadContacto, onChange: e=>set("comunidadContacto",e.target.value), placeholder: "director@comunidad.com",}))
+              
             )
           )
 
@@ -20552,7 +20542,7 @@ function HistorialView({ user }) {
       triviaHistory.length===0
         ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Aún no jugaste ninguna trivia")
         : triviaHistory.map(function(t,i){
-            var pct = Math.round((t.score/(t.total||15))*100);
+            var pct = Math.round((t.score/(t.total||5))*100);
             return React.createElement('div',{key:t.date,style:{
               display:"flex",alignItems:"center",gap:12,padding:"12px 16px",
               background:"rgba(167,139,250,.04)",border:"1px solid rgba(167,139,250,.12)",borderRadius:10
@@ -20566,7 +20556,7 @@ function HistorialView({ user }) {
               ),
               React.createElement('div',{style:{textAlign:"right"}},
                 React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color:"#a78bfa"}},t.score),
-                React.createElement('div',{style:{fontSize:".65rem",color:"#3a5a4a"}},"/ "+(t.total||15))
+                React.createElement('div',{style:{fontSize:".65rem",color:"#3a5a4a"}},"/ "+(t.total||5))
               )
             );
           })
@@ -20577,7 +20567,7 @@ function HistorialView({ user }) {
       mitoHistory.length===0
         ? React.createElement('div',{style:{textAlign:"center",padding:40,color:"#3a5a4a",fontSize:".9rem"}},"Aún no jugaste Verdad o Mito")
         : mitoHistory.map(function(t,i){
-            var pct = Math.round((t.score/(t.total||15))*100);
+            var pct = Math.round((t.score/(t.total||5))*100);
             return React.createElement('div',{key:t.date,style:{
               display:"flex",alignItems:"center",gap:12,padding:"12px 16px",
               background:"rgba(251,191,36,.04)",border:"1px solid rgba(251,191,36,.12)",borderRadius:10
@@ -20591,7 +20581,7 @@ function HistorialView({ user }) {
               ),
               React.createElement('div',{style:{textAlign:"right"}},
                 React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1.1rem",color:"#fbbf24"}},t.score),
-                React.createElement('div',{style:{fontSize:".65rem",color:"#3a5a4a"}},"/ "+(t.total||15))
+                React.createElement('div',{style:{fontSize:".65rem",color:"#3a5a4a"}},"/ "+(t.total||5))
               )
             );
           })
@@ -20617,7 +20607,7 @@ function ShareResultCard({ user, type, onClose }) {
   var color   = type==="trivia" ? "#a78bfa" : "#fbbf24";
   var icon    = type==="trivia" ? "🧠" : "🎭";
   var label   = type==="trivia" ? "TRIVIA DIARIA" : "VERDAD O MITO";
-  var total   = type==="trivia" ? (res&&res.total||15) : (res&&res.total||15);
+  var total   = type==="trivia" ? (res&&res.total||5) : (res&&res.total||5);
   var score   = res ? res.score : 0;
   var pct     = Math.round((score/total)*100);
   var emoji   = pct>=80?"🌟":pct>=50?"🎯":"💪";
@@ -21593,7 +21583,7 @@ function MitoView({ user, toast }) {
   var hoy = new Date().toISOString().slice(0,10);
   var storageKey = "gm_mito_" + user.uid + "_" + hoy;
   var savedState = getLS(storageKey, null);
-  var N = 10; var SECS = 8; var PTS_OK = 1.5;
+  var N = 10; var SECS = 8; var PTS_OK = 0.5;
 
   var [phase, setPhase] = useState(savedState ? "done" : "intro");
   var [afirmaciones, setAfirmaciones] = useState(null);
@@ -21689,12 +21679,12 @@ function MitoView({ user, toast }) {
 
   if (phase === "done") {
     var res = getLS(storageKey, {score:0,total:N*PTS_OK,results:[]});
-    var pct = Math.round((res.score/(res.total||15))*100);
+    var pct = Math.round((res.score/(res.total||5))*100);
     return React.createElement('div', {style:{display:"flex",flexDirection:"column",gap:12,padding:"0 4px"}},
       React.createElement('div', {style:{background:"linear-gradient(135deg,#1a0a2e,#0d1b2a)",border:"1px solid rgba(251,191,36,.2)",borderRadius:14,padding:"24px 20px",textAlign:"center"}},
         React.createElement('div', {style:{fontSize:"2.5rem",marginBottom:8}}, pct>=80?"🌟":pct>=50?"🎯":"💪"),
         React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#fbbf24",letterSpacing:1,marginBottom:4}}, "COMPLETADO!"),
-        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.8rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||15))),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.8rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||5))),
         React.createElement('div', {style:{fontSize:".82rem",color:"#5a7a8a",marginBottom:6}}, "Aciertos: "+(res.results||[]).filter(function(r){return r.correct;}).length+" de "+N),
         React.createElement('div', {style:{fontSize:".78rem",color:"#3a5a6a"}}, "Volvé mañana para nuevas afirmaciones"),
         React.createElement('div', {style:{display:"flex",gap:12,justifyContent:"center",marginTop:12,flexWrap:"wrap"}},
@@ -21832,7 +21822,7 @@ function TriviaView({ user, toast }) {
     var correct = optIdx === q.a;
     setSelected(optIdx);
     setRevealed(true);
-    if (correct) setScore(function(s){ return s+1.5; });
+    if (correct) setScore(function(s){ return s+0.5; });
     setAnswers(function(prev){ return prev.concat([{correct:correct}]); });
     setTimeout(nextQuestion, 1600);
   }
@@ -21852,7 +21842,7 @@ function TriviaView({ user, toast }) {
   function finishTrivia() {
     var pts = score + (selected !== null && preguntas[qIdx] && selected === preguntas[qIdx].a ? 3 : 0);
     // Guardar resultado del día
-    var result = { score: pts, date: hoy, total: N_QUESTIONS*1.5 };
+    var result = { score: pts, date: hoy, total: N_QUESTIONS*0.5 };
     setLS(storageKey, result);
     // Actualizar ptsTrivia del usuario
     var users = getLS("gm_users", []);
@@ -21906,12 +21896,12 @@ function TriviaView({ user, toast }) {
 
   // ── DONE (ya jugó hoy) ──
   if (phase === "done") {
-    var res = getLS(storageKey, {score:0,total:15});
+    var res = getLS(storageKey, {score:0,total:5});
     return React.createElement('div', {className:"trivia-wrap"},
       React.createElement('div', {className:"trivia-header",style:{textAlign:"center",padding:"24px 20px"}},
         React.createElement('div', {style:{fontSize:"2.5rem",marginBottom:8}}, res.score >= 24 ? "🌟" : res.score >= 15 ? "🎯" : "💪"),
         React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"1.2rem",color:"#a78bfa",letterSpacing:1,marginBottom:4}}, "¡TRIVIA COMPLETADA!"),
-        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.5rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||15))),
+        React.createElement('div', {style:{fontFamily:"Oswald,sans-serif",fontSize:"2.5rem",fontWeight:900,color:"#e2e8f0",marginBottom:4}}, res.score, React.createElement('span',{style:{fontSize:"1rem",color:"#5a7a8a"}}," / "+(res.total||5))),
         React.createElement('div', {style:{fontSize:".82rem",color:"#5a7a8a",marginBottom:12}}, "Volvé mañana para nuevas preguntas 🧠"),
         React.createElement('div', {style:{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginTop:4}},
           React.createElement(StreakBadge, {uid:user.uid}),
@@ -22595,12 +22585,12 @@ const LOGROS_DEF = [
   { id:"l20", icon:"🧪", nombre:"Científico",         desc:"Jugá la trivia 7 días distintos",               check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_trivia_"+u.uid+"_")); return keys.length>=7; } },
   { id:"l21", icon:"🎓", nombre:"Sabio",              desc:"Superá 100 puntos de trivia acumulados",        check:(s,xi,subs,u)=>u&&(u.ptsTrivia||0)>=100 },
   { id:"l22", icon:"🏛", nombre:"Gran Sabio",         desc:"Superá 300 puntos de trivia acumulados",        check:(s,xi,subs,u)=>u&&(u.ptsTrivia||0)>=300 },
-  { id:"l23", icon:"💯", nombre:"Perfecto",           desc:"Sacá el puntaje máximo en una trivia (15 pts)", check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_trivia_"+u.uid+"_")); return keys.some(k=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&v.score>=(v.total||15); }catch(e){return false;} }); } },
+  { id:"l23", icon:"💯", nombre:"Perfecto",           desc:"Sacá el puntaje máximo en una trivia (5 pts)", check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_trivia_"+u.uid+"_")); return keys.some(k=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&v.score>=(v.total||5); }catch(e){return false;} }); } },
   // ── VERDAD O MITO ──
   { id:"l24", icon:"🎭", nombre:"Primer mito",        desc:"Jugá Verdad o Mito por primera vez",            check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_mito_"+u.uid+"_")); return keys.length>=1; } },
   { id:"l25", icon:"🕵️", nombre:"Detective",         desc:"Jugá Verdad o Mito 7 días distintos",           check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_mito_"+u.uid+"_")); return keys.length>=7; } },
   { id:"l26", icon:"🔍", nombre:"Cazamitos",          desc:"Superá 100 puntos de Verdad o Mito acumulados", check:(s,xi,subs,u)=>u&&(u.ptsMito||0)>=100 },
-  { id:"l27", icon:"🦅", nombre:"Sin engaños",        desc:"Sacá el puntaje máximo en un Verdad o Mito (15 pts)", check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_mito_"+u.uid+"_")); return keys.some(k=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&v.score>=(v.total||15); }catch(e){return false;} }); } },
+  { id:"l27", icon:"🦅", nombre:"Sin engaños",        desc:"Sacá el puntaje máximo en un Verdad o Mito (5 pts)", check:(s,xi,subs,u)=>{ if(!u) return false; const keys=Object.keys(localStorage).filter(k=>k.startsWith("gm_mito_"+u.uid+"_")); return keys.some(k=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&v.score>=(v.total||5); }catch(e){return false;} }); } },
   // ── RACHA ──
   { id:"l28", icon:"🔥", nombre:"En racha",           desc:"Jugá 3 días seguidos (trivia o mito)",          check:(s,xi,subs,u)=>{ if(!u) return false; const st=getLS("gm_streak_"+u.uid,{}); return (st.current||0)>=3; } },
   { id:"l29", icon:"⚡", nombre:"Imparable",          desc:"Jugá 7 días seguidos",                          check:(s,xi,subs,u)=>{ if(!u) return false; const st=getLS("gm_streak_"+u.uid,{}); return (st.current||0)>=7; } },
