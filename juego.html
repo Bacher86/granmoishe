@@ -17844,9 +17844,10 @@ const POS_ORDER  = ["GK","DEF","MID","FWD"];
 const POS_LABELS = { GK:"Portero", DEF:"Defensa", MID:"Medio", FWD:"Delantero" };
 
 const TIER = {
-  estrella:{ bg:"#FFD700", text:"#111", label:"⭐ Estrella", min:10e6, max:14e6 },
-  titular: { bg:"#3B82F6", text:"#fff", label:"🔵 Titular",  min:5e6,  max:9e6 },
-  suplente:{ bg:"#6B7280", text:"#fff", label:"⚪ Suplente", min:1e6,  max:4e6  },
+  superestrella:{ bg:"#FF6B00", text:"#fff", label:"🔥 Superestrella", min:16e6, max:22e6 },
+  estrella:     { bg:"#FFD700", text:"#111", label:"⭐ Estrella",       min:10e6, max:15e6 },
+  titular:      { bg:"#3B82F6", text:"#fff", label:"🔵 Titular",        min:5e6,  max:9e6  },
+  suplente:     { bg:"#6B7280", text:"#fff", label:"⚪ Suplente",       min:1e6,  max:4e6  },
 };
 
 // Ad tiers
@@ -18813,11 +18814,42 @@ const RAW = [
   ["José Fajardo","Panamá","FWD","titular"],
   ["Tomás Rodríguez","Panamá","FWD","suplente"],
 
+  // ── ARGENTINA ─────────────────────────────────────────────────────────
+  // Porteros
+  ["Emiliano Martínez","Argentina","GK","superestrella"],
+  ["Gerónimo Rulli","Argentina","GK","titular"],
+  ["Juan Musso","Argentina","GK","titular"],
+  // Defensas
+  ["Leonardo Balerdi","Argentina","DEF","titular"],
+  ["Nicolás Tagliafico","Argentina","DEF","titular"],
+  ["Gonzalo Montiel","Argentina","DEF","titular"],
+  ["Lisandro Martínez","Argentina","DEF","estrella"],
+  ["Cristian Romero","Argentina","DEF","estrella"],
+  ["Nicolás Otamendi","Argentina","DEF","estrella"],
+  ["Facundo Medina","Argentina","DEF","titular"],
+  ["Nahuel Molina","Argentina","DEF","estrella"],
+  // Centrocampistas
+  ["Leandro Paredes","Argentina","MID","titular"],
+  ["Rodrigo De Paul","Argentina","MID","estrella"],
+  ["Valentín Barco","Argentina","MID","titular"],
+  ["Giovani Lo Celso","Argentina","MID","titular"],
+  ["Exequiel Palacios","Argentina","MID","titular"],
+  ["Alexis Mac Allister","Argentina","MID","estrella"],
+  ["Enzo Fernández","Argentina","MID","estrella"],
+  // Delanteros
+  ["Julián Álvarez","Argentina","FWD","superestrella"],
+  ["Lionel Messi","Argentina","FWD","superestrella"],
+  ["Nicolás González","Argentina","FWD","estrella"],
+  ["Thiago Almada","Argentina","FWD","titular"],
+  ["Giuliano Simeone","Argentina","FWD","titular"],
+  ["Nicolás Paz","Argentina","FWD","titular"],
+  ["José Manuel López","Argentina","FWD","suplente"],
+  ["Lautaro Martínez","Argentina","FWD","estrella"]
 ];
 
 let _pid = 1;
 const PLAYERS_DB = RAW.map(([nombre, pais, posicion, tier]) => {
-  const td = TIER[tier];
+  const td = TIER[tier] || TIER["titular"];
   const valor = rand(td.min/1e6, td.max/1e6)*1e6;
   const espn  = +(5.5+Math.random()*3.5).toFixed(1);
   const sofa  = +(5.5+Math.random()*3.5).toFixed(1);
