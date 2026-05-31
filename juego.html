@@ -436,6 +436,8 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
   .idx-features{grid-template-columns:1fr 1fr;max-width:100%;}
 }
 .prode-input{width:40px;background:#0a1525;border:1px solid #2a4a38;color:#4ade80;border-radius:5px;padding:4px;text-align:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;outline:none;}
+.lg-code{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:900;letter-spacing:6px;color:#4ade80;text-align:center;padding:16px;background:rgba(74,222,128,.08);border:2px dashed rgba(74,222,128,.3);border-radius:10px;cursor:pointer;margin:8px 0;transition:background .2s;}
+.lg-code:hover{background:rgba(74,222,128,.15);}
 
 /* ── LOGROS ── */
 .logro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
@@ -19008,7 +19010,8 @@ const DB = {
   createLeague: (data,uid) => {
     const leagues=getLS("gm_leagues",[]);
     const id="L"+Math.random().toString(36).slice(2,7).toUpperCase();
-    const liga={id,...data,adminUid:uid,miembros:[uid],creada:Date.now()};
+    const codigo=data.codigo||Math.random().toString(36).slice(2,8).toUpperCase();
+    const liga={id,...data,codigo,adminUid:uid,miembros:[uid],creada:Date.now()};
     setLS("gm_leagues",[...leagues,liga]);
     const users=getLS("gm_users",[]);
     const idx=users.findIndex(u=>u.uid===uid);
@@ -20131,7 +20134,18 @@ function LigasView({ user, toast }) {
         React.createElement('div', { className:"lg-code", onClick:copyCodigo },
           copied ? "✅ ¡COPIADO!" : miLiga.codigo
         ),
-        React.createElement('div', { style:{fontSize:".72rem",color:"#3a5a6a",marginTop:6,textAlign:"center"} }, "Tocá para copiar y compartir con tus amigos")
+        React.createElement('div', { style:{fontSize:".72rem",color:"#3a5a6a",marginTop:4,textAlign:"center",marginBottom:10} }, "Tocá el código para copiarlo"),
+        React.createElement('button', {
+          onClick: () => {
+            const msg = `🏆 *¡Unite a mi liga en Gran Moishe 2026!*\n\n`+
+              `Mi liga se llama *${miLiga.nombre}*.\n\n`+
+              `👉 Entrá a *granmoishe.com*, creá tu cuenta y usá el código:\n\n`+
+              `*${miLiga.codigo}*\n\n`+
+              `¡Armá tu equipo y competí conmigo en el Mundial! ⚽🔥`;
+            window.open("https://wa.me/?text="+encodeURIComponent(msg), "_blank");
+          },
+          style:{width:"100%",padding:"11px 0",borderRadius:9,border:"none",background:"#25D366",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:.5}
+        }, "💬 Invitar por WhatsApp")
       ),
 
       // Ranking de la liga
