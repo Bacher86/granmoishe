@@ -18963,6 +18963,17 @@ window.addEventListener("storage",function(e){
 });
 const ALL_COUNTRIES = [...new Set(PLAYERS_DB.map(p=>p.pais))].sort();
 
+// ── Auto-unirse a liga desde link ?liga=CODIGO ────────────────────────────
+(function(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cod = params.get("liga");
+    if (!cod) return;
+    sessionStorage.setItem("gm_pending_liga", cod.trim().toUpperCase());
+    window.history.replaceState({}, "", window.location.pathname);
+  } catch(e) {}
+})();
+
 // ─── AUTH MOCK ───────────────────────────────────────────────────────────
 const _authListeners = [];
 let _cu = getLS("gm_session", null);
@@ -19979,10 +19990,17 @@ function LigasView({ user, toast }) {
   // ── Copiar código ────────────────────────────────────────────────
   const copyCodigo = () => {
     if (!miLiga) return;
-    navigator.clipboard?.writeText(miLiga.codigo).catch(()=>{});
+    const cod = miLiga.codigo || miLiga.id;
+    // Auto-parchear liga sin código
+    if (!miLiga.codigo) {
+      const ligas = getLS("gm_leagues", []);
+      const idx = ligas.findIndex(l => l.id === miLiga.id);
+      if (idx !== -1) { ligas[idx].codigo = cod; setLS("gm_leagues", ligas); }
+    }
+    try { navigator.clipboard.writeText(cod); } catch(e) {}
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast("📋 Código copiado: " + miLiga.codigo);
+    toast("📋 Código copiado: " + cod);
   };
 
   const isAdmin = miLiga && miLiga.adminUid === user.uid;
@@ -20132,15 +20150,17 @@ function LigasView({ user, toast }) {
       React.createElement('div', { style: st.card },
         React.createElement('div', { style:st.label }, "Código para invitar"),
         React.createElement('div', { className:"lg-code", onClick:copyCodigo },
-          copied ? "✅ ¡COPIADO!" : miLiga.codigo
+          copied ? "✅ ¡COPIADO!" : (miLiga.codigo || miLiga.id)
         ),
         React.createElement('div', { style:{fontSize:".72rem",color:"#3a5a6a",marginTop:4,textAlign:"center",marginBottom:10} }, "Tocá el código para copiarlo"),
         React.createElement('button', {
           onClick: () => {
+            const cod = miLiga.codigo || miLiga.id;
+            const link = `https://granmoishe.com/juego.html?liga=${encodeURIComponent(cod)}`;
             const msg = `🏆 *¡Unite a mi liga en Gran Moishe 2026!*\n\n`+
               `Mi liga se llama *${miLiga.nombre}*.\n\n`+
-              `👉 Entrá a *granmoishe.com*, creá tu cuenta y usá el código:\n\n`+
-              `*${miLiga.codigo}*\n\n`+
+              `👉 Entrá directo con este link:\n${link}\n\n`+
+              `O buscá el código *${cod}* en la sección Ligas.\n\n`+
               `¡Armá tu equipo y competí conmigo en el Mundial! ⚽🔥`;
             window.open("https://wa.me/?text="+encodeURIComponent(msg), "_blank");
           },
@@ -20530,7 +20550,7 @@ function RulesView() {
       , React.createElement('h2', { className: "rv-title",}, "📋 Reglamento — Gran Moishe 2026"     )
       , React.createElement('div', { className: "rv-grid",}
         , [
-          ["💰","Presupuesto","Cada DT dispone de <strong>$120 millones</strong> para armar su equipo de 15 jugadores (11 titulares + 4 suplentes)."],
+          ["💰","Presupuesto","Cada DT dispone de <strong>$100 millones</strong> para armar su equipo de 15 jugadores (11 titulares + 4 suplentes)."],
           ["⚽","XI + Suplentes","Los <strong>11 titulares y los 4 suplentes</strong> suman puntos. El equipo no tiene banco ocioso."],
           ["🌍","Límite por País","Máximo <strong>3 jugadores</strong> de la misma selección en toda la plantilla."],
           ["👑","Capitán","<strong>1 capitán por equipo.</strong> Suma el 25% más de sus puntos totales (redondeado hacia arriba). Solo 1 por equipo."],
@@ -20547,7 +20567,7 @@ function RulesView() {
         , [
           ["🧠","10 preguntas por día","Cada día hay 10 preguntas nuevas sobre fútbol, matemática, ciencias, tecnología y cultura general. Las preguntas cambian cada día."],
           ["⏱","20 segundos","Tenés 20 segundos para responder cada pregunta. Si se acaba el tiempo, la pregunta se pierde."],
-          ["✅","5 puntos por acierto","Cada respuesta correcta suma <strong>5 puntos</strong> al ranking. El máximo por sesión es 50 puntos."],
+          ["✅","0.5 puntos por acierto","Cada respuesta correcta suma <strong>0.5 puntos</strong> a tu puntaje total del equipo fantasy."],
           ["📊","Suma al ranking total","Los puntos de trivia se suman a tu puntaje total junto con los del fantasy y las predicciones de partidos."],
         ].map(([ic,t,b])=>React.createElement('div', { key: t, className: "rv-card",}, React.createElement('div', { className: "rv-ic",}, ic), React.createElement('div', { className: "rv-ct",}, t), React.createElement('div', { className: "rv-cb", dangerouslySetInnerHTML: {__html:b},})))
       )
@@ -20557,7 +20577,7 @@ function RulesView() {
         , [
           ["🎭","10 afirmaciones por día","Cada día hay 10 afirmaciones nuevas. Tenés que decir si cada una es VERDAD o MITO. Las afirmaciones cambian cada día."],
           ["⏱","8 segundos","Tenés solo 8 segundos para decidir. La presión forma parte del juego."],
-          ["✅","3 puntos por acierto","Cada respuesta correcta suma <strong>3 puntos</strong>. Máximo 30 puntos por sesión."],
+          ["✅","0.5 puntos por acierto","Cada respuesta correcta suma <strong>0.5 puntos</strong> a tu puntaje total del equipo fantasy."],
           ["📖","Explicación al terminar","Al finalizar las 10 afirmaciones, se muestra la explicación de cada respuesta con el por qué es verdad o mito."],
           ["📊","Suma al ranking total","Los puntos de Verdad o Mito también se suman a tu puntaje total y tienen su propio ranking."],
         ].map(([ic,t,b])=>React.createElement('div', { key: t, className: "rv-card",}, React.createElement('div', { className: "rv-ic",}, ic), React.createElement('div', { className: "rv-ct",}, t), React.createElement('div', { className: "rv-cb", dangerouslySetInnerHTML: {__html:b},})))
@@ -20576,7 +20596,25 @@ function RulesView() {
       , React.createElement('div', { style: {background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:16,marginTop:8},}
         , React.createElement('div', { style: {fontFamily:"Oswald,sans-serif",fontSize:".85rem",fontWeight:700,letterSpacing:1.5,color:"#4ade80",textTransform:"uppercase",marginBottom:12},}, "⚡ Tabla de puntos"   )
         , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr auto",gap:6},}
-          , [["✅ Equipo ganó","+5"],["🤝 Empate","+3"],["❌ Derrota","+1"],["⚽ Gol (DEL)","+4"],["⚽ Gol (MID)","+5"],["⚽ Gol (DEF)","+6"],["⚽ Gol (GK)","+7"],["🔴 Autogol","-2"],["🅰 Asistencia","+2"],["🧤 Valla invicta (GK)","+4"],["🛡 Valla invicta (DEF)","+2"],["🟨 Amarilla","-1"],["🟥 Roja","-3"],["🚫 No convocado","0 pts"],["👑 Capitán","+25% total↑"]].map(([a,b])=>(
+          , [
+            ["✅ Equipo ganó","+5"],
+            ["🤝 Empate","+3"],
+            ["❌ Derrota","+1"],
+            ["⚽ Gol (DEL)","+4"],
+            ["⚽ Gol (MID)","+5"],
+            ["⚽ Gol (DEF)","+6"],
+            ["⚽ Gol (GK)","+7"],
+            ["🔴 Autogol","-2"],
+            ["🅰 Asistencia","+2"],
+            ["🧤 Valla invicta (GK)","+4"],
+            ["🛡 Valla invicta (DEF)","+2"],
+            ["🟨 Amarilla","-1"],
+            ["🟥 Roja","-3"],
+            ["🚫 No convocado","0 pts"],
+            ["👑 Capitán","+25% total↑"],
+            ["🧠 Trivia — acierto","+0.5 pts"],
+            ["🎭 Mito — acierto","+0.5 pts"],
+          ].map(([a,b])=>(
             React.createElement('div', { key: a, style: {display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",fontSize:".83rem",color:"#a0b0c0"},}, React.createElement('span', null, a), React.createElement('span', { style: {fontWeight:700,color:b.startsWith("-")?"#ef4444":"#4ade80"},}, b))
           ))
         )
@@ -20927,35 +20965,79 @@ function ShareResultCard({ user, type, onClose }) {
 
 
 function ProfileView({ user, toast }) {
-  const [f,setF]=useState({nombre:user.nombre||"",apellido:user.apellido||"",equipo:user.equipo||"",pais:user.pais||"Argentina",provincia:user.provincia||"",edad:user.edad||"",comunidad:user.comunidad||"Macabi"});
-  const [saving,setSaving]=useState(false);
-  const set=(k,v)=>setF(p=>({...p,[k]:v,...(k==="pais"?{provincia:""}:{})}));
-  const save=async()=>{setSaving(true);await Auth.updateProfile({...f,edad:parseInt(f.edad)});toast("Perfil actualizado ✅","success");setSaving(false);};
+  const fmtARS = v => "$" + Math.round(v).toLocaleString("es-AR");
+
   return (
-    React.createElement('div', { className: "profile-view",}
-      , React.createElement('div', { className: "pv-hd",}
-        , React.createElement('div', { className: "pv-av",}, (user.nombre||user.email)[0].toUpperCase())
-        , React.createElement('div', null, React.createElement('div', { className: "pv-name",}, user.nombre, " " , user.apellido), React.createElement('div', { className: "pv-email",}, user.email), user.admin&&React.createElement('div', { className: "pv-admin-badge",}, "👑 ADMINISTRADOR" ))
-      )
-      , React.createElement('div', { className: "ps-form",}
-        , React.createElement('div', { className: "ps-row2",}, React.createElement('div', { className: "pf",}, React.createElement('label', null, "Nombre"), React.createElement('input', { value: f.nombre, onChange: e=>set("nombre",e.target.value),})), React.createElement('div', { className: "pf",}, React.createElement('label', null, "Apellido"), React.createElement('input', { value: f.apellido, onChange: e=>set("apellido",e.target.value),})))
-        , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Nombre del equipo"  ), React.createElement('input', { value: f.equipo, onChange: e=>set("equipo",e.target.value), maxLength: 40,}))
-        , React.createElement('div', { className: "ps-row2",}
-          , React.createElement('div', { className: "pf",}, React.createElement('label', null, "País"), React.createElement('select', { value: f.pais, onChange: e=>set("pais",e.target.value),}, PAISES_RES.map(p=>React.createElement('option', { key: p,}, p))))
-          , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Provincia")
-            , f.pais==="Argentina"
-              ?React.createElement('select', { value: f.provincia, onChange: e=>set("provincia",e.target.value),}, React.createElement('option', { value: "",}, "Seleccioná..."), PROVS_AR.map(p=>React.createElement('option', { key: p,}, p)))
-              :React.createElement('input', { value: f.provincia, onChange: e=>set("provincia",e.target.value),})
+    React.createElement('div', { className: "profile-view" }
+      // Avatar + nombre
+      , React.createElement('div', { className: "pv-hd" }
+        , React.createElement('div', { className: "pv-av" }, (user.nombre||user.email)[0].toUpperCase())
+        , React.createElement('div', null,
+            React.createElement('div', { className: "pv-name" }, user.nombre, " ", user.apellido),
+            React.createElement('div', { className: "pv-email" }, user.email),
+            user.admin && React.createElement('div', { className: "pv-admin-badge" }, "👑 ADMINISTRADOR")
           )
-        )
-        , React.createElement('div', { className: "ps-row2",}
-          , React.createElement('div', { className: "pf", style: {maxWidth:140},}, React.createElement('label', null, "Edad"), React.createElement('input', { type: "number", min: 10, max: 100, value: f.edad, onChange: e=>set("edad",e.target.value),}))
-          , React.createElement('div', { className: "pf",}, React.createElement('label', null, "Comunidad"), React.createElement('select', { value: f.comunidad, onChange: e=>set("comunidad",e.target.value),}, COMMUNITIES.map(c=>React.createElement('option', { key: c,}, c))))
-        )
-        , React.createElement('button', { className: "btn-save", onClick: save, disabled: saving,}, saving?"Guardando...":"Guardar cambios")
       )
 
-      // ── MIS CUENTAS ──
+      // Datos en modo lectura
+      , React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:10,marginTop:14} }
+
+        , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10} }
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "NOMBRE")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".95rem"} }, user.nombre||"—")
+          )
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "APELLIDO")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".95rem"} }, user.apellido||"—")
+          )
+        )
+
+        , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+          , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "NOMBRE DEL EQUIPO")
+          , React.createElement('div', { style:{color:"#4ade80",fontWeight:700,fontSize:"1.05rem",fontFamily:"Oswald,sans-serif"} }, user.equipo||"—")
+        )
+
+        , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10} }
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "COMUNIDAD")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".9rem"} }, user.comunidad||"—")
+          )
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "PAÍS")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".9rem"} }, user.pais||"—")
+          )
+        )
+
+        , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10} }
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "PLAYER ID")
+            , React.createElement('div', { style:{color:"#60a5fa",fontWeight:700,fontSize:".95rem",fontFamily:"Oswald,sans-serif",letterSpacing:1} }, user.playerId||"—")
+          )
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "ESTADO")
+            , React.createElement('div', { style:{color:user.pagado?"#4ade80":"#ef4444",fontWeight:700,fontSize:".9rem"} }, user.pagado?"✅ Pagado":"⏳ Pendiente de pago")
+          )
+        )
+
+        , React.createElement('div', { style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10} }
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "CELULAR")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".9rem"} }, user.celular||"—")
+          )
+          , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:10,padding:"12px 14px"} }
+            , React.createElement('div', { style:{fontSize:".68rem",color:"#4a6a5a",letterSpacing:1,marginBottom:4,fontFamily:"Oswald,sans-serif"} }, "DNI")
+            , React.createElement('div', { style:{color:"#e2e8f0",fontWeight:600,fontSize:".9rem"} }, user.dni||"—")
+          )
+        )
+
+        // Nota info
+        , React.createElement('div', { style:{background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,padding:"10px 14px",fontSize:".78rem",color:"#4a6a8a",textAlign:"center"} },
+            "Para modificar tus datos contactá al administrador del juego."
+          )
+      )
+
+      // Mis cuentas (si tiene más de una)
       , (function(){
           var linked = getLS("gm_users",[]).filter(function(u){ return !u.admin && u.email===user.email; });
           if (linked.length <= 1) return null;
@@ -23371,6 +23453,23 @@ function GranMoishe() {
   const [capitan,setCapitan]=useState(null);
 
   useEffect(()=>{ Auth.onAuthStateChanged(u=>{ setUser(u); setAuthLoading(false); }); },[]);
+
+  // Auto-unirse a liga pendiente desde link ?liga=CODIGO
+  useEffect(()=>{
+    if (!user) return;
+    const pendingCod = sessionStorage.getItem("gm_pending_liga");
+    if (!pendingCod) return;
+    sessionStorage.removeItem("gm_pending_liga");
+    // Buscar la liga por código
+    const ligas = getLS("gm_leagues", []);
+    const liga = ligas.find(l => (l.codigo||l.id).toUpperCase() === pendingCod);
+    if (!liga) { toast("❌ No se encontró la liga con código: " + pendingCod, "error"); return; }
+    if (user.liga === liga.id) { setTab("ligas"); return; }
+    if (user.liga) { toast("⚠️ Ya estás en una liga. Salí primero para unirte a otra.", "warn"); setTab("ligas"); return; }
+    const res = DB.joinLeague(liga.id, user.uid);
+    if (res.ok) { toast("🏆 ¡Te uniste a la liga \"" + liga.nombre + "\"!"); setTab("ligas"); }
+    else { toast("❌ " + (res.error || "Error al unirse"), "error"); setTab("ligas"); }
+  }, [user]);
 
   // Sync user data from Firebase when admin updates (e.g. extraBudget)
   useEffect(()=>{
