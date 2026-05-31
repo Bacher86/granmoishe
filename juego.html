@@ -17801,7 +17801,7 @@ if (document.readyState === 'loading') {
 
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────
-const BUDGET = 120000000;
+const BUDGET = 100000000;
 const MAX_SQUAD = 15; // 11 + 4 subs
 const MAX_XI = 11;
 const MAX_SUBS = 4;
@@ -17844,10 +17844,10 @@ const POS_ORDER  = ["GK","DEF","MID","FWD"];
 const POS_LABELS = { GK:"Portero", DEF:"Defensa", MID:"Medio", FWD:"Delantero" };
 
 const TIER = {
-  superestrella:{ bg:"#FF6B00", text:"#fff", label:"🔥 Superestrella", min:16e6, max:22e6 },
-  estrella:     { bg:"#FFD700", text:"#111", label:"⭐ Estrella",       min:10e6, max:15e6 },
-  titular:      { bg:"#3B82F6", text:"#fff", label:"🔵 Titular",        min:5e6,  max:9e6  },
-  suplente:     { bg:"#6B7280", text:"#fff", label:"⚪ Suplente",       min:1e6,  max:4e6  },
+  superestrella:{ bg:"#FF6B00", text:"#fff", label:"🔥 Superestrella", min:14e6, max:18e6 },
+  estrella:     { bg:"#FFD700", text:"#111", label:"⭐ Estrella",       min:8e6,  max:13e6 },
+  titular:      { bg:"#3B82F6", text:"#fff", label:"🔵 Titular",        min:4e6,  max:7e6  },
+  suplente:     { bg:"#6B7280", text:"#fff", label:"⚪ Suplente",       min:1e6,  max:3e6  },
 };
 
 // Ad tiers
@@ -17925,7 +17925,7 @@ const RAW = [
   ["Danilo","Brasil","MID","titular"],
   ["Lucas Paquetá","Brasil","MID","titular"],
   ["Endrick","Brasil","FWD","estrella"],
-  ["Vinícius Júnior","Brasil","FWD","estrella"],
+  ["Vinícius Júnior","Brasil","FWD","superestrella"],
   ["Raphinha","Brasil","FWD","estrella"],
   ["Gabriel Martinelli","Brasil","FWD","estrella"],
   ["Igor Thiago","Brasil","FWD","titular"],
@@ -17956,8 +17956,9 @@ const RAW = [
   ["Rayan Cherki","Francia","FWD","titular"],
   ["Desiré Doué","Francia","FWD","titular"],
   ["Jean-Philippe Mateta","Francia","FWD","titular"],
-  ["Kylian Mbappé","Francia","FWD","estrella"],
-  ["Michael Olise","Francia","FWD","titular"],
+  ["Ousmane Dembélé","Francia","FWD","superestrella"],
+  ["Kylian Mbappé","Francia","FWD","superestrella"],
+  ["Michael Olise","Francia","FWD","estrella"],
   ["Marcus Thuram","Francia","FWD","estrella"],
   ["Yahia Fofana","Costa de Marfil","GK","titular"],
   ["Mohamed Kone","Costa de Marfil","GK","titular"],
@@ -18361,7 +18362,7 @@ const RAW = [
   ["Rafael Leão","Portugal","FWD","estrella"],
   ["Gonçalo Guedes","Portugal","FWD","titular"],
   ["Gonçalo Ramos","Portugal","FWD","titular"],
-  ["Cristiano Ronaldo","Portugal","FWD","estrella"],
+  ["Cristiano Ronaldo","Portugal","FWD","superestrella"],
   // Escocia
   ["Craig Gordon","Escocia","GK","titular"],
   ["Angus Gunn","Escocia","GK","titular"],
@@ -18610,7 +18611,7 @@ const RAW = [
   ["Mikel Merino","España","MID","titular"],
   ["Gavi","España","MID","titular"],
   ["Alex Baena","España","MID","titular"],
-  ["Lamine Yamal","España","FWD","estrella"],
+  ["Lamine Yamal","España","FWD","superestrella"],
   ["Yeremy Pino","España","FWD","suplente"],
   ["Ferrán Torres","España","FWD","titular"],
   ["Mikel Oyarzabal","España","FWD","titular"],
@@ -18816,7 +18817,7 @@ const RAW = [
 
   // ── ARGENTINA ─────────────────────────────────────────────────────────
   // Porteros
-  ["Emiliano Martínez","Argentina","GK","superestrella"],
+  ["Emiliano Martínez","Argentina","GK","estrella"],
   ["Gerónimo Rulli","Argentina","GK","titular"],
   ["Juan Musso","Argentina","GK","titular"],
   // Defensas
