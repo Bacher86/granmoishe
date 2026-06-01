@@ -19213,8 +19213,6 @@ function useToast() {
 // AD SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 function AdBanner({ ads, slot, className="" }) {
-  const adsOn = getLS("gm_ads_enabled", true);
-  if (!adsOn) return null;
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&_optionalChain([AD_TIERS, 'access', _3 => _3[a.tier], 'optionalAccess', _4 => _4.slot])===slot),[ads,slot]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -19354,8 +19352,6 @@ function FullScreenAd({ ad, onClose }) {
 }
 
 function SidebarAds({ ads }) {
-  const adsOn = getLS("gm_ads_enabled", true);
-  if (!adsOn) return null;
   const slotAds = useMemo(()=>ads.filter(a=>a.active&&a.tier==="bronce"),[ads]);
   const [idx,setIdx]=useState(0);
   useEffect(()=>{
@@ -23524,32 +23520,18 @@ function AdSlot({ ads, slotIndex, total }) {
 
 function BottomAdBar() {
   const [ads, setAds] = useState(() => DB.getAds());
-  const [adsOn, setAdsOn] = useState(() => getLS("gm_ads_enabled", true));
 
   useEffect(() => {
-    function refresh() {
-      setAds(DB.getAds());
-      setAdsOn(getLS("gm_ads_enabled", true));
-    }
-    // Escuchar Firebase (funciona entre admin y juego en tiempo real)
+    function refresh() { setAds(DB.getAds()); }
     onFBChange("gm_ads", refresh);
-    onFBChange("gm_ads_enabled", refresh);
-    // Escuchar localStorage (mismo tab)
-    function onStorage(e) {
-      if (e.key === "gm_ads" || e.key === "gm_ads_enabled") refresh();
-    }
-    window.addEventListener("storage", onStorage);
-    // Polling fallback cada 10 segundos
+    window.addEventListener("storage", function(e) {
+      if (e.key === "gm_ads") refresh();
+    });
     const interval = setInterval(refresh, 10000);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", onStorage);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  if (!adsOn) return null;
   const slotAds = ads.filter(a => a.active && a.tier === "bronce");
-  if (slotAds.length === 0) return null;
 
   return React.createElement('div', { className: "bottom-ad-bar" },
     Array.from({ length: NUM_SLOTS }).map((_, i) =>
@@ -24005,7 +23987,7 @@ function GranMoishe() {
           , tab==="compartir"&&React.createElement(CompartirEquipoView, { user: user, xi: xi, subs: subs, capitan: capitan, squad: squad,})
 
           /* ── AD GRID — aparece en todas las tabs al final del contenido ── */
-          , !user.admin && React.createElement(BottomAdBar, null)
+          , React.createElement(BottomAdBar, null)
         )
       )
     )
