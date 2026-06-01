@@ -1212,6 +1212,7 @@ async function submitAuth() {
   btn.disabled = true;
   btn.textContent = 'Registrando...';
 
+  try {
   const registeredUsers = [];
 
   // ── Sistema de referidos ──────────────────────────────────────────────
@@ -1238,6 +1239,8 @@ async function submitAuth() {
   const uid1 = 'u_' + Math.random().toString(36).slice(2);
   const pid1 = 'GM-' + String(users.length + 1).padStart(4,'0');
   const fechaIngreso = parseInt(localStorage.getItem('gm_ultima_fecha_publicada')||'0')||0;
+  const comDir  = document.getElementById('f_comDir')?.value?.trim() || '';
+  const comCont = document.getElementById('f_comContacto')?.value?.trim() || '';
   const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, celular, fecha_nac, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1, extraBudget:newUserExtraBudget, referralCount:0, refCode:refCode||null, fecha_ingreso:fechaIngreso };
   registeredUsers.push(user1);
   let allUsers = [...users, user1];
@@ -1247,14 +1250,12 @@ async function submitAuth() {
     const ex = extras[i];
     const uid2 = 'u_' + Math.random().toString(36).slice(2);
     const pid2 = 'GM-' + String(allUsers.length + 1).padStart(4,'0');
-    const u2 = { uid:uid2, email:email, password:pass, dni, nombre, apellido, equipo:ex.equipo, comunidad, pais, celular, fecha_nac, admin:false, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid2 };
+    const u2 = { uid:uid2, email:email, password:pass, dni, nombre, apellido, equipo:ex.equipo, comunidad, pais, celular, fecha_nac, admin:false, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid2, extraBudget:0, referralCount:0, fecha_ingreso:fechaIngreso };
     registeredUsers.push(u2);
     allUsers.push(u2);
   }
 
   setLS('gm_users', allUsers);
-
-
 
   // Guardar sesión del usuario principal
   setLS('gm_session', user1);
@@ -1262,15 +1263,20 @@ async function submitAuth() {
   // Mostrar modal de pago
   closeModal();
   const totalCuentas = registeredUsers.length;
-  const _TABLA=[0,30000,35000,40000,45000,50000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*15000;
+  const _TABLA=[0,30000,35000,40000,45000,50000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*30000;
   document.getElementById('payId').textContent = registeredUsers.map(u=>u.playerId).join(' · ');
   document.getElementById('paySubject').textContent = `Comprobante · ${nombre} ${apellido} · ${registeredUsers.map(u=>u.playerId).join(', ')}`;
-  // Actualizar monto en el modal de pago si existe el elemento
   const payAmountEl = document.getElementById('payAmount');
   if (payAmountEl) payAmountEl.textContent = '$' + totalPago.toLocaleString('es-AR');
   document.getElementById('payModal').style.display = 'flex';
 
-  btn.disabled = false;
+  } catch(err) {
+    console.error('Error en registro:', err);
+    showErr('Error al registrar. Intentá de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'register' ? 'Registrarse' : 'Ingresar';
+  }
 }
 
 function showErr(msg) {
