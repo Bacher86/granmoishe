@@ -471,11 +471,11 @@ body{background:#07111e;-webkit-font-smoothing:antialiased;}
 .bottom-ad-bar{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  grid-template-rows:repeat(2,1fr);
+  grid-template-rows:1fr;
   gap:5px;
   padding:5px 0;
-  min-height:240px;
-  height:240px;
+  min-height:120px;
+  height:120px;
   margin-top:16px;
   border-top:2px solid #1a3a28;
 }
@@ -17779,8 +17779,11 @@ function getLS(key, def) {
 
 // setLS — escribe en Firebase Y en localStorage
 function setLS(key, val) {
-  // Siempre guardar en localStorage (inmediato, offline)
   try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+  // Disparar storage event en el mismo tab para que los componentes se enteren
+  try {
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue: JSON.stringify(val) }));
+  } catch(e) {}
   // Si es clave compartida, subir a Firebase
   if (FB_KEYS.includes(key) && _fbReady && _fbDB) {
     _fbDB.ref('gm/' + key).set(val !== undefined ? val : null)
@@ -23464,7 +23467,7 @@ function CompartirEquipoView({ user, xi, subs, capitan, squad }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // BOTTOM AD BAR — 6 slots siempre visibles, cada uno rota independiente
 // ═══════════════════════════════════════════════════════════════════════════
-const NUM_SLOTS = 6;
+const NUM_SLOTS = 3;
 
 function AdSlot({ ads, slotIndex, total }) {
   // Cada slot arranca en un offset distinto para que no roten todos al mismo tiempo
@@ -23519,10 +23522,27 @@ function AdSlot({ ads, slotIndex, total }) {
   );
 }
 
-function BottomAdBar({ ads }) {
-  const adsOn = getLS("gm_ads_enabled", true);
+function BottomAdBar() {
+  const [ads, setAds] = useState(() => DB.getAds());
+  const [adsOn, setAdsOn] = useState(() => getLS("gm_ads_enabled", true));
+
+  // Re-lee ads cada 15 segundos y también cuando Firebase los actualiza
+  useEffect(() => {
+    function refresh() {
+      setAds(DB.getAds());
+      setAdsOn(getLS("gm_ads_enabled", true));
+    }
+    const interval = setInterval(refresh, 15000);
+    window.addEventListener("storage", function(e) {
+      if (e.key === "gm_ads" || e.key === "gm_ads_enabled") refresh();
+    });
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   if (!adsOn) return null;
-  const slotAds = useMemo(() => ads.filter(a => a.active && a.tier === "bronce"), [ads]);
+  const slotAds = ads.filter(a => a.active && a.tier === "bronce");
 
   return React.createElement('div', { className: "bottom-ad-bar" },
     Array.from({ length: NUM_SLOTS }).map((_, i) =>
@@ -23978,7 +23998,7 @@ function GranMoishe() {
           , tab==="compartir"&&React.createElement(CompartirEquipoView, { user: user, xi: xi, subs: subs, capitan: capitan, squad: squad,})
 
           /* ── AD GRID — aparece en todas las tabs al final del contenido ── */
-          , !user.admin && React.createElement(BottomAdBar, { ads: ads})
+          , !user.admin && React.createElement(BottomAdBar, null)
         )
       )
     )
