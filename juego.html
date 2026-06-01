@@ -17724,7 +17724,7 @@ const FB_KEYS = [
   "gm_users", "gm_ads", "gm_player_stats", "gm_stats_by_name",
   "gm_matches_cache", "gm_published_matches", "gm_match_stats",
   "gm_init", "gm_comunidades", "gm_score_log", "gm_custom_players",
-  "gm_ultima_fecha_publicada"
+  "gm_ultima_fecha_publicada", "gm_ads_enabled", "gm_market_open"
 ];
 
 let _fbApp = null, _fbDB = null, _fbReady = false;
@@ -23526,23 +23526,30 @@ function BottomAdBar() {
   const [ads, setAds] = useState(() => DB.getAds());
   const [adsOn, setAdsOn] = useState(() => getLS("gm_ads_enabled", true));
 
-  // Re-lee ads cada 15 segundos y también cuando Firebase los actualiza
   useEffect(() => {
     function refresh() {
       setAds(DB.getAds());
       setAdsOn(getLS("gm_ads_enabled", true));
     }
-    const interval = setInterval(refresh, 15000);
-    window.addEventListener("storage", function(e) {
+    // Escuchar Firebase (funciona entre admin y juego en tiempo real)
+    onFBChange("gm_ads", refresh);
+    onFBChange("gm_ads_enabled", refresh);
+    // Escuchar localStorage (mismo tab)
+    function onStorage(e) {
       if (e.key === "gm_ads" || e.key === "gm_ads_enabled") refresh();
-    });
+    }
+    window.addEventListener("storage", onStorage);
+    // Polling fallback cada 10 segundos
+    const interval = setInterval(refresh, 10000);
     return () => {
       clearInterval(interval);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
   if (!adsOn) return null;
   const slotAds = ads.filter(a => a.active && a.tier === "bronce");
+  if (slotAds.length === 0) return null;
 
   return React.createElement('div', { className: "bottom-ad-bar" },
     Array.from({ length: NUM_SLOTS }).map((_, i) =>
