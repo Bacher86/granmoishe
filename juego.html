@@ -19314,38 +19314,42 @@ function PushAd({ ad, onClose }) {
   );
 }
 
+const PLACEHOLDER_AD = { id:"placeholder", tier:"elite", nombre:"Publicidad", url:"", img:"", active:true, seconds:8 };
+
 function FullScreenAd({ ad, onClose }) {
-  const [seconds,setSeconds]=useState(_optionalChain([ad, 'optionalAccess', _15 => _15.seconds])||10);
+  const resolvedAd = ad || PLACEHOLDER_AD;
+  const [seconds,setSeconds]=useState(resolvedAd.seconds||8);
   const [canSkip,setCanSkip]=useState(false);
   useEffect(()=>{
-    if(!ad) return;
-    DB.trackAdView(ad.id);
-    const skipAfter=(ad.seconds||10)-2;
+    if(ad) DB.trackAdView(ad.id);
+    const skipAfter=Math.max(1,(resolvedAd.seconds||8)-2);
     const t=setInterval(()=>setSeconds(s=>{
       if(s<=1){clearInterval(t);onClose();return 0;}
       return s-1;
     }),1000);
-    const sk=setTimeout(()=>setCanSkip(true),(skipAfter)*1000);
+    const sk=setTimeout(()=>setCanSkip(true),skipAfter*1000);
     return()=>{clearInterval(t);clearTimeout(sk);};
-  },[ad]);
-  if(!ad) return null;
+  },[]);
   return (
     React.createElement('div', { className: "fullad-overlay",}
-      , React.createElement('div', { className: "fullad-content", onClick: ()=>{DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");},}
+      , React.createElement('div', { className: "fullad-content", onClick: ()=>{if(ad){DB.trackAdClick(ad.id);if(ad.url)window.open(ad.url,"_blank");}},}
         , React.createElement('div', { className: "fullad-inner",}
-          , ad.img
-            ? React.createElement('img',{src:ad.img,alt:"",style:{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:10,display:"block"},onError:function(e){e.target.style.display='none';}})
-            : React.createElement('div',{style:{height:200,display:"flex",alignItems:"center",justifyContent:"center"}},
-                React.createElement('div',{style:{fontSize:"3rem",opacity:.15}}, "📢")
+          , resolvedAd.img
+            ? React.createElement('img',{src:resolvedAd.img,alt:"",style:{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:10,display:"block"},onError:function(e){e.target.style.display='none';}})
+            : React.createElement('div',{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:220,gap:16}},
+                React.createElement('div',{style:{fontSize:"4rem"}},"📢"),
+                React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontSize:"1.4rem",fontWeight:900,color:"#e2e8f0",letterSpacing:2,textAlign:"center"}}, resolvedAd.nombre||"PUBLICIDAD"),
+                resolvedAd.descripcion&&React.createElement('div',{style:{fontSize:".9rem",color:"#4a6a7a",textAlign:"center"}},resolvedAd.descripcion),
+                resolvedAd.url&&React.createElement('div',{style:{fontSize:".8rem",color:"#4ade80",textAlign:"center",marginTop:4}},resolvedAd.url)
               )
-          , React.createElement('div', { className: "fullad-hint",}, "Tocá para más información"   )
+          , React.createElement('div', { className: "fullad-hint",}, resolvedAd.url?"Tocá para más información":"Espacio publicitario")
         )
-        )
+      )
       , React.createElement('div', { className: "fullad-bar",}
         , React.createElement('div', { className: "fullad-timer",}, seconds, "s")
         , canSkip
           ?React.createElement('button', { className: "fullad-skip", onClick: e=>{e.stopPropagation();onClose();},}, "Continuar →" )
-          :React.createElement('div', { className: "fullad-wait",}, "Podés continuar en "   , seconds-Math.max(0,seconds-(ad.seconds||10)+2), "s")
+          :React.createElement('div', { className: "fullad-wait",}, "Podés continuar en ", seconds, "s")
       )
     )
   );
@@ -23630,10 +23634,11 @@ function GranMoishe() {
     setSubs(getLS(subsKey,[]));
     setFormation(getLS(fmKey,"4-3-3"));
     setCapitan(getLS(capKey,null));
-    // show login ad — siempre, sin importar gm_ads_enabled
+    // show login ad — siempre, con placeholder si no hay ninguno cargado
     var freshAds=DB.getAds();setAds(freshAds);
     var loginAds=freshAds.filter(function(a){return a.active&&a.tier==="elite";});
-    if(loginAds.length>0) setTimeout(function(){setFullAd(loginAds[Math.floor(Math.random()*loginAds.length)]);},800);
+    var adToShow=loginAds.length>0?loginAds[Math.floor(Math.random()*loginAds.length)]:PLACEHOLDER_AD;
+    setTimeout(function(){setFullAd(adToShow);},800);
   },[_optionalChain([user, 'optionalAccess', _72 => _72.uid])]);
 
   useEffect(()=>{ if(user){setLS(squadKey,squad);} },[squad]);
@@ -23660,9 +23665,8 @@ function GranMoishe() {
     clickCountRef.current = (clickCountRef.current||0) + 1;
     if(clickCountRef.current % 15 === 0) {
       const pushAds = ads.filter(a=>a.active&&a.tier==="push");
-      if(pushAds.length>0) {
-        setPushAd(pushAds[Math.floor(Math.random()*pushAds.length)]);
-      }
+      var adToShow=pushAds.length>0?pushAds[Math.floor(Math.random()*pushAds.length)]:PLACEHOLDER_AD;
+      setPushAd(adToShow);
     }
   },[ads]);
 
