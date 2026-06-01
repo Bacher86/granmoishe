@@ -429,6 +429,16 @@
       <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">Creá tu propia liga con un código único e invitá a tus amigos. Ranking exclusivo, podés expulsar miembros y ver a todos competir en tiempo real.</div>
     </div>
 
+    <div style="background:rgba(74,222,128,.08);border:2px solid rgba(74,222,128,.3);border-radius:14px;padding:20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:10px;right:12px;background:#4ade80;color:#07111e;font-family:'Oswald',sans-serif;font-size:.65rem;font-weight:900;padding:2px 8px;border-radius:20px;letter-spacing:1px;">NUEVO</div>
+      <div style="font-size:1.6rem;margin-bottom:10px;">🎁</div>
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#4ade80;font-size:1rem;margin-bottom:6px;">Invitá amigos y ganás más</div>
+      <div style="font-size:.82rem;color:var(--gris);line-height:1.6;">
+        Compartí tu código único con amigos. Cuando se registren con él, <strong style="color:#e2e8f0;">los dos ganan +$10M de presupuesto extra</strong>.<br><br>
+        Podés invitar hasta 5 amigos. Al quinto, <strong style="color:#4ade80;">ganás 10 puntos extra</strong> en el ranking general.
+      </div>
+    </div>
+
     <div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:20px;">
       <div style="font-size:1.6rem;margin-bottom:10px;">🏅</div>
       <div style="font-family:'Oswald',sans-serif;font-weight:700;color:#e2e8f0;font-size:1rem;margin-bottom:6px;">Logros y Badges</div>
@@ -856,6 +866,28 @@ function closeModal(){ document.getElementById('authOverlay').style.display='non
 function closeContact(){ document.getElementById('contactOverlay').style.display='none'; }
 function toggleMode(){ authMode=authMode==='login'?'register':'login'; renderForm(); document.getElementById('authErr').style.display='none'; }
 
+// ── Auto-rellenar código de referido desde URL ?ref=GM-XXXX ──────────────
+(function(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      sessionStorage.setItem('gm_pending_ref', ref.trim().toUpperCase());
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  } catch(e) {}
+})();
+
+function fillRefCode() {
+  const pending = sessionStorage.getItem('gm_pending_ref');
+  if (!pending) return;
+  const input = document.getElementById('f_refcode');
+  if (input && !input.value) {
+    input.value = pending;
+    input.dispatchEvent(new Event('input'));
+  }
+}
+
 function getComs() {
   const base=['Macabi','Cisaab','Hacoaj','Círculo','Hebraica','ORT','Bet El','Benei Akiva','Habonim Dror','Hashomer','Bamidbar','Tzofim'];
   const fromUsers=getLS('gm_users',[]).map(u=>u.comunidad).filter(Boolean);
@@ -918,6 +950,13 @@ function renderForm() {
     <div class="row2">
 
     </div>
+    <div class="field" style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:10px;padding:14px;">
+      <label style="color:#4ade80;">🎁 Código de invitación <span style="font-weight:400;color:var(--gris);">(opcional)</span></label>
+      <input id="f_refcode" placeholder="Ej: GM-0001" maxlength="10"
+        style="text-transform:uppercase;letter-spacing:3px;font-weight:700;font-size:1.1rem;color:#4ade80;background:#07111e;border-color:rgba(74,222,128,.3);"
+        oninput="this.value=this.value.toUpperCase()"/>
+      <div class="field-hint" style="color:rgba(74,222,128,.6);">🎁 Si alguien te invitó, ingresá su código GM-XXXX y los dos ganan <strong style="color:#4ade80;">+$10M de presupuesto extra</strong>.</div>
+    </div>
     <div class="field">
       <div class="terms-box">
         <strong>Términos y Condiciones de Participación</strong><br><br>
@@ -936,6 +975,8 @@ function renderForm() {
   if (isReg) {
     const btn = document.getElementById('btnSubmit');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'not-allowed'; btn.title = 'Completá tu fecha de nacimiento y aceptá los términos para continuar.'; }
+    // Auto-rellenar código de referido si vino por link
+    setTimeout(fillRefCode, 50);
   }
 }
 
@@ -1173,10 +1214,31 @@ async function submitAuth() {
 
   const registeredUsers = [];
 
+  // ── Sistema de referidos ──────────────────────────────────────────────
+  const REFERRAL_BUDGET = 10000000;
+  const REFERRAL_PTS = 10;
+  const refCode = (document.getElementById('f_refcode')?.value||'').trim().toUpperCase();
+  let newUserExtraBudget = 0;
+
+  if (refCode) {
+    const refIdx = users.findIndex(u => (u.playerId||'').toUpperCase() === refCode);
+    if (refIdx !== -1) {
+      const referrer = users[refIdx];
+      const newCount = (referrer.referralCount||0) + 1;
+      newUserExtraBudget = REFERRAL_BUDGET;
+      if (newCount === 5) {
+        users[refIdx] = {...referrer, referralCount:5, pts:(referrer.pts||0)+REFERRAL_PTS};
+      } else {
+        users[refIdx] = {...referrer, referralCount:newCount, extraBudget:(referrer.extraBudget||0)+REFERRAL_BUDGET};
+      }
+    }
+  }
+
   // Registrar cuenta principal
   const uid1 = 'u_' + Math.random().toString(36).slice(2);
   const pid1 = 'GM-' + String(users.length + 1).padStart(4,'0');
-  const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, celular, fecha_nac, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1 };
+  const fechaIngreso = parseInt(localStorage.getItem('gm_ultima_fecha_publicada')||'0')||0;
+  const user1 = { uid:uid1, email, password:pass, dni, nombre, apellido, equipo, comunidad, comunidadDir:comDir, comunidadContacto:comCont, pais, celular, fecha_nac, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null, pagado:false, playerId:pid1, extraBudget:newUserExtraBudget, referralCount:0, refCode:refCode||null, fecha_ingreso:fechaIngreso };
   registeredUsers.push(user1);
   let allUsers = [...users, user1];
 
