@@ -19084,9 +19084,10 @@ const ALL_COUNTRIES = [...new Set(PLAYERS_DB.map(p=>p.pais))].sort();
   try {
     const params = new URLSearchParams(window.location.search);
     const cod = params.get("liga");
-    if (!cod) return;
-    sessionStorage.setItem("gm_pending_liga", cod.trim().toUpperCase());
-    window.history.replaceState({}, "", window.location.pathname);
+    if (cod) sessionStorage.setItem("gm_pending_liga", cod.trim().toUpperCase());
+    const ref = params.get("ref");
+    if (ref) sessionStorage.setItem("gm_pending_ref", ref.trim().toUpperCase());
+    if (cod || ref) window.history.replaceState({}, "", window.location.pathname);
   } catch(e) {}
 })();
 
@@ -19097,7 +19098,7 @@ const notifyAuth = u => { _cu=u; setLS("gm_session",u); _authListeners.forEach(f
 
 const Auth = {
   onAuthStateChanged: fn => { _authListeners.push(fn); fn(_cu); return ()=>{}; },
-  register: async ({ email, password, dni, nombre, apellido, comunidad, pais, celular, fecha_nac, equipo }) => {
+  register: async ({ email, password, dni, nombre, apellido, comunidad, pais, celular, fecha_nac, equipo, refCode }) => {
     const users = getLS("gm_users",[]);
     const dniUsers = users.filter(u=>u.dni===dni);
     if (dniUsers.length>=5) return { error:"Ya hay 5 cuentas con ese DNI" };
@@ -19105,12 +19106,39 @@ const Auth = {
     const uid = "u_"+Math.random().toString(36).slice(2);
     const playerNum = String(users.length + 1).padStart(4, "0");
     const playerId = "GM-" + playerNum;
-    // Guardar la fecha (matchday) en que se registra — solo suma desde la SIGUIENTE
     const fechaIngreso = parseInt(getLS("gm_ultima_fecha_publicada", 0) || 0);
+
+    // ── Sistema de referidos ──────────────────────────────────────────────
+    const REFERRAL_BUDGET = 10000000; // +10M por amigo referido (para los dos)
+    const REFERRAL_PTS = 10;          // +10 pts al quinto amigo (solo al invitador)
+    let newUserExtraBudget = 0;
+    const normalizedRef = (refCode||"").trim().toUpperCase();
+
+    if (normalizedRef) {
+      const refIdx = users.findIndex(u=>(u.playerId||"").toUpperCase()===normalizedRef);
+      if (refIdx !== -1) {
+        const referrer = users[refIdx];
+        const newCount = (referrer.referralCount||0) + 1;
+        // El nuevo usuario siempre gana +10M
+        newUserExtraBudget = REFERRAL_BUDGET;
+        // El invitador gana +10M salvo en el 5to (gana 10 pts en cambio)
+        if (newCount === 5) {
+          users[refIdx] = {...referrer, referralCount:5, pts:(referrer.pts||0)+REFERRAL_PTS};
+        } else {
+          users[refIdx] = {...referrer, referralCount:newCount, extraBudget:(referrer.extraBudget||0)+REFERRAL_BUDGET};
+        }
+        setLS("gm_users", users);
+      }
+    }
+
     const user = { uid, email, dni, nombre, apellido, comunidad, pais, celular, fecha_nac,
                    equipo, admin:email===ADMIN_EMAIL, pts:0, profileComplete:true, liga:null,
-                   pagado:false, playerId, fecha_ingreso: fechaIngreso };
-    setLS("gm_users",[...users,user]); return { ok:true, user };
+                   pagado:false, playerId, fecha_ingreso: fechaIngreso,
+                   extraBudget: newUserExtraBudget, referralCount:0,
+                   refCode: normalizedRef||null };
+    const allUsers = getLS("gm_users",[]);
+    setLS("gm_users",[...allUsers, user]);
+    return { ok:true, user };
   },
   login: async ({ email, password }) => {
     const users = getLS("gm_users",[]);
@@ -19560,6 +19588,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
   const isReg = mode==="register";
   const [cantidad,setCantidad]=useState(1);
   const [f,setF]=useState({email:"",password:"",dni:"",nombre:"",apellido:"",equipo:"",pais:"Argentina",celular:"",fecha_nac:"",comunidad:"Weitzman Orjadash",comunidadCustom:"",comunidadDir:"",comunidadContacto:""});
+  const [refCode,setRefCode]=useState(()=>{ try{return sessionStorage.getItem("gm_pending_ref")||"";}catch(e){return "";} });
   // extra accounts: array of {email, password, equipo}
   const [extras,setExtras]=useState([]);
   const [err,setErr]=useState("");
@@ -19598,7 +19627,7 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
     }
     setLoading(true);setErr("");
     // Register primary account
-    const res=await onSubmit({...f, comunidad: comunidadFinal});
+    const res=await onSubmit({...f, comunidad: comunidadFinal, refCode});
     if(_optionalChain([res, 'optionalAccess', _24 => _24.error])){setErr(res.error);setLoading(false);return;}
     const registeredUsers=[res.user];
     // Register extra accounts (same DNI)
@@ -19694,9 +19723,20 @@ function AuthModal({ mode, onSubmit, onSwitch, onClose }) {
               , React.createElement('input', { value: "Weitzman Orjadash", readOnly: true, style:{opacity:.6,cursor:"not-allowed"},})
               , React.createElement('div', { style: {fontSize:".7rem",color:"#4a6a5a",marginTop:4},}, "ℹ️ Las comunidades de la lista fueron escritas por otros participantes. Si la tuya no aparece, seleccioná \"Otra\" y escribila — aparecerá para todos luego.")
             )
-            , React.createElement('div', { className: "ps-row2",}
-              
-            )
+
+            /* ── CÓDIGO DE INVITACIÓN ── */
+            , React.createElement('div', { style:{background:"rgba(74,222,128,.05)",border:"1px solid rgba(74,222,128,.15)",borderRadius:10,padding:"12px 14px"}},
+                React.createElement('label', { style:{display:"block",fontSize:".72rem",color:"#4a6a5a",letterSpacing:1,textTransform:"uppercase",marginBottom:6,fontWeight:700} }, "🎁 Código de invitación (opcional)"),
+                React.createElement('input', {
+                  value: refCode,
+                  onChange: e=>setRefCode(e.target.value.toUpperCase()),
+                  placeholder: "Ej: GM-0001",
+                  style:{width:"100%",boxSizing:"border-box",background:"#07111e",border:"1px solid rgba(74,222,128,.3)",color:"#4ade80",borderRadius:8,padding:"10px 12px",fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:"1rem",letterSpacing:2,textTransform:"uppercase",outline:"none"}
+                }),
+                React.createElement('div', { style:{fontSize:".7rem",color:"#3a5a4a",marginTop:6} },
+                  "Si alguien te invitó, ingresá su código (GM-XXXX) para que los dos ganen +$10M de presupuesto extra."
+                )
+              )
           )
 
           /* ── CUENTAS EXTRA ── */
@@ -21080,7 +21120,117 @@ function ShareResultCard({ user, type, onClose }) {
 }
 
 
-function ProfileView({ user, toast }) {
+// ═══════════════════════════════════════════════════════════════════════════
+// AMIGOS VIEW — Sistema de referidos
+// ═══════════════════════════════════════════════════════════════════════════
+function AmigosView({ user, toast }) {
+  const [copied, setCopied] = useState(false);
+  const referralCount = user.referralCount || 0;
+  const fmtM = v => "$"+Math.round(v/1e6)+"M";
+
+  const STEPS = [
+    {n:1, reward:"+ "+fmtM(10000000)+" de presupuesto para los dos"},
+    {n:2, reward:"+ "+fmtM(10000000)+" más (acumulado: "+fmtM(20000000)+")"},
+    {n:3, reward:"+ "+fmtM(10000000)+" más (acumulado: "+fmtM(30000000)+")"},
+    {n:4, reward:"+ "+fmtM(10000000)+" más (acumulado: "+fmtM(40000000)+")"},
+    {n:5, reward:"+ 10 puntos en el ranking 🏆"},
+  ];
+
+  function copyCode() {
+    try { navigator.clipboard.writeText(user.playerId); } catch(e) {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast("📋 Código copiado: " + user.playerId);
+  }
+
+  function shareWhatsApp() {
+    const refLink = "https://granmoishe.com/juego.html?ref=" + user.playerId;
+    const msg =
+      "🏆 *¡Jugá Gran Moishe 2026 conmigo!*\n\n" +
+      "El fantasy del Mundial 2026. Armás tu equipo con jugadores reales y competís por puntos.\n\n" +
+      "🎁 Entrate por este link y los *dos ganamos +$10M* de presupuesto extra:\n\n" +
+      refLink + "\n\n" +
+      "O podés ingresar el código *" + user.playerId + "* al registrarte.\n\n" +
+      "⚽ ¡Arrancá el Mundial con ventaja!";
+    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+  }
+
+  return React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:16,maxWidth:540,margin:"0 auto"} }
+
+    // Header
+    , React.createElement('div', { style:{textAlign:"center",padding:"8px 0"} }
+      , React.createElement('div', { style:{fontSize:"3rem",marginBottom:8} }, "🎁")
+      , React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontSize:"1.8rem",fontWeight:900,color:"#4ade80",letterSpacing:2} }, "INVITAR AMIGOS")
+      , React.createElement('div', { style:{fontSize:".85rem",color:"#4a7a5a",marginTop:6,lineHeight:1.5} },
+          "Invitá amigos y los dos ganan ",
+          React.createElement('strong',{style:{color:"#e2e8f0"}},"+$10M de presupuesto extra"),
+          ". Al 5° amigo, vos ganás 10 puntos en el ranking."
+        )
+    )
+
+    // Código grande
+    , React.createElement('div', { style:{background:"rgba(74,222,128,.07)",border:"2px solid rgba(74,222,128,.25)",borderRadius:14,padding:"20px 16px",textAlign:"center"} }
+      , React.createElement('div', { style:{fontSize:".72rem",color:"#3a5a4a",letterSpacing:2,textTransform:"uppercase",marginBottom:10} }, "Tu código de invitación")
+      , React.createElement('div', {
+          onClick: copyCode,
+          style:{fontFamily:"Oswald,sans-serif",fontSize:"2.8rem",fontWeight:900,letterSpacing:8,color:"#4ade80",cursor:"pointer",padding:"8px 0",userSelect:"all"}
+        }, copied ? "✅ COPIADO" : user.playerId)
+      , React.createElement('div', { style:{fontSize:".72rem",color:"#2a4a3a",marginTop:8} }, "Tocá para copiar")
+    )
+
+    // Botón WhatsApp grande
+    , React.createElement('button', {
+        onClick: shareWhatsApp,
+        style:{width:"100%",padding:"16px 0",borderRadius:12,border:"none",background:"#25D366",color:"#fff",fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:"1.1rem",cursor:"pointer",letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 4px 16px rgba(37,211,102,.3)"}
+      }, "💬  COMPARTIR POR WHATSAPP")
+
+    // Progreso
+    , React.createElement('div', { style:{background:"#0d1b2a",border:"1px solid #1a2d40",borderRadius:12,padding:16} }
+      , React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontSize:".85rem",fontWeight:700,color:"#e2e8f0",letterSpacing:1,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"} }
+        , React.createElement('span',null,"AMIGOS INVITADOS")
+        , React.createElement('span',{style:{color:"#4ade80",fontSize:"1.2rem"}}, referralCount + " / 5")
+      )
+      // Barra de progreso
+      , React.createElement('div', { style:{background:"rgba(255,255,255,.05)",borderRadius:6,height:10,marginBottom:16,overflow:"hidden"} }
+        , React.createElement('div', { style:{height:10,borderRadius:6,background:"linear-gradient(90deg,#4ade80,#22c55e)",width:Math.min(100,referralCount/5*100)+"%",transition:"width .5s"} })
+      )
+      // Pasos
+      , React.createElement('div', { style:{display:"flex",flexDirection:"column",gap:8} }
+        , STEPS.map(step => {
+            const done = referralCount >= step.n;
+            const current = referralCount === step.n - 1;
+            return React.createElement('div', {key:step.n, style:{
+              display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:9,
+              background: done?"rgba(74,222,128,.1)":current?"rgba(74,222,128,.04)":"rgba(255,255,255,.02)",
+              border:"1px solid",
+              borderColor: done?"rgba(74,222,128,.35)":current?"rgba(74,222,128,.15)":"rgba(255,255,255,.05)"
+            }}
+              , React.createElement('div', { style:{
+                  width:28,height:28,borderRadius:"50%",flexShrink:0,
+                  background:done?"#4ade80":current?"rgba(74,222,128,.2)":"rgba(255,255,255,.06)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontFamily:"Oswald,sans-serif",fontWeight:900,fontSize:".85rem",
+                  color:done?"#07111e":current?"#4ade80":"#4a6a5a"
+                } }, done?"✓":step.n)
+              , React.createElement('div', { style:{flex:1} }
+                , React.createElement('div', { style:{fontFamily:"Oswald,sans-serif",fontWeight:700,fontSize:".82rem",color:done?"#4ade80":current?"#e2e8f0":"#5a7a8a"} },
+                    step.n === 1 ? "Primer amigo" : step.n+" amigos"
+                  )
+                , React.createElement('div', { style:{fontSize:".72rem",color:done?"#4ade80":"#4a6a5a",marginTop:2} }, step.reward)
+              )
+            );
+          })
+      )
+    )
+
+    // Info
+    , React.createElement('div', { style:{fontSize:".75rem",color:"#2a4a3a",textAlign:"center",lineHeight:1.6} },
+        "El presupuesto extra se suma automáticamente al registrarse con tu código.\nNo expira y se acumula durante todo el Mundial."
+      )
+  );
+}
+
+function ProfileView({ user, toast, setTab }) {
   const fmtARS = v => "$" + Math.round(v).toLocaleString("es-AR");
 
   return (
@@ -21151,6 +21301,15 @@ function ProfileView({ user, toast }) {
         , React.createElement('div', { style:{background:"rgba(96,165,250,.06)",border:"1px solid rgba(96,165,250,.15)",borderRadius:10,padding:"10px 14px",fontSize:".78rem",color:"#4a6a8a",textAlign:"center"} },
             "Para modificar tus datos contactá al administrador del juego."
           )
+
+        // ── INVITAR AMIGOS — ver tab Amigos ─────────────────────────────
+        , React.createElement('div', { style:{background:"rgba(74,222,128,.06)",border:"1px solid rgba(74,222,128,.2)",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,cursor:"pointer"}, onClick:()=>setTab&&setTab("amigos") }
+          , React.createElement('div',null,
+              React.createElement('div',{style:{fontFamily:"Oswald,sans-serif",fontWeight:900,color:"#4ade80",fontSize:".95rem"}},"🎁 Invitar amigos"),
+              React.createElement('div',{style:{fontSize:".75rem",color:"#3a5a4a",marginTop:2}},(user.referralCount||0)+" amigos invitados · Tocá para compartir tu código")
+            )
+          , React.createElement('span',{style:{fontSize:"1.4rem",color:"#4ade80"}},"›")
+        )
       )
 
       // Mis cuentas (si tiene más de una)
@@ -23796,6 +23955,7 @@ function GranMoishe() {
     {id:"prode",icon:"🎯",label:"Prode"},
     {id:"ranking",icon:"📈",label:"Ranking"},
     {id:"logros",icon:"🏅",label:"Logros"},
+    {id:"amigos",icon:"🎁",label:"Amigos"},
     {id:"compartir",icon:"📤",label:"Compartir"},
     {id:"reglas",icon:"📋",label:"Reglas"},
     {id:"perfil",icon:"👤",label:"Perfil"},
@@ -23965,7 +24125,8 @@ function GranMoishe() {
           , tab==="reglas"&&React.createElement(RulesView, null)
 
           /* ── PERFIL ── */
-          , tab==="perfil"&&React.createElement(ProfileView, { user: user, toast: toast,})
+          , tab==="amigos"&&React.createElement(AmigosView, { user: user, toast: toast,})
+          , tab==="perfil"&&React.createElement(ProfileView, { user: user, toast: toast, setTab: setTab,})
 
           /* ── ADMIN ── */
           , tab==="admin"&&user.admin&&React.createElement(AdminPanel, { toast: toast,})
