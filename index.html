@@ -893,7 +893,7 @@ function renderForm() {
   const isReg = authMode==='register';
   document.getElementById('modalTitle').textContent = isReg?'Crear cuenta':'Ingresar';
   document.getElementById('modalPrice').style.display = isReg?'block':'none';
-  const _PRECIOS=[0,30000,35000,40000,45000,50000]; document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + _PRECIOS[window._cantidad||1].toLocaleString('es-AR')) : 'Ingresar';
+  const _PRECIOS=[0,15000,18000,24000,28000,30000]; document.getElementById('btnSubmit').textContent = isReg ? ('Registrarse · $' + _PRECIOS[window._cantidad||1].toLocaleString('es-AR')) : 'Ingresar';
   document.getElementById('btnSwitch').textContent = isReg?'¿Ya tenés cuenta? Ingresá':'¿No tenés cuenta? Registrate';
   const coms = getComs();
   document.getElementById('modalForm').innerHTML = isReg ? `
@@ -1041,10 +1041,10 @@ function setCantidad(n) {
   }
   // Actualizar precio
   const pt = document.getElementById('precioTotal');
-  const PRECIOS=[0,30000,35000,40000,45000,50000]; if (pt) pt.textContent = '$' + PRECIOS[n].toLocaleString('es-AR');
+  const PRECIOS=[0,15000,18000,24000,28000,30000]; if (pt) pt.textContent = '$' + PRECIOS[n].toLocaleString('es-AR');
   // Actualizar botón submit
   const bs = document.getElementById('btnSubmit');
-  const PRECIOS2=[0,30000,35000,40000,45000,50000]; if (bs) bs.textContent = 'Registrarse · $' + PRECIOS2[n].toLocaleString('es-AR');
+  const PRECIOS2=[0,15000,18000,24000,28000,30000]; if (bs) bs.textContent = 'Registrarse · $' + PRECIOS2[n].toLocaleString('es-AR');
   // Mostrar/ocultar cuentas extra
   const ce = document.getElementById('cuentasExtra');
   const eaf = document.getElementById('extraAccountsForm');
@@ -1248,7 +1248,7 @@ async function submitAuth() {
   // Mostrar modal de pago
   closeModal();
   const totalCuentas = registeredUsers.length;
-  const _TABLA=[0,30000,35000,40000,45000,50000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*30000;
+  const _TABLA=[0,15000,18000,24000,28000,30000]; const totalPago = _TABLA[totalCuentas] || totalCuentas*15000;
   document.getElementById('payId').textContent = registeredUsers.map(u=>u.playerId).join(' · ');
   document.getElementById('paySubject').textContent = `Comprobante · ${nombre} ${apellido} · ${registeredUsers.map(u=>u.playerId).join(', ')}`;
   const payAmountEl = document.getElementById('payAmount');
