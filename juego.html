@@ -22827,24 +22827,7 @@ function ProdeView({ user, toast }) {
     return d.toLocaleString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + "hs";
   }
 
-  // ── Predicción campeón + goleador ──────────────────────
-  var predKey = 'gm_pred_' + user.uid;
-  var predStateArr = useState(function(){ return getLS(predKey, {campeon:'', goleador:''}); });
-  var pred = predStateArr[0]; var setPred = predStateArr[1];
-  var predDeadline = getLS('gm_pred_deadline', '');
-  var predLocked = predDeadline ? new Date() > new Date(predDeadline) : false;
-  var SELECCIONES = (function(){
-    var all = [];
-    WC2026_FIXTURE.forEach(function(m){ if(all.indexOf(m.home)<0)all.push(m.home); if(all.indexOf(m.away)<0)all.push(m.away); });
-    return all.sort();
-  })();
-  var GOLEADORES_TOP = ['Lionel Messi (Argentina)','Kylian Mbappé (Francia)','Erling Haaland (Noruega)','Vinicius Jr. (Brasil)','Harry Kane (Inglaterra)','Lautaro Martínez (Argentina)','Neymar (Brasil)','Cristiano Ronaldo (Portugal)','Robert Lewandowski (Polonia)','Dusan Vlahovic (Serbia)','Otro jugador'];
-  function savePred(field, val) {
-    if (predLocked) { toast('Las predicciones están cerradas', 'error'); return; }
-    var next = Object.assign({}, pred); next[field] = val;
-    setPred(next); setLS(predKey, next);
-    toast('Predicción guardada ✅', 'success');
-  }
+  // ── Predicción campeón + goleador — ELIMINADA ──
   const totalPicks = Object.keys(picks).length;
   const totalPts = WC2026_FIXTURE.reduce(function(acc, m) {
     const pts = calcProdePoints(picks[m.id], m);
@@ -22857,34 +22840,6 @@ function ProdeView({ user, toast }) {
   const FILTER_TABS = PHASES;
 
   return React.createElement("div", { style: { padding: "16px", maxWidth: 760, margin: "0 auto" } },
-
-    // Predicciones del torneo
-    React.createElement("div", { style:{background:"#0d1b2a",border:"1px solid",borderColor:predLocked?"#2a3a4a":"rgba(74,222,128,.25)",borderRadius:12,padding:14,marginBottom:14}},
-      React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
-        React.createElement("span", {style:{fontSize:"1.2rem"}}, "🔮"),
-        React.createElement("div", {style:{fontFamily:"Oswald,sans-serif",fontSize:".95rem",fontWeight:700,color:"#e2e8f0",flex:1}}, "PREDICCIONES DEL TORNEO"),
-        predLocked&&React.createElement("span", {style:{fontSize:".6rem",background:"rgba(239,68,68,.12)",color:"#ef4444",borderRadius:4,padding:"2px 7px"}}, "🔒 CERRADAS")
-      ),
-      React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
-        React.createElement("div", null,
-          React.createElement("div", {style:{fontSize:".7rem",color:"#5a7a8a",marginBottom:4}}, "🏆 CAMPEÓN DEL MUNDIAL"),
-          React.createElement("select", {className:"pred-select",disabled:predLocked,value:pred.campeon,onChange:function(e){savePred("campeon",e.target.value);}},
-            [React.createElement("option",{key:"",value:""},"-- Elegí --")].concat(SELECCIONES.map(function(s){return React.createElement("option",{key:s,value:s},s);}))
-          ),
-          pred.campeon&&React.createElement("div",{style:{fontSize:".68rem",color:"#4ade80",marginTop:3}},"✅ "+pred.campeon)
-        ),
-        React.createElement("div", null,
-          React.createElement("div", {style:{fontSize:".7rem",color:"#5a7a8a",marginBottom:4}}, "⚽ GOLEADOR DEL TORNEO"),
-          React.createElement("select", {className:"pred-select",disabled:predLocked,value:pred.goleador,onChange:function(e){savePred("goleador",e.target.value);}},
-            [React.createElement("option",{key:"",value:""},"-- Elegí --")].concat(GOLEADORES_TOP.map(function(g){return React.createElement("option",{key:g,value:g},g);}))
-          ),
-          pred.goleador&&React.createElement("div",{style:{fontSize:".68rem",color:"#4ade80",marginTop:3}},"✅ "+pred.goleador)
-        )
-      ),
-      predDeadline&&!predLocked&&React.createElement("div",{style:{fontSize:".68rem",color:"#f97316",marginTop:8}},"⏰ Cierre: "+new Date(predDeadline).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+"hs")
-    ),
-
-    // Header
     React.createElement("div", { style: { marginBottom: 12 } },
       React.createElement("h2", { style: { fontFamily: "Oswald,sans-serif", fontSize: "1.6rem", fontWeight: 900, letterSpacing: 2, color: "#4ade80", marginBottom: 4 } }, "🎯 PRODE"),
       React.createElement("p", { style: { fontSize: ".78rem", color: "#5a7a6a" } }, "Pronosticá resultados antes de que empiece cada partido. +3 pts por exacto, +1 por ganador correcto.")
