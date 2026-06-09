@@ -24127,41 +24127,19 @@ function GranMoishe() {
   // ── BLOCKED ──
   if(user && user.bloqueado && !user.admin) return (
     React.createElement('div', { style: {minHeight:"100vh",background:"#07111e",display:"flex",alignItems:"center",justifyContent:"center",padding:16},}
-      , React.createElement('div', { style: {background:"#0d1b2a",border:"2px solid #ef4444",borderRadius:16,padding:28,maxWidth:440,textAlign:"center"},}
+      , React.createElement('div', { style: {background:"#0d1b2a",border:"2px solid #ef4444",borderRadius:16,padding:32,maxWidth:420,textAlign:"center"},}
         , React.createElement('div', { style: {fontSize:"2.5rem",marginBottom:12},}, "🔒")
-        , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.3rem",fontWeight:700,color:"#ef4444",letterSpacing:2,marginBottom:10},}, "CUENTA SUSPENDIDA")
-        , React.createElement('div', { style: {fontSize:".88rem",color:"#8a9ab0",lineHeight:1.7,marginBottom:16},},
-            "Tu cuenta fue suspendida temporalmente porque no pudimos verificar tu pago. ",
-            "Realizá el pago y enviá el comprobante para reactivar tu acceso."
+        , React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:"1.3rem",fontWeight:700,color:"#ef4444",letterSpacing:2,marginBottom:10},}, "CUENTA SUSPENDIDA" )
+        , React.createElement('div', { style: {fontSize:".88rem",color:"#8a9ab0",lineHeight:1.7,marginBottom:20},}, "Tu cuenta fue suspendida temporalmente porque no pudimos verificar tu pago."
+                    , React.createElement('br', null)
+          , React.createElement('strong', { style: {color:"#e2e8f0"},}, "Realizá el pago y contactá a los administradores"       ), " para reactivar tu acceso."
         )
-
-        // Player ID
-        , React.createElement('div', { style: {background:"rgba(239,68,68,.06)",border:"1px solid rgba(239,68,68,.15)",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:".8rem",color:"#8a9ab0"}},
-            "Tu Player ID: ",
-            React.createElement('strong', { style: {color:"#ef4444",fontFamily:"'Oswald',sans-serif",letterSpacing:2}}, user.playerId||user.uid)
+        , React.createElement('div', { style: {background:"rgba(239,68,68,.06)",border:"1px solid rgba(239,68,68,.15)",borderRadius:10,padding:12,marginBottom:20,fontSize:".8rem",color:"#8a9ab0"},}, "Tu ID: "
+            , React.createElement('strong', { style: {color:"#ef4444",fontFamily:"'Oswald',sans-serif",letterSpacing:2},}, user.playerId||user.uid)
         )
+        , React.createElement('button', { onClick: async()=>{await Auth.signOut();setUser(null);window.location.href='index.html';}, style: {background:"transparent",border:"1px solid #3a5a6a",color:"#5a7a8a",borderRadius:8,padding:"9px 20px",fontFamily:"'Oswald',sans-serif",fontSize:".88rem",cursor:"pointer"},}, "Cerrar sesión"
 
-        // Payment info
-        , React.createElement('div', { style: {background:"rgba(74,222,128,.05)",border:"1px solid rgba(74,222,128,.2)",borderRadius:12,padding:16,marginBottom:14,textAlign:"left"}},
-            React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:".8rem",fontWeight:700,color:"#4ade80",letterSpacing:1,marginBottom:12,textAlign:"center"}}, "💳 DATOS DE PAGO"),
-            React.createElement('div', { style: {fontSize:".85rem",color:"#e2e8f0",lineHeight:2}},
-              React.createElement('div', null, "🏦 ", React.createElement('strong', null, "Mercado Pago")),
-              React.createElement('div', null, "📎 Alias: ", React.createElement('strong', { style:{color:"#4ade80",fontFamily:"'Oswald',sans-serif",letterSpacing:1}}, "wceorja.mp")),
-              React.createElement('div', null, "💰 Monto: ", React.createElement('strong', null, "$15.000"))
-            )
         )
-
-        // Contact info
-        , React.createElement('div', { style: {background:"rgba(96,165,250,.05)",border:"1px solid rgba(96,165,250,.2)",borderRadius:12,padding:16,marginBottom:20,textAlign:"left"}},
-            React.createElement('div', { style: {fontFamily:"'Oswald',sans-serif",fontSize:".8rem",fontWeight:700,color:"#60a5fa",letterSpacing:1,marginBottom:12,textAlign:"center"}}, "📧 ENVIÁ EL COMPROBANTE"),
-            React.createElement('a', {
-              href: "mailto:granmoishe2026@gmail.com?subject=Comprobante%20de%20pago%20-%20"+(user.playerId||user.uid)+"&body=Hola%2C%20te%20mando%20el%20comprobante%20de%20pago.%20Mi%20Player%20ID%20es%3A%20"+(user.playerId||user.uid),
-              style: {display:"flex",alignItems:"center",justifyContent:"center",gap:10,width:"100%",padding:"12px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#2563eb,#3b82f6)",color:"#fff",fontFamily:"'Oswald',sans-serif",fontWeight:700,fontSize:".95rem",cursor:"pointer",textDecoration:"none",marginBottom:8}
-            }, "📧 granmoishe2026@gmail.com"),
-            React.createElement('div', { style:{fontSize:".72rem",color:"#4a6a8a",textAlign:"center"}}, "Adjuntá el comprobante y mencioná tu Player ID: ", React.createElement('strong',{style:{color:"#e2e8f0"}}, user.playerId||user.uid))
-        )
-
-        , React.createElement('button', { onClick: async()=>{await Auth.signOut();setUser(null);window.location.href='index.html';}, style: {background:"transparent",border:"1px solid #3a5a6a",color:"#5a7a8a",borderRadius:8,padding:"9px 20px",fontFamily:"'Oswald',sans-serif",fontSize:".88rem",cursor:"pointer"}}, "Cerrar sesión")
       )
     )
   );
@@ -24436,3 +24414,4 @@ function triggerInstall() {
 </script>
 </body>
 </html>
+
