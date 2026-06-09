@@ -21635,10 +21635,10 @@ const WC2026_FIXTURE = [
 {id:17, matchday:3, date:"2026-06-24T22:00:00Z", home:"Escocia", away:"Brasil", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
 {id:18, matchday:3, date:"2026-06-26T22:00:00Z", home:"Marruecos", away:"Haití", group:"Grupo C", round:"Fase de Grupos", venue:"Por definir"},
 {id:19, matchday:1, date:"2026-06-13T01:00:00Z", home:"Estados Unidos", away:"Paraguay", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
-{id:20, matchday:1, date:"2026-06-13T04:00:00Z", home:"Australia", away:"Rumania", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
-{id:21, matchday:2, date:"2026-06-19T04:00:00Z", home:"Rumania", away:"Paraguay", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:20, matchday:1, date:"2026-06-13T04:00:00Z", home:"Australia", away:"Turquía", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:21, matchday:2, date:"2026-06-19T04:00:00Z", home:"Turquía", away:"Paraguay", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
 {id:22, matchday:2, date:"2026-06-19T19:00:00Z", home:"Estados Unidos", away:"Australia", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
-{id:23, matchday:3, date:"2026-06-27T02:00:00Z", home:"Rumania", away:"Estados Unidos", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
+{id:23, matchday:3, date:"2026-06-27T02:00:00Z", home:"Turquía", away:"Estados Unidos", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
 {id:24, matchday:3, date:"2026-06-26T02:00:00Z", home:"Paraguay", away:"Australia", group:"Grupo D", round:"Fase de Grupos", venue:"Por definir"},
 {id:25, matchday:1, date:"2026-06-14T17:00:00Z", home:"Alemania", away:"Curazao", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
 {id:26, matchday:1, date:"2026-06-14T23:00:00Z", home:"Costa de Marfil", away:"Ecuador", group:"Grupo E", round:"Fase de Grupos", venue:"Por definir"},
@@ -24185,10 +24185,10 @@ function GranMoishe() {
         player: modal, onClose: ()=>setModal(null),
         onAdd: addToSquad, onRemove: removeFromSquad,
         onSetCapitan: setCapitan,
-        inSquad: !!squad.find(p=>p.id===modal.id),
+        inSquad: !!(squad.find(p=>p.id===modal.id)||xi.find(p=>p.id===modal.id)||subs.find(p=>p.id===modal.id)),
         isCapitan: capitan===modal.id,
         canAdd: canAddFn(modal),
-        canSetCap: !!squad.find(p=>p.id===modal.id),}
+        canSetCap: !!(squad.find(p=>p.id===modal.id)||xi.find(p=>p.id===modal.id)||subs.find(p=>p.id===modal.id)),}
       )
 
       /* HEADER */
@@ -24414,4 +24414,3 @@ function triggerInstall() {
 </script>
 </body>
 </html>
-
